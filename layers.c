@@ -163,9 +163,9 @@ Mat * gru_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW
 }
 
 
-Mat * gru_step(const Mat * x, const Mat * istate,
-	       const Mat * xW, const Mat * sW, const Mat * sW2, const Mat * bias,
-	       Mat * xF, Mat * ostate){
+void gru_step(const Mat * x, const Mat * istate,
+	      const Mat * xW, const Mat * sW, const Mat * sW2, const Mat * bias,
+	      Mat * xF, Mat * ostate){
 	/* Perform a single GRU step
 	 * x      is [isize]
 	 * istate is [size]
@@ -174,7 +174,7 @@ Mat * gru_step(const Mat * x, const Mat * istate,
 	 * sW2    is [size, size]
 	 * bias   is [3 * size]
 	 * xF     is [3 * size]
-	 * ostate is [size] (allocated if NULL)
+	 * ostate is [size]
 	 */
 	assert(x->nr == xW->nr);
 	const int size = istate->nr;
@@ -185,10 +185,6 @@ Mat * gru_step(const Mat * x, const Mat * istate,
 	assert(size == sW2->nc);
 	assert(3 * size == bias->nr);
 	assert(3 * size == xF->nr);
-
-	if(NULL == ostate){
-		ostate = make_mat(size, 1);
-	}
 	assert(size == ostate->nr);
 
 	/* Copy bias vector to output*/
@@ -222,6 +218,135 @@ Mat * gru_step(const Mat * x, const Mat * istate,
 	for(int i=0 ; i < sizeq ; i++){
 		ostate->data.v[i] = z[i] * istate->data.v[i] + (ones - z[i]) * hbar[i];
 	}
+}
 
-	return ostate;
+
+Mat * lstm_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output){
+	assert(X->nr == iW->nr);
+	const int size = sW->nr;
+	const int bsize = X->nc;
+	assert(b->nr == 4 * size);
+	assert(p->nr == 3 * size);
+	assert(iW->nc == 4 * size);
+	assert(sW->nc == 4 * size);
+	if(NULL == output){
+		output = make_mat(size, bsize);
+	}
+	assert(output->nr == size);
+	assert(output->nc == X->nc);
+
+	Mat xCol, sCol1, sCol2;
+	Mat * tmp = make_mat(3 * size, 1);
+	Mat * state = make_mat(size, 1);
+
+	/* First step state is zero.  Set second column of ostate to zero and use that */
+	memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
+	xCol = *X; sCol1 = *output; sCol2 = *output;
+	xCol.nc = sCol1.nc = sCol2.nc = 1;
+	sCol1.data.v = output->data.v + output->nrq;
+	sCol2.data.v = output->data.v;
+	lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+	for(int i=1 ; i < bsize ; i++){
+		xCol.data.v = X->data.v + i * X->nrq;
+		sCol1.data.v = output->data.v + (i - 1) * output->nrq;
+		sCol2.data.v = output->data.v + i * output->nrq;
+		lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+	}
+
+	free_mat(state);
+	free_mat(tmp);
+	return output;
+}
+
+Mat * lstm_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output){
+	assert(X->nr == iW->nr);
+	const int size = sW->nr;
+	const int bsize = X->nc;
+	assert(iW->nc == 4 * size);
+	assert(sW->nc == 4 * size);
+	assert(b->nr == 4 * size);
+	assert(p->nr == 3 * size);
+	if(NULL == output){
+		output = make_mat(size, bsize);
+	}
+	assert(output->nr == size);
+	assert(output->nc == X->nc);
+
+	Mat xCol, sCol1, sCol2;
+	Mat * tmp = make_mat(4 * size, 1);
+	Mat * state = make_mat(size, 1);
+
+	/* First step state is zero.  Set first column of ostate to zero and use that */
+	memset(output->data.v, 0, output->nrq * sizeof(__m128));
+	xCol = *X; sCol1 = *output; sCol2 = *output;
+	xCol.nc = sCol1.nc = sCol2.nc = 1;
+	xCol.data.v = X->data.v + (X->nc - 1) * X->nrq;
+	sCol1.data.v = output->data.v + (output->nc - 1) * output->nrq;
+	sCol2.data.v = output->data.v;
+	lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+        for(int i=1 ; i < bsize ; i++){
+		const int index = bsize - i - 1;
+		xCol.data.v = X->data.v + index * X->nrq;
+		sCol1.data.v = output->data.v + (index + 1) * output->nrq;
+		sCol2.data.v = output->data.v + index * output->nrq;
+		lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+	}
+
+	free_mat(state);
+	free_mat(tmp);
+	return output;
+}
+
+
+void lstm_step(const Mat * x, const Mat * out_prev,
+	       const Mat * xW, const Mat * sW, const Mat * bias, const Mat * peep,
+	       Mat * xF, Mat * state, Mat * output){
+	/* Perform a single GRU step
+	 * x        is [isize]
+	 * out-prev is [size]
+	 * xW       is [isize, 4 * size]
+	 * sW       is [size, 4 * size]
+	 * bias     is [4 * size]
+	 * peep     is [4 * size]
+	 * xF       is [4 * size]
+	 * state    is [size]
+	 * output   is [size]
+	 */
+	assert(x->nr == xW->nr);
+	const int size = state->nr;
+	assert(size == out_prev->nr);
+	assert(4 * size == xW->nc);
+	assert(size == sW->nr);
+	assert(4 * size == sW->nc);
+	assert(4 * size == bias->nr);
+	assert(4 * size == peep->nr);
+	assert(4 * size == xF->nr);
+	assert(size == output->nr);
+
+	/* Copy bias vector to output*/
+	memcpy(xF->data.v, bias->data.v, bias->nrq * sizeof(__m128));
+	//  + iW' * x
+	cblas_sgemv(CblasColMajor, CblasTrans, xW->nr, xW->nc, 1.0, xW->data.f, xW->nrq * 4,
+		    x->data.f, 1, 1.0, xF->data.f, 1);
+	//  + sW' * xprev
+	cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f, sW->nrq * 4,
+		    out_prev->data.f, 1, 1.0, xF->data.f, 1);
+
+	assert((size % 4) == 0);
+	const int sizeq = size / 4;
+	for(int i=0 ; i < sizeq ; i++){
+		// Forget gate
+		__m128 forget = logisticfv(xF->data.v[2 * sizeq + i]
+				          + state->data.v[i] * peep->data.v[sizeq + i])
+			      * state->data.v[i];
+		// Update gate
+		__m128 update = logisticfv(xF->data.v[sizeq + i]
+			                  + state->data.v[i] * peep->data.v[i])
+			      * tanhfv(xF->data.v[i]);
+		state->data.v[i] = forget + update;
+		// Output gate
+		output->data.v[i] = logisticfv(xF->data.v[3 * sizeq + i]
+				              + state->data.v[i] * peep->data.v[2 * sizeq + i])
+			          * tanhfv(state->data.v[i]);
+	}
 }

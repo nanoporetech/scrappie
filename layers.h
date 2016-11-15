@@ -19,9 +19,13 @@ Mat * feedforward2_tanh(const Mat * Xf, const Mat * Xb,
 
 Mat * gru_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2, const Mat * b, Mat * res);
 Mat * gru_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2, const Mat * b, Mat * res);
-Mat * gru_step(const Mat * x, const Mat * istate,
-	       const Mat * xW, const Mat * sW, const Mat * sW2, const Mat * bias,
-	       Mat * xF, Mat * ostate);
+void gru_step(const Mat * x, const Mat * istate,
+	      const Mat * xW, const Mat * sW, const Mat * sW2, const Mat * bias,
+	      Mat * xF, Mat * ostate);
 
-
+Mat * lstm_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output);
+Mat * lstm_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output);
+void lstm_step(const Mat * x, const Mat * out_prev,
+	       const Mat * xW, const Mat * sW, const Mat * bias, const Mat * peep,
+	       Mat * xF, Mat * state, Mat * output);
 #endif /* LAYERS_H */
