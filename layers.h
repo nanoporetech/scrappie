@@ -3,29 +3,33 @@
 
 #include "util.h"
 
-Mat * window(const Mat * input, int w);
-Mat * feedforward_linear(const Mat * X, const Mat * W,
-		         const Mat * b, Mat * C);
-Mat * feedforward_tanh(const Mat * X, const Mat * W,
-		       const Mat * b, Mat * C);
-Mat * feedforward_exp(const Mat * X, const Mat * W,
-		      const Mat * b, Mat * C);
-Mat * softmax(const Mat * X, const Mat * W,
-	      const Mat * b, Mat * C);
+Mat_rptr window(const Mat_rptr input, int w);
+Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
+		            const Mat_rptr b, Mat_rptr C);
+Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
+		          const Mat_rptr b, Mat_rptr C);
+Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
+		         const Mat_rptr b, Mat_rptr C);
+Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
+	         const Mat_rptr b, Mat_rptr C);
 
-Mat * feedforward2_tanh(const Mat * Xf, const Mat * Xb,
-		        const Mat * Wf, const Mat * Wb,
-			const Mat * b, Mat * C);
+Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
+		           const Mat_rptr Wf, const Mat_rptr Wb,
+			   const Mat_rptr b, Mat_rptr C);
 
-Mat * gru_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2, const Mat * b, Mat * res);
-Mat * gru_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2, const Mat * b, Mat * res);
-void gru_step(const Mat * x, const Mat * istate,
-	      const Mat * xW, const Mat * sW, const Mat * sW2, const Mat * bias,
-	      Mat * xF, Mat * ostate);
+Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
+		     const Mat_rptr sW2, const Mat_rptr b, Mat_rptr res);
+Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
+		      const Mat_rptr sW2, const Mat_rptr b, Mat_rptr res);
+void gru_step(const Mat_rptr x, const Mat_rptr istate,
+	      const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr sW2,
+	      const Mat_rptr bias, Mat_rptr xF, Mat_rptr ostate);
 
-Mat * lstm_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output);
-Mat * lstm_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output);
-void lstm_step(const Mat * x, const Mat * out_prev,
-	       const Mat * xW, const Mat * sW, const Mat * bias, const Mat * peep,
-	       Mat * xF, Mat * state, Mat * output);
+Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
+		      const Mat_rptr b, const Mat_rptr p, Mat_rptr output);
+Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
+		       const Mat_rptr b, const Mat_rptr p, Mat_rptr output);
+void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
+	       const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr bias,
+	       const Mat_rptr peep, Mat_rptr xF, Mat_rptr state, Mat_rptr output);
 #endif /* LAYERS_H */

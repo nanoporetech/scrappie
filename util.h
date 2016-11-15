@@ -22,7 +22,9 @@ typedef struct {
 		__m128 * v;
 		float * f;
 	} data;
-} Mat;
+} _Mat;
+
+typedef _Mat * restrict Mat_rptr;
 
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
@@ -91,15 +93,15 @@ static inline __m128 tanhfv(__m128 x){
 
 
 
-Mat * make_mat(int nr, int nc);
-Mat * mat_from_array(const float * x, int nr, int nc);
-void free_mat(Mat * mat);
+Mat_rptr make_mat(int nr, int nc);
+Mat_rptr mat_from_array(const float * x, int nr, int nc);
+void free_mat(Mat_rptr mat);
 
-Mat * affine_map(const Mat * X, const Mat * W,
-		 const Mat * b, Mat * C);
-Mat * affine_map2(const Mat * Xf, const Mat * Xb,
-		  const Mat * Wf, const Mat * Wb,
-		  const Mat * b, Mat * C);
-void row_normalise_inplace(Mat * C);
+Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
+		 const Mat_rptr b, Mat_rptr C);
+Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
+		  const Mat_rptr Wf, const Mat_rptr Wb,
+		  const Mat_rptr b, Mat_rptr C);
+void row_normalise_inplace(Mat_rptr C);
 
 #endif /* UTIL_H */

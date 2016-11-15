@@ -7,12 +7,12 @@
 
 
 
-Mat * window(const Mat * input, int w){
+Mat_rptr window(const Mat_rptr input, int w){
 	assert(NULL != input);
 	assert(w > 0 && (w%2) == 1);
 	const int wh = w / 2;
 
-	Mat * output = make_mat(input->nr * w, input->nc);
+	Mat_rptr output = make_mat(input->nr * w, input->nc);
 
 	for(int col=0 ; col<output->nc ; col++){
 		// First and last columns are special cases
@@ -32,15 +32,15 @@ Mat * window(const Mat * input, int w){
 	return output;
 }
 
-Mat * feedforward_linear(const Mat * X, const Mat * W,
-		         const Mat * b, Mat * C){
+Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
+		         const Mat_rptr b, Mat_rptr C){
 	C = affine_map(X, W, b, C);
 	return C;
 }
 
 
-Mat * feedforward_tanh(const Mat * X, const Mat * W,
-	               const Mat * b, Mat * C){
+Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
+	               const Mat_rptr b, Mat_rptr C){
 	C = affine_map(X, W, b, C);
 	for(int c=0 ; c<C->nc ; c++){
 		const int offset = c * C->nrq;
@@ -52,8 +52,8 @@ Mat * feedforward_tanh(const Mat * X, const Mat * W,
 }
 
 
-Mat * feedforward_exp(const Mat * X, const Mat * W,
-	              const Mat * b, Mat * C){
+Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
+	              const Mat_rptr b, Mat_rptr C){
 	C = affine_map(X, W, b, C);
 	for(int c=0 ; c<C->nc ; c++){
 		const int offset = c * C->nrq;
@@ -64,17 +64,17 @@ Mat * feedforward_exp(const Mat * X, const Mat * W,
 	return C;
 }
 
-Mat * softmax(const Mat * X, const Mat * W,
-              const Mat * b, Mat * C){
+Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
+              const Mat_rptr b, Mat_rptr C){
 	C = feedforward_exp(X, W, b, C);
 	row_normalise_inplace(C);
 	return C;
 }
 
 
-Mat * feedforward2_tanh(const Mat * Xf, const Mat * Xb,
-	  	       const Mat * Wf, const Mat * Wb,
-	               const Mat * b, Mat * C){
+Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
+	  	       const Mat_rptr Wf, const Mat_rptr Wb,
+	               const Mat_rptr b, Mat_rptr C){
 	C = affine_map2(Xf, Xb, Wf, Wb, b, C);
 
 	for(int c=0 ; c<C->nc ; c++){
@@ -86,7 +86,7 @@ Mat * feedforward2_tanh(const Mat * Xf, const Mat * Xb,
 	return C;
 }
 
-Mat * gru_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2, const Mat * b, Mat * ostate){
+Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
 	assert(X->nr == iW->nr);
 	const int bsize = X->nc;
 	const int size = sW2->nc;
@@ -102,8 +102,8 @@ Mat * gru_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2
 	assert(ostate->nr == size);
 	assert(ostate->nc == X->nc);
 
-	Mat xCol, sCol1, sCol2;
-	Mat * tmp = make_mat(3 * size, 1);
+	_Mat xCol, sCol1, sCol2;
+	Mat_rptr tmp = make_mat(3 * size, 1);
 
 	/* First step state is zero.  Set second column of ostate to zero and use that */
 	memset(ostate->data.v + ostate->nrq, 0, ostate->nrq * sizeof(__m128));
@@ -123,7 +123,7 @@ Mat * gru_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2
 	return ostate;
 }
 
-Mat * gru_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW2, const Mat * b, Mat * ostate){
+Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
 	assert(X->nr == iW->nr);
 	const int size = sW2->nc;
 	const int bsize = X->nc;
@@ -139,8 +139,8 @@ Mat * gru_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW
 	assert(ostate->nr == size);
 	assert(ostate->nc == X->nc);
 
-	Mat xCol, sCol1, sCol2;
-	Mat * tmp = make_mat(3 * size, 1);
+	_Mat xCol, sCol1, sCol2;
+	Mat_rptr tmp = make_mat(3 * size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(ostate->data.v, 0, ostate->nrq * sizeof(__m128));
@@ -163,9 +163,9 @@ Mat * gru_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * sW
 }
 
 
-void gru_step(const Mat * x, const Mat * istate,
-	      const Mat * xW, const Mat * sW, const Mat * sW2, const Mat * bias,
-	      Mat * xF, Mat * ostate){
+void gru_step(const Mat_rptr x, const Mat_rptr istate,
+	      const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr bias,
+	      Mat_rptr xF, Mat_rptr ostate){
 	/* Perform a single GRU step
 	 * x      is [isize]
 	 * istate is [size]
@@ -221,7 +221,7 @@ void gru_step(const Mat * x, const Mat * istate,
 }
 
 
-Mat * lstm_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output){
+Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr b, const Mat_rptr p, Mat_rptr output){
 	assert(X->nr == iW->nr);
 	const int size = sW->nr;
 	const int bsize = X->nc;
@@ -235,9 +235,9 @@ Mat * lstm_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b,
 	assert(output->nr == size);
 	assert(output->nc == X->nc);
 
-	Mat xCol, sCol1, sCol2;
-	Mat * tmp = make_mat(3 * size, 1);
-	Mat * state = make_mat(size, 1);
+	_Mat xCol, sCol1, sCol2;
+	Mat_rptr tmp = make_mat(3 * size, 1);
+	Mat_rptr state = make_mat(size, 1);
 
 	/* First step state is zero.  Set second column of ostate to zero and use that */
 	memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
@@ -258,7 +258,7 @@ Mat * lstm_forward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b,
 	return output;
 }
 
-Mat * lstm_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b, const Mat * p, Mat * output){
+Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr b, const Mat_rptr p, Mat_rptr output){
 	assert(X->nr == iW->nr);
 	const int size = sW->nr;
 	const int bsize = X->nc;
@@ -272,9 +272,9 @@ Mat * lstm_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b
 	assert(output->nr == size);
 	assert(output->nc == X->nc);
 
-	Mat xCol, sCol1, sCol2;
-	Mat * tmp = make_mat(4 * size, 1);
-	Mat * state = make_mat(size, 1);
+	_Mat xCol, sCol1, sCol2;
+	Mat_rptr tmp = make_mat(4 * size, 1);
+	Mat_rptr state = make_mat(size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(output->data.v, 0, output->nrq * sizeof(__m128));
@@ -298,9 +298,9 @@ Mat * lstm_backward(const Mat * X, const Mat * iW, const Mat * sW, const Mat * b
 }
 
 
-void lstm_step(const Mat * x, const Mat * out_prev,
-	       const Mat * xW, const Mat * sW, const Mat * bias, const Mat * peep,
-	       Mat * xF, Mat * state, Mat * output){
+void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
+	       const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr bias, const Mat_rptr peep,
+	       Mat_rptr xF, Mat_rptr state, Mat_rptr output){
 	/* Perform a single GRU step
 	 * x        is [isize]
 	 * out-prev is [size]

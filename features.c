@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include "features.h"
 
-Mat * make_features(const event_table evtbl, bool normalise){
+Mat_rptr make_features(const event_table evtbl, bool normalise){
 	const int nevent = evtbl.n;
-	Mat * features = make_mat(4, nevent);
+	Mat_rptr features = make_mat(4, nevent);
 	for(int ev=0 ; ev<nevent - 1 ; ev++){
 		features->data.v[ev] = _mm_setr_ps(
 			evtbl.event[ev].mean,

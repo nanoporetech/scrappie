@@ -5,6 +5,6 @@
 #include "read_events.h"
 #include "util.h"
 
-Mat * make_features(const event_table evtbl, bool normalise);
+Mat_rptr make_features(const event_table evtbl, bool normalise);
 
 #endif /* FEATURES_H */

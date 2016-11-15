@@ -5,10 +5,10 @@
 #include <string.h>
 #include "util.h"
 
-Mat * make_mat(int nr, int nc){
+Mat_rptr make_mat(int nr, int nc){
 	// Matrix padded so row length is multiple of 4
 	int nrq = (int)ceil(nr / 4.0);
-	Mat * mat = malloc(sizeof(Mat));
+	Mat_rptr mat = malloc(sizeof(*mat));
 	mat->nr = nr;
 	mat->nrq = nrq;
 	mat->nc = nc;
@@ -16,21 +16,21 @@ Mat * make_mat(int nr, int nc){
 	return mat;
 }
 
-Mat * mat_from_array(const float * x, int nr, int nc){
-	Mat * res = make_mat(nr, nc);
+Mat_rptr mat_from_array(const float * x, int nr, int nc){
+	Mat_rptr res = make_mat(nr, nc);
 	for(int col=0 ; col < nc ; col++){
 		memcpy(res->data.f + col * res->nrq * 4, x + col * nr, nr * sizeof(float));
 	}
 	return res;
 }
 
-void free_mat(Mat * mat){
+void free_mat(Mat_rptr mat){
 	free(mat->data.v);
 	free(mat);
 }
 
-Mat * affine_map(const Mat * X, const Mat * W,
-                 const Mat * b, Mat * C){
+Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
+                 const Mat_rptr b, Mat_rptr C){
         /*  Affine transform C = W^t X + b
          *  X is [nr, nc]
          *  W is [nr, nk]
@@ -56,9 +56,9 @@ Mat * affine_map(const Mat * X, const Mat * W,
         return C;
 }
 
-Mat * affine_map2(const Mat * Xf, const Mat * Xb,
-		  const Mat * Wf, const Mat * Wb,
-		  const Mat * b, Mat * C){
+Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
+		  const Mat_rptr Wf, const Mat_rptr Wb,
+		  const Mat_rptr b, Mat_rptr C){
 	assert(Wf->nr == Xf->nr);
 	assert(Wb->nr == Xb->nr);
 	assert(Xf->nc == Xb->nc);
@@ -83,7 +83,7 @@ Mat * affine_map2(const Mat * Xf, const Mat * Xb,
 
 
 
-void row_normalise_inplace(Mat * C){
+void row_normalise_inplace(Mat_rptr C){
 	assert(NULL != C);
 	for(int col=0 ; col < C->nc ; col++){
 		const int offset = col * C->nrq;
