@@ -20,75 +20,24 @@ Mat * calculate_post(char * filename, int analysis){
 	Mat * features = make_features(et, true);
 	Mat * feature3 = window(features, 3);
 
-	Mat * vgruF1_iW = mat_from_array(gruF1_iW, 12, 288);
-	Mat * vgruF1_sW = mat_from_array(gruF1_sW, 96, 192);
-	Mat * vgruF1_sW2 = mat_from_array(gruF1_sW2, 96, 96);
-	Mat * vgruF1_b = mat_from_array(gruF1_b, 288, 1);
-	Mat * gruF = gru_forward(feature3, vgruF1_iW, vgruF1_sW, vgruF1_sW2, vgruF1_b, NULL);
-
-	Mat * vgruB1_iW = mat_from_array(gruB1_iW, 12, 288);
-	Mat * vgruB1_sW = mat_from_array(gruB1_sW, 96, 192);
-	Mat * vgruB1_sW2 = mat_from_array(gruB1_sW2, 96, 96);
-	Mat * vgruB1_b = mat_from_array(gruB1_b, 288, 1);
-	Mat * gruB = gru_backward(feature3, vgruB1_iW, vgruB1_sW, vgruB1_sW2, vgruB1_b, NULL);
+	Mat * gruF = gru_forward(feature3, gruF1_iW, gruF1_sW, gruF1_sW2, gruF1_b, NULL);
+	Mat * gruB = gru_backward(feature3, gruB1_iW, gruB1_sW, gruB1_sW2, gruB1_b, NULL);
 
 	//  Combine GRU output
-	Mat * vFF1_fW = mat_from_array(FF1_Wf, 96, 128);
-	Mat * vFF1_bW = mat_from_array(FF1_Wb, 96, 128);
-	Mat * vFF1_b = mat_from_array(FF1_b, 128, 1);
-	Mat * gruFF = feedforward2_tanh(gruF, gruB, vFF1_fW, vFF1_bW, vFF1_b, NULL);
+	Mat * gruFF = feedforward2_tanh(gruF, gruB, FF1_Wf, FF1_Wb, FF1_b, NULL);
 
-
-	Mat * vgruF2_iW = mat_from_array(gruF2_iW, 128, 288);
-	Mat * vgruF2_sW = mat_from_array(gruF2_sW, 96, 192);
-	Mat * vgruF2_sW2 = mat_from_array(gruF2_sW2, 96, 96);
-	Mat * vgruF2_b = mat_from_array(gruF2_b, 288, 1);
-	gru_forward(gruFF, vgruF2_iW, vgruF2_sW, vgruF2_sW2, vgruF2_b, gruF);
-
-	Mat * vgruB2_iW = mat_from_array(gruB2_iW, 128, 288);
-	Mat * vgruB2_sW = mat_from_array(gruB2_sW, 96, 192);
-	Mat * vgruB2_sW2 = mat_from_array(gruB2_sW2, 96, 96);
-	Mat * vgruB2_b = mat_from_array(gruB2_b, 288, 1);
-	gru_backward(gruFF, vgruB2_iW, vgruB2_sW, vgruB2_sW2, vgruB2_b, gruB);
+	gru_forward(gruFF, gruF2_iW, gruF2_sW, gruF2_sW2, gruF2_b, gruF);
+	gru_backward(gruFF, gruB2_iW, gruB2_sW, gruB2_sW2, gruB2_b, gruB);
 
 	// Combine GRU output
-	Mat * vFF2_fW = mat_from_array(FF2_Wf, 96, 128);
-	Mat * vFF2_bW = mat_from_array(FF2_Wb, 96, 128);
-	Mat * vFF2_b = mat_from_array(FF2_b, 128, 1);
-	feedforward2_tanh(gruF, gruB, vFF2_fW, vFF2_bW, vFF2_b, gruFF);
+	feedforward2_tanh(gruF, gruB, FF2_Wf, FF2_Wb, FF2_b, gruFF);
+
+	Mat * post = softmax(gruFF, FF3_W, FF3_b, NULL);
 
 
-
-	Mat * vFF3_W = mat_from_array(FF3_W, 128, 1025);
-	Mat * vFF3_b = mat_from_array(FF3_b, 1025, 1);
-	Mat * post = softmax(gruFF, vFF3_W, vFF3_b, NULL);
-
-
-	free_mat(vFF3_b);
-	free_mat(vFF3_W);
-	free_mat(vFF2_b);
-	free_mat(vFF2_bW);
-	free_mat(vFF2_fW);
-	free_mat(vgruB2_b);
-	free_mat(vgruB2_sW2);
-	free_mat(vgruB2_sW);
-	free_mat(vgruF2_iW);
-	free_mat(vgruF2_b);
-	free_mat(vgruF2_sW2);
-	free_mat(vgruF2_sW);
 	free_mat(gruFF);
-	free_mat(vFF1_b);
-	free_mat(vFF1_bW);
-	free_mat(vFF1_fW);
 	free_mat(gruB);
-	free_mat(vgruB1_b);
-	free_mat(vgruB1_sW2);
-	free_mat(vgruB1_sW);
 	free_mat(gruF);
-	free_mat(vgruF1_iW);
-	free_mat(vgruF1_b);
-	free_mat(vgruF1_sW2);
-	free_mat(vgruF1_sW);
 	free_mat(feature3);
 	free_mat(features);
 
@@ -98,6 +47,7 @@ Mat * calculate_post(char * filename, int analysis){
 int main(int argc, char * argv[]){
 	openblas_set_num_threads(1);
 	assert(argc > 1);
+	setup();
 
 	#pragma omp parallel for
 	for(int fn=1 ; fn<argc ; fn++){
