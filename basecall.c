@@ -8,7 +8,7 @@
 #include "read_events.h"
 #include "util.h"
 
-#include "model.h"
+#include "gru_model.h"
 
 const int NOUT = 5;
 
@@ -62,6 +62,7 @@ Mat * calculate_post(char * filename, int analysis){
 	Mat * vFF3_W = mat_from_array(FF3_W, 128, 1025);
 	Mat * vFF3_b = mat_from_array(FF3_b, 1025, 1);
 	Mat * post = softmax(gruFF, vFF3_W, vFF3_b, NULL);
+
 
 	free_mat(vFF3_b);
 	free_mat(vFF3_W);
