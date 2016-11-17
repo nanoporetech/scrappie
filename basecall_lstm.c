@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <math.h>
-#include <openblas/cblas.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "features.h"
@@ -96,7 +95,6 @@ Mat_rptr calculate_post(char * filename, int analysis){
 }
 
 int main(int argc, char * argv[]){
-	openblas_set_num_threads(1);
 	assert(argc > 1);
 
 	#pragma omp parallel for

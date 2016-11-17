@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <openblas/cblas.h>
+#include <cblas.h>
 #include <math.h>
 #include <string.h>
 #include "layers.h"
