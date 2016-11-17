@@ -1,7 +1,9 @@
+#!/usr/bin/env python
+
 import cPickle
 import sys
 
-model_file = 'gru_obese/model_final.pkl'
+model_file = sys.argv[1]
 
 
 def cformatM(fh, name, X):
@@ -9,7 +11,7 @@ def cformatM(fh, name, X):
     fh.write('const float {}[] = {}\n'.format('_' + name, '{'))
     fh.write('\t' + ',\n\t'.join(lines))
     fh.write('};\n')
-    fh.write('Mat * {} = NULL;\n\n'.format(name));
+    fh.write('Mat_rptr {} = NULL;\n\n'.format(name));
     # Mat object
     return '{} = mat_from_array({}, {}, {});\n'.format(name, '_' + name, X.shape[1], X.shape[0])
 
@@ -19,7 +21,7 @@ def cformatV(fh, name, X):
     fh.write('const float {}[] = {}\n'.format( '_' + name, '{'))
     fh.write('\t' + lines)
     fh.write('};\n')
-    fh.write('Mat * {} = NULL;\n\n'.format(name));
+    fh.write('Mat_rptr {} = NULL;\n\n'.format(name));
     # Mat object
     return '{} = mat_from_array({}, {}, {});\n'.format(name, '_' + name, X.shape[0], 1)
 
