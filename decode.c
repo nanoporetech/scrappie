@@ -24,7 +24,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	}
 
 	//  Forwards Viterbi iteration
-	for(int ev=0 ; ev < nev ; ev++){
+	for(int ev=1 ; ev < nev ; ev++){
 		const int offsetT = ev * nkmer;
 		const int offsetP = ev * ldp;
 		// Swap score and previous score
@@ -44,7 +44,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 		for(int i=0 ; i < nkmer ; i++){
 			const int to = (i << 2) & kmer_mask;
 			for(int b=0 ; b < NBASE ; b++){
-				const float step_score = logpost->data.f[offsetP + to + b]
+				const float step_score = logpost->data.f[offsetP + to + b + 1]
 					               + prev_score[i];
 				if(score[to + b] < step_score){
 					score[to + b] = step_score;
@@ -56,7 +56,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 		for(int i=0 ; i < nkmer ; i++){
 			const int to = (i << 4) & kmer_mask;
 			for(int b=0 ; b < NBASE * NBASE ; b++){
-				const float step_score = logpost->data.f[offsetP + to + b]
+				const float step_score = logpost->data.f[offsetP + to + b + 1]
 					               + prev_score[i] - skip_pen;
 				if(score[to + b] < step_score){
 					score[to + b] = step_score;
@@ -109,28 +109,40 @@ int position_highest_bit(int x){
 	return i;
 }
 
+int first_nonnegative(const int * seq, int n){
+	int st;
+        for(st=0 ; st < n && seq[st] < 0; st++);
+	return st;
+}
+
 
 const char base_lookup[4] = {'A', 'C', 'G', 'T'};
 char * overlapper(const int * seq, int n, int nkmer){
 	assert(NULL != seq);
-	const int kmer_len = position_highest_bit(nkmer);
+	const int kmer_len = position_highest_bit(nkmer) / 2;
 
 
 	//  Determine length of final sequence
 	int length = kmer_len;
-	for(int kprev=seq[0], k=1 ; k < n ; k++){
-		if(seq[k] == -1){
+ 	// Find first non-stay
+        const int st = first_nonnegative(seq, n);
+	assert(st != n);
+	int kprev = seq[st];
+	for(int k=st + 1 ; k < n ; k++){
+		if(seq[k] < 0){
 			// Short-cut stays
 			continue;
 		}
+		assert(seq[k] >= 0);
 		length += overlap(kprev , seq[k], nkmer);
 		kprev = seq[k];
+		assert(kprev >= 0);
 	}
 
 	// Initialise basespace sequence
 	char * bases = calloc(length + 1, sizeof(char));
 	// Fill with first kmer
-	for(int kmer=seq[0], k=1 ; k <= kmer_len ; k++){
+	for(int kmer=seq[st], k=1 ; k <= kmer_len ; k++){
 		int b = kmer & 3;
 		kmer >>= 2;
 		bases[kmer_len - k] = base_lookup[b];
@@ -138,8 +150,8 @@ char * overlapper(const int * seq, int n, int nkmer){
 
 
 
-	for(int last_idx=kmer_len - 1, kprev=seq[0], k=1 ; k < n ; k++){
-		if(seq[k] == -1){
+	for(int last_idx=kmer_len - 1, kprev=seq[st], k=st + 1 ; k < n ; k++){
+		if(seq[k] < 0){
 			// Short-cut stays
 			continue;
 		}
