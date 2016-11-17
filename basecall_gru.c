@@ -1,8 +1,10 @@
 #include <assert.h>
+#include <libgen.h>
 #include <math.h>
-#include <openblas/cblas.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "decode.h"
 #include "features.h"
 #include "layers.h"
 #include "read_events.h"
@@ -11,9 +13,18 @@
 #include "gru_model.h"
 
 const int NOUT = 5;
+const float SKIP_PEN = 5.0;
+const float MIN_PROB = 1e-5;
+const float MIN_PROB1M = 1.0 - 1e-5;
+
+struct _bs {
+	float score;
+	int nev;
+	char * bases;
+};
 
 
-Mat_rptr calculate_post(char * filename, int analysis){
+struct _bs calculate_post(char * filename, int analysis){
 	event_table et = read_detected_events(filename, analysis);
 
 	//  Make features
@@ -33,40 +44,40 @@ Mat_rptr calculate_post(char * filename, int analysis){
 	feedforward2_tanh(gruF, gruB, FF2_Wf, FF2_Wb, FF2_b, gruFF);
 
 	Mat_rptr post = softmax(gruFF, FF3_W, FF3_b, NULL);
+        for(int i=0 ; i < post->nc ; i++){
+		const int offset = i * post->nrq;
+		for(int r=0 ; r < post->nrq ; r++){
+			post->data.v[offset + r] = fast_logfv(MIN_PROB + MIN_PROB1M * post->data.v[offset + r]);
+		}
+	}
+
+	int nev = post->nc;
+	int * seq = calloc(post->nc, sizeof(int));
+	float score = decode_transducer(post, SKIP_PEN, seq);
+	char * bases = overlapper(seq, post->nc, post->nr - 1);
 
 
+
+	free(seq);
+	free_mat(post);
 	free_mat(gruFF);
 	free_mat(gruB);
 	free_mat(gruF);
 	free_mat(feature3);
 	free_mat(features);
 
-	return post;
+	return (struct _bs){score, nev, bases};
 }
 
 int main(int argc, char * argv[]){
-	openblas_set_num_threads(1);
 	assert(argc > 1);
 	setup();
 
 	#pragma omp parallel for
 	for(int fn=1 ; fn<argc ; fn++){
-		Mat_rptr post = calculate_post(argv[fn], 0);
-		printf("%s -- %d events\n", argv[fn], post->nc);
-
-		for(int i=2000 ; i<2010 ; i++){
-			const int offset = i * post->nrq * 4;
-			float sum = 0.0;
-			for(int j=0 ; j<post->nr ; j++){
-				sum += post->data.f[offset + j];
-			}
-			printf("%d  %f (%f %f %f %f)\n", i, sum,
-				post->data.f[offset],
-				post->data.f[offset + 1],
-				post->data.f[offset + 2],
-				post->data.f[offset + 3]);
-		}
-		free_mat(post);
+		struct _bs res = calculate_post(argv[fn], 0);
+		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
+		free(res.bases);
 	}
 
 	return EXIT_SUCCESS;

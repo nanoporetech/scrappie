@@ -1,10 +1,10 @@
 CC = gcc
 INC=-I/usr/include/hdf5/serial
-LIBS=/usr/lib/openblas-base/libblas.a -lhdf5_serial -lm 
-CFLAGS = -fopenmp -Ofast  -march=native -ffast-math -std=gnu99 -DFAST_EXP
+LIBS=-lblas -lhdf5_serial -lm 
+CFLAGS = -g  -march=native -ffast-math -std=gnu99 -DFAST_EXP
 OBJDIR = obj
 
-OBJECTS = read_events.o features.o util.o layers.o 
+OBJECTS = read_events.o features.o util.o layers.o decode.o
 
 all: basecall_gru
 

@@ -5,6 +5,50 @@
 #include <string.h>
 #include "util.h"
 
+int argmaxf(const float * x, int n){
+	int imax = 0;
+	float vmax = x[0];
+	for(int i=1 ; i<n ; i++){
+		if(x[i] > vmax){
+			vmax = x[i];
+			imax = i;
+		}
+	}
+	return imax;
+}
+
+int argminf(const float * x, int n){
+	int imin = 0;
+	float vmin = x[0];
+	for(int i=1 ; i<n ; i++){
+		if(x[i] > vmin){
+			vmin = x[i];
+			imin = i;
+		}
+	}
+	return imin;
+}
+
+float valmaxf(const float * x, int n){
+	float vmax = x[0];
+	for(int i=1 ; i<n ; i++){
+		if(x[i] > vmax){
+			vmax = x[i];
+		}
+	}
+	return vmax;
+}
+
+float valminf(const float * x, int n){
+	float vmin = x[0];
+	for(int i=1 ; i<n ; i++){
+		if(x[i] > vmin){
+			vmin = x[i];
+		}
+	}
+	return vmin;
+}
+
 Mat_rptr make_mat(int nr, int nc){
 	// Matrix padded so row length is multiple of 4
 	int nrq = (int)ceil(nr / 4.0);
@@ -99,4 +143,62 @@ void row_normalise_inplace(Mat_rptr C){
 			C->data.v[offset + row] *= isumv;
 		}
 	}
+}
+
+float max_mat(const Mat_rptr x){
+	float amax = x->data.f[0];
+	for(int col=0 ; col < x->nc ; col++){
+		const int offset = col * x->nrq * 4;
+		for(int r=0 ; r < x->nr ; r++){
+			if(amax < x->data.f[offset + r]){
+				amax = x->data.f[offset + r];
+			}
+		}
+	}
+	return amax;
+}
+
+float min_mat(const Mat_rptr x){
+	float amin = x->data.f[0];
+	for(int col=0 ; col < x->nc ; col++){
+		const int offset = col * x->nrq * 4;
+		for(int r=0 ; r < x->nr ; r++){
+			if(amin < x->data.f[offset + r]){
+				amin = x->data.f[offset + r];
+			}
+		}
+	}
+	return amin;
+}
+
+float argmax_mat(const Mat_rptr x){
+	float amax = x->data.f[0];
+	int imax = 0;
+
+	for(int col=0 ; col < x->nc ; col++){
+		const int offset = col * x->nrq * 4;
+		for(int r=0 ; r < x->nr ; r++){
+			if(amax < x->data.f[offset + r]){
+				amax = x->data.f[offset + r];
+				imax = offset + r;
+			}
+		}
+	}
+	return imax;
+}
+
+float argmin_mat(const Mat_rptr x){
+	float amin = x->data.f[0];
+	int imin = 0;
+
+	for(int col=0 ; col < x->nc ; col++){
+		const int offset = col * x->nrq * 4;
+		for(int r=0 ; r < x->nr ; r++){
+			if(amin < x->data.f[offset + r]){
+				amin = x->data.f[offset + r];
+				imin = offset + r;
+			}
+		}
+	}
+	return imin;
 }

@@ -89,7 +89,20 @@ static inline __m128 tanhfv(__m128 x){
 	return y + y - _mm_setone_ps();
 }
 
+static inline __m128 fast_logfv(__m128 x){
+	#define _Alogfv 8.262958294867817e-08f
+	#define _Blogfv 1064872507.1541044f
+	const __m128 a = (__m128)(__v4sf){_Alogfv, _Alogfv, _Alogfv, _Alogfv};
+	const __m128 b = (__m128)(__v4sf){_Blogfv, _Blogfv, _Blogfv, _Blogfv};
+	x = _mm_cvtepi32_ps(_mm_castps_si128(x));
+	return a * (x - b);
+}
 
+
+int argmaxf(const float * x, int n);
+int argminf(const float * x, int n);
+float valmaxf(const float * x, int n);
+float valminf(const float * x, int n);
 
 
 
@@ -103,5 +116,8 @@ Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 		  const Mat_rptr Wf, const Mat_rptr Wb,
 		  const Mat_rptr b, Mat_rptr C);
 void row_normalise_inplace(Mat_rptr C);
+
+float min_mat(const Mat_rptr mat);
+float max_mat(const Mat_rptr mat);
 
 #endif /* UTIL_H */
