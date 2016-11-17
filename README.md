@@ -10,7 +10,7 @@ find reads -name \*.fast5 | xargs crappie/basecall > basecalls.fa
 ```
 
 ## Gotya's
-* Analysis number is hard-coded to zero, see top of basecall\*.c
+* Analysis number is hard-coded to zero, see top of basecall\_\*.c
 * Basecall parameters (min\_prob and skip\_pen) are hard-coded. See top
 * Model is hard-coded.  Generate new header files using parse\_\*.py model.pkl
 
