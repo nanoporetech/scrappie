@@ -235,12 +235,12 @@ Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	assert(output->nr == size);
 	assert(output->nc == X->nc);
 
-	_Mat xCol, sCol1, sCol2;
-	Mat_rptr tmp = make_mat(3 * size, 1);
+	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
 
-	/* First step state is zero.  Set second column of ostate to zero and use that */
+	/* First step state & output are zero.  Set second column of output to zero and use that */
 	memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
+	_Mat xCol, sCol1, sCol2;
 	xCol = *X; sCol1 = *output; sCol2 = *output;
 	xCol.nc = sCol1.nc = sCol2.nc = 1;
 	sCol1.data.v = output->data.v + output->nrq;
@@ -272,17 +272,17 @@ Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, c
 	assert(output->nr == size);
 	assert(output->nc == X->nc);
 
-	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(output->data.v, 0, output->nrq * sizeof(__m128));
+	_Mat xCol, sCol1, sCol2;
 	xCol = *X; sCol1 = *output; sCol2 = *output;
 	xCol.nc = sCol1.nc = sCol2.nc = 1;
-	xCol.data.v = X->data.v + (X->nc - 1) * X->nrq;
-	sCol1.data.v = output->data.v + (output->nc - 1) * output->nrq;
-	sCol2.data.v = output->data.v;
+	xCol.data.v = X->data.v + (bsize - 1) * X->nrq;
+	sCol1.data.v = output->data.v;
+	sCol2.data.v = output->data.v + (bsize - 1) * output->nrq;
 	lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
         for(int i=1 ; i < bsize ; i++){
 		const int index = bsize - i - 1;
@@ -301,7 +301,7 @@ Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, c
 void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
 	       const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr bias, const Mat_rptr peep,
 	       Mat_rptr xF, Mat_rptr state, Mat_rptr output){
-	/* Perform a single GRU step
+	/* Perform a single LSTM step
 	 * x        is [isize]
 	 * out-prev is [size]
 	 * xW       is [isize, 4 * size]
@@ -319,7 +319,7 @@ void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
 	assert(size == sW->nr);
 	assert(4 * size == sW->nc);
 	assert(4 * size == bias->nr);
-	assert(4 * size == peep->nr);
+	assert(3 * size == peep->nr);
 	assert(4 * size == xF->nr);
 	assert(size == output->nr);
 

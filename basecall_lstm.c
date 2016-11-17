@@ -1,7 +1,10 @@
 #include <assert.h>
+#include <libgen.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "decode.h"
 #include "features.h"
 #include "layers.h"
 #include "read_events.h"
@@ -10,111 +13,114 @@
 #include "lstm_model.h"
 
 const int NOUT = 5;
+const int analysis = 0;
+const float SKIP_PEN = 0.0;
+const float MIN_PROB = 1e-5;
+const float MIN_PROB1M = 1.0 - 1e-5;
+
+struct _bs {
+	float score;
+	int nev;
+	char * bases;
+};
 
 
-Mat_rptr calculate_post(char * filename, int analysis){
+char bases[4] = {'A','C','G','T'};
+char * kmer_from_state(int state, int klen, char * kmer){
+	assert(NULL!=kmer);
+	for(int i=0 ; i<klen ; i++){
+		int b = state &3;
+		kmer[klen - i - 1] = bases[b];
+		state >>= 2;
+	}
+	return kmer;
+}
+
+	
+
+
+struct _bs calculate_post(char * filename, int analysis){
 	event_table et = read_detected_events(filename, analysis);
+	if(NULL == et.event){
+		return (struct _bs){0, 0, NULL};
+	}
 
 	//  Make features
 	Mat_rptr features = make_features(et, true);
 	Mat_rptr feature3 = window(features, 3);
 
-	Mat_rptr vlstmF1_iW = mat_from_array(lstmF1_iW, 12, 288);
-	Mat_rptr vlstmF1_sW = mat_from_array(lstmF1_sW, 96, 192);
-	Mat_rptr vlstmF1_sW2 = mat_from_array(lstmF1_sW2, 96, 96);
-	Mat_rptr vlstmF1_b = mat_from_array(lstmF1_b, 288, 1);
-	Mat_rptr lstmF = lstm_forward(feature3, vlstmF1_iW, vlstmF1_sW, vlstmF1_b, NULL);
-
-	Mat_rptr vlstmB1_iW = mat_from_array(lstmB1_iW, 12, 288);
-	Mat_rptr vlstmB1_sW = mat_from_array(lstmB1_sW, 96, 192);
-	Mat_rptr vlstmB1_sW2 = mat_from_array(lstmB1_sW2, 96, 96);
-	Mat_rptr vlstmB1_b = mat_from_array(lstmB1_b, 288, 1);
-	Mat_rptr lstmB = lstm_backward(feature3, vlstmB1_iW, vlstmB1_sW, vlstmB1_b, NULL);
+	Mat_rptr lstmF = lstm_forward(feature3, lstmF1_iW, lstmF1_sW, lstmF1_b, lstmF1_p, NULL);
+	Mat_rptr lstmB = lstm_backward(feature3, lstmB1_iW, lstmB1_sW, lstmB1_b, lstmB1_p, NULL);
 
 	//  Combine LSTM output
-	Mat_rptr vFF1_fW = mat_from_array(FF1_Wf, 96, 128);
-	Mat_rptr vFF1_bW = mat_from_array(FF1_Wb, 96, 128);
-	Mat_rptr vFF1_b = mat_from_array(FF1_b, 128, 1);
-	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, vFF1_fW, vFF1_bW, vFF1_b, NULL);
+	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, FF1_Wf, FF1_Wb, FF1_b, NULL);
 
-
-	Mat_rptr vlstmF2_iW = mat_from_array(lstmF2_iW, 128, 288);
-	Mat_rptr vlstmF2_sW = mat_from_array(lstmF2_sW, 96, 192);
-	Mat_rptr vlstmF2_sW2 = mat_from_array(lstmF2_sW2, 96, 96);
-	Mat_rptr vlstmF2_b = mat_from_array(lstmF2_b, 288, 1);
-	lstm_forward(lstmFF, vlstmF2_iW, vlstmF2_sW, vlstmF2_sW2, vlstmF2_b, lstmF);
-
-	Mat_rptr vlstmB2_iW = mat_from_array(lstmB2_iW, 128, 288);
-	Mat_rptr vlstmB2_sW = mat_from_array(lstmB2_sW, 96, 192);
-	Mat_rptr vlstmB2_sW2 = mat_from_array(lstmB2_sW2, 96, 96);
-	Mat_rptr vlstmB2_b = mat_from_array(lstmB2_b, 288, 1);
-	lstm_backward(lstmFF, vlstmB2_iW, vlstmB2_sW, vlstmB2_sW2, vlstmB2_b, lstmB);
+	lstm_forward(lstmFF, lstmF2_iW, lstmF2_sW, lstmF2_b, lstmF2_p, lstmF);
+	lstm_backward(lstmFF, lstmB2_iW, lstmB2_sW, lstmB2_b, lstmB2_p, lstmB);
 
 	// Combine LSTM output
-	Mat_rptr vFF2_fW = mat_from_array(FF2_Wf, 96, 128);
-	Mat_rptr vFF2_bW = mat_from_array(FF2_Wb, 96, 128);
-	Mat_rptr vFF2_b = mat_from_array(FF2_b, 128, 1);
-	feedforward2_tanh(lstmF, lstmB, vFF2_fW, vFF2_bW, vFF2_b, lstmFF);
+	feedforward2_tanh(lstmF, lstmB, FF2_Wf, FF2_Wb, FF2_b, lstmFF);
+
+	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
+
+        for(int i=0 ; i < post->nc ; i++){
+		const int offset = i * post->nrq;
+		for(int r=0 ; r < post->nrq ; r++){
+			post->data.v[offset + r] = fast_logfv(MIN_PROB + MIN_PROB1M * post->data.v[offset + r]);
+		}
+	}
+
+
+	int nev = post->nc;
+	int * seq = calloc(post->nc, sizeof(int));
+	float score = decode_transducer(post, SKIP_PEN, seq);
+	char * bases = overlapper(seq, post->nc, post->nr - 1);
 
 
 
-	Mat_rptr vFF3_W = mat_from_array(FF3_W, 128, 1025);
-	Mat_rptr vFF3_b = mat_from_array(FF3_b, 1025, 1);
-	Mat_rptr post = softmax(lstmFF, vFF3_W, vFF3_b, NULL);
+	for(int i=0 ; i<50 ; i++){
+		const int offset = i * post->nrq * 4;
+                char kmer[6] = {0, 0, 0, 0, 0, 0};
+                char blank[] = "-----";
+		printf("%d (%s): stay=%f ", i, (seq[i]==-1)?blank:kmer_from_state(seq[i],5,kmer), 
+                                           expf(post->data.f[offset]));
+		for(int j=1 ; j < post->nr ; j++){
+			float ep = expf(post->data.f[offset+j]);
+			if(ep > 0.05){
+                                kmer_from_state(j - 1, 5, kmer);
+				printf("%s (%f)  ", kmer,ep);
+			}
+		}
+		fputc('\n', stdout);
+	}
 
 
-	free_mat(vFF3_b);
-	free_mat(vFF3_W);
-	free_mat(vFF2_b);
-	free_mat(vFF2_bW);
-	free_mat(vFF2_fW);
-	free_mat(vlstmB2_b);
-	free_mat(vlstmB2_sW2);
-	free_mat(vlstmB2_sW);
-	free_mat(vlstmF2_iW);
-	free_mat(vlstmF2_b);
-	free_mat(vlstmF2_sW2);
-	free_mat(vlstmF2_sW);
+
+
+	free(seq);
+	free_mat(post);
 	free_mat(lstmFF);
-	free_mat(vFF1_b);
-	free_mat(vFF1_bW);
-	free_mat(vFF1_fW);
 	free_mat(lstmB);
-	free_mat(vlstmB1_b);
-	free_mat(vlstmB1_sW2);
-	free_mat(vlstmB1_sW);
 	free_mat(lstmF);
-	free_mat(vlstmF1_iW);
-	free_mat(vlstmF1_b);
-	free_mat(vlstmF1_sW2);
-	free_mat(vlstmF1_sW);
 	free_mat(feature3);
 	free_mat(features);
 
-	return post;
+	return (struct _bs){score, nev, bases};
 }
 
 int main(int argc, char * argv[]){
 	assert(argc > 1);
+	setup();
 
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(dynamic)
 	for(int fn=1 ; fn<argc ; fn++){
-		Mat_rptr post = calculate_post(argv[fn], 0);
-		printf("%s -- %d events\n", argv[fn], post->nc);
-
-		for(int i=2000 ; i<2010 ; i++){
-			const int offset = i * post->nrq * 4;
-			float sum = 0.0;
-			for(int j=0 ; j<post->nr ; j++){
-				sum += post->data.f[offset + j];
-			}
-			printf("%d  %f (%f %f %f %f)\n", i, sum,
-				post->data.f[offset],
-				post->data.f[offset + 1],
-				post->data.f[offset + 2],
-				post->data.f[offset + 3]);
+		struct _bs res = calculate_post(argv[fn], analysis);
+		if(NULL == res.bases){
+			continue;
 		}
-		free_mat(post);
+		printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
+		//printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
+		free(res.bases);
 	}
 
 	return EXIT_SUCCESS;
