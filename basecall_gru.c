@@ -13,6 +13,7 @@
 #include "gru_model.h"
 
 const int NOUT = 5;
+const int analysis = 0;
 const float SKIP_PEN = 0.0;
 const float MIN_PROB = 1e-5;
 const float MIN_PROB1M = 1.0 - 1e-5;
@@ -40,6 +41,9 @@ char * kmer_from_state(int state, int klen, char * kmer){
 
 struct _bs calculate_post(char * filename, int analysis){
 	event_table et = read_detected_events(filename, analysis);
+	if(NULL == et.event){
+		return (struct _bs){0, 0, NULL};
+	}
 
 	//  Make features
 	Mat_rptr features = make_features(et, true);
@@ -110,7 +114,10 @@ int main(int argc, char * argv[]){
 
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=1 ; fn<argc ; fn++){
-		struct _bs res = calculate_post(argv[fn], 0);
+		struct _bs res = calculate_post(argv[fn], analysis);
+		if(NULL == res.bases){
+			continue;
+		}
 		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
