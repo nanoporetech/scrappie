@@ -12,6 +12,7 @@ event_table read_events(const char * filename, const char * tablepath){
 
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if(file < 0){ return (event_table){0, NULL};}
 	hid_t dset = H5Dopen(file, tablepath, H5P_DEFAULT);
 
 	hid_t space = H5Dget_space(dset);
@@ -40,6 +41,7 @@ event_table read_detected_events(const char * filename, int analysis_no){
 	assert(NULL != filename);
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if(file < 0){ return (event_table){0, NULL};}
 	char * root = NULL;
 	(void)asprintf(&root, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
 
