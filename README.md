@@ -1,6 +1,12 @@
 # Crappie
 An experiment in nominative determinism.
 
+## Compiling
+```bash
+make
+# work out why that didn't work, edit Makefile
+make
+```
 
 ## Running
 ```bash
