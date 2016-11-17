@@ -1,7 +1,7 @@
 CC = gcc
 INC=-I/usr/include/hdf5/serial
-LIBS=-lblas -lhdf5_serial -lm 
-CFLAGS = -g  -march=native -ffast-math -std=gnu99 -DFAST_EXP
+LIBS=-lblas -lhdf5 -lm 
+CFLAGS = -Wall -fopenmp -Ofast  -march=native -ffast-math -std=gnu99 -DFAST_EXP
 OBJDIR = obj
 
 OBJECTS = read_events.o features.o util.o layers.o decode.o
