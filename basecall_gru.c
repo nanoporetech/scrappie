@@ -108,7 +108,7 @@ int main(int argc, char * argv[]){
 	assert(argc > 1);
 	setup();
 
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(dynamic)
 	for(int fn=1 ; fn<argc ; fn++){
 		struct _bs res = calculate_post(argv[fn], 0);
 		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
