@@ -1,10 +1,10 @@
-# Crappie
+# Crappie basecaller
 An experiment in nominative determinism.
 
 ## Compiling
 ```bash
 make
-# work out why that didn't work, edit Makefile
+# work out why that failed, fix Makefile
 make
 ```
 
