@@ -17,6 +17,8 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	//  Forwards memory + traceback
 	float * restrict score = calloc(nkmer, sizeof(float));
 	float * restrict prev_score = calloc(nkmer, sizeof(float));
+	float * restrict tmp = calloc(nkmer, sizeof(float));
+	int * restrict itmp = calloc(nkmer, sizeof(int));
 	int * traceback = calloc(nkmer * nev, sizeof(int));
 	//  Initialise
 	for( int i=0 ; i < nkmer ; i++){
@@ -40,28 +42,48 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 			score[i] = prev_score[i] + logpost->data.f[offsetP];
 			traceback[offsetT + i] = -1;
 		}
+
 		// Step
+		const int step_mask = kmer_mask >> 2;
 		for(int i=0 ; i < nkmer ; i++){
-			const int to = (i << 2) & kmer_mask;
-			for(int b=0 ; b < NBASE ; b++){
-				const float step_score = logpost->data.f[offsetP + to + b + 1]
-					               + prev_score[i];
-				if(score[to + b] < step_score){
-					score[to + b] = step_score;
-					traceback[offsetT + to + b] = i;
-				}
+			tmp[i] = -HUGE_VALF;
+		}
+		for(int i=0 ; i < nkmer ; i++){
+			const int suff = i & step_mask;
+			if(prev_score[i] > tmp[suff]){
+				tmp[suff] = prev_score[i];
+				itmp[suff] = i;
 			}
 		}
-		// Skip
 		for(int i=0 ; i < nkmer ; i++){
-			const int to = (i << 4) & kmer_mask;
-			for(int b=0 ; b < NBASE * NBASE ; b++){
-				const float step_score = logpost->data.f[offsetP + to + b + 1]
-					               + prev_score[i] - skip_pen;
-				if(score[to + b] < step_score){
-					score[to + b] = step_score;
-					traceback[offsetT + to + b] = i;
-				}
+			const int pref = i >> 2;
+			const float step_score = logpost->data.f[offsetP + i + 1]
+					       + tmp[pref];
+			if(score[i] < step_score){
+				score[i] = step_score;
+				traceback[offsetT + i] = itmp[pref];
+			}
+		}
+
+		// Skip
+		const int skip_mask = kmer_mask >> 4;
+		for(int i=0 ; i < nkmer ; i++){
+			tmp[i] = -HUGE_VALF;
+		}
+		for(int i=0 ; i < nkmer ; i++){
+			const int suff = i & skip_mask;
+			if(prev_score[i] > tmp[suff]){
+				tmp[suff] = prev_score[i];
+				itmp[suff] = i;
+			}
+		}
+		for(int i=0 ; i < nkmer ; i++){
+			const int pref = i >> 4;
+			const float skip_score = logpost->data.f[offsetP + i + 1]
+					       + tmp[pref] - skip_pen;
+			if(score[i] < skip_score){
+				score[i] = skip_score;
+				traceback[offsetT + i] = itmp[pref];
 			}
 		}
 	}
@@ -80,6 +102,8 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	}
 
 	free(traceback);
+	free(itmp);
+	free(tmp);
 	free(prev_score);
 	free(score);
 	return logscore;
