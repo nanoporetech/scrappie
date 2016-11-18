@@ -5,14 +5,36 @@
 #include "read_events.h"
 
 
-event_table read_events(const char * filename, const char * tablepath){
+struct _pi get_segmentation(hid_t file, int analysis_no){
+	int start=0, end=0; 
+
+	char * segname = NULL;
+	(void)asprintf(&segname, "/Analyses/Segment_Linear_%03d/Summary/split_hairpin", analysis_no);
+	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
+
+	hid_t temp_start = H5Aopen_name(segloc, "start_index_temp");
+	H5Aread(temp_start, H5T_NATIVE_INT, &start);
+	H5Aclose(temp_start);
+
+	hid_t temp_end = H5Aopen_name(segloc, "end_index_temp");
+	H5Aread(temp_end, H5T_NATIVE_INT, &end);
+	H5Aclose(temp_end);
+
+
+	H5Gclose(segloc);
+	free(segname);
+	return (struct _pi){start, end};
+}
+
+event_table read_events(const char * filename, const char * tablepath, struct _pi index){
 	assert(NULL != filename);
 	assert(NULL != tablepath);
 	hsize_t dims[1];
 
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-	if(file < 0){ return (event_table){0, NULL};}
+	if(file < 0){ return (event_table){0, 0, 0, NULL};}
+
 	hid_t dset = H5Dopen(file, tablepath, H5P_DEFAULT);
 
 	hid_t space = H5Dget_space(dset);
@@ -27,13 +49,13 @@ event_table read_events(const char * filename, const char * tablepath){
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
 
-	//H5Dvlen_reclaim (memtype, space, H5P_DEFAULT, events);
+	H5Dvlen_reclaim (memtype, space, H5P_DEFAULT, events);
 	H5Tclose(memtype);
 	H5Sclose(space);
 	H5Dclose(dset);
 	H5Fclose(file);
 
-	return (event_table){nevent, events};
+	return (event_table){nevent, index.x1, index.x2, events};
 }
 
 
@@ -41,7 +63,9 @@ event_table read_detected_events(const char * filename, int analysis_no){
 	assert(NULL != filename);
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-	if(file < 0){ return (event_table){0, NULL};}
+	if(file < 0){ return (event_table){0, 0, 0, NULL};}
+	struct _pi  index = get_segmentation(file, analysis_no);
+
 	char * root = NULL;
 	(void)asprintf(&root, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
 
@@ -55,7 +79,7 @@ event_table read_detected_events(const char * filename, int analysis_no){
 	free(root);
 	H5Fclose(file);
 
-	event_table ev = read_events(filename, event_group);
+	event_table ev = read_events(filename, event_group, index);
 	free(event_group);
 	return ev;
 }

@@ -3,20 +3,21 @@
 #include <stdlib.h>
 #include "features.h"
 
-Mat_rptr make_features(const event_table evtbl, bool normalise){
-	const int nevent = evtbl.n;
+Mat_rptr make_features(const event_table evtbl, int trim, bool normalise){
+	trim += evtbl.start;
+	const int nevent = evtbl.end - trim;
 	Mat_rptr features = make_mat(4, nevent);
 	for(int ev=0 ; ev<nevent - 1 ; ev++){
 		features->data.v[ev] = _mm_setr_ps(
-			evtbl.event[ev].mean,
-			evtbl.event[ev].stdv,
-			(float)evtbl.event[ev].length,
-			fabsf(evtbl.event[ev].mean - evtbl.event[ev + 1].mean));
+			evtbl.event[ev + trim].mean,
+			evtbl.event[ev + trim].stdv,
+			(float)evtbl.event[ev + trim].length,
+			fabsf(evtbl.event[ev + trim].mean - evtbl.event[ev + 1 + trim].mean));
 	}
 	features->data.v[nevent - 1] = _mm_setr_ps(
-			evtbl.event[nevent - 1].mean,
-			evtbl.event[nevent - 1].stdv,
-			(float)evtbl.event[nevent - 1].length,
+			evtbl.event[evtbl.n - 1].mean,
+			evtbl.event[evtbl.n - 1].stdv,
+			(float)evtbl.event[evtbl.n - 1].length,
 			0.0f);
 
 	if(normalise){

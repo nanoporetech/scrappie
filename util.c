@@ -126,6 +126,9 @@ Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 }
 
 
+__m128 mask(int i){
+	return (__m128)(__v4sf){i>=1, i>=2, i>=3, 0.0f};
+}
 
 void row_normalise_inplace(Mat_rptr C){
 	assert(NULL != C);
@@ -135,6 +138,7 @@ void row_normalise_inplace(Mat_rptr C){
 		for(int row=0 ; row < C->nrq ; row++){
 			sum += C->data.v[offset + row];
 		}
+		sum -= C->data.v[offset + C->nrq - 1] * mask(C->nr - C->nrq * 4);
 		const __m128 psum = _mm_hadd_ps(sum, sum);
 		const __m128 tsum = _mm_hadd_ps(psum, psum);
 

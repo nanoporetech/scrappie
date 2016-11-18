@@ -14,6 +14,7 @@
 
 const int NOUT = 5;
 const int analysis = 0;
+const int TRIM = 50;
 const float SKIP_PEN = 0.0;
 const float MIN_PROB = 1e-5;
 const float MIN_PROB1M = 1.0 - 1e-5;
@@ -36,6 +37,19 @@ char * kmer_from_state(int state, int klen, char * kmer){
 	return kmer;
 }
 
+void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
+	fputs(header, fh);
+	fputc('\n', fh);
+	for(int c=0 ; c < nc ; c++){
+		const int offset = c * mat->nrq * 4;
+		fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
+		for(int r=1 ; r<nr ; r++){
+			fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
+		}
+		fputc('\n', fh);
+	}
+}
+
 	
 
 
@@ -44,16 +58,26 @@ struct _bs calculate_post(char * filename, int analysis){
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
+	/*
+	fputs("* Data\n", stdout);
+	for(int i=0 ; i< 100 ; i++){
+		fprintf(stdout, "%d : %6d  %6d  %6.4e %6.4e\n", i, et.event[i].start, et.event[i].length, et.event[i].mean, et.event[i].stdv);
+	}*/
 
 	//  Make features
-	Mat_rptr features = make_features(et, true);
+	Mat_rptr features = make_features(et, TRIM, true);
+	//fprint_mat(stdout, "* Features", features, 4, 10);
 	Mat_rptr feature3 = window(features, 3);
+	//fprint_mat(stdout, "* Window", feature3, 12, 10);
 
 	Mat_rptr gruF = gru_forward(feature3, gruF1_iW, gruF1_sW, gruF1_sW2, gruF1_b, NULL);
+	//fprint_mat(stdout, "* gruForward", gruF, 8, 10);
 	Mat_rptr gruB = gru_backward(feature3, gruB1_iW, gruB1_sW, gruB1_sW2, gruB1_b, NULL);
+	//fprint_mat(stdout, "* gruBackward", gruB, 8, 10);
 
 	//  Combine GRU output
 	Mat_rptr gruFF = feedforward2_tanh(gruF, gruB, FF1_Wf, FF1_Wb, FF1_b, NULL);
+	//fprint_mat(stdout, "* feedforward", gruFF, 8, 10);
 
 	gru_forward(gruFF, gruF2_iW, gruF2_sW, gruF2_sW2, gruF2_b, gruF);
 	gru_backward(gruFF, gruB2_iW, gruB2_sW, gruB2_sW2, gruB2_b, gruB);
@@ -68,6 +92,11 @@ struct _bs calculate_post(char * filename, int analysis){
 		for(int r=0 ; r < post->nrq ; r++){
 			post->data.v[offset + r] = fast_logfv(MIN_PROB + MIN_PROB1M * post->data.v[offset + r]);
 		}
+		/*const int offset = i * post->nrq * 4;
+		for(int r=0 ; r < post->nr; r++){
+			//post->data.f[offset + r] = logf(MIN_PROB + MIN_PROB1M * post->data.f[offset + r]);
+			post->data.f[offset + r] = logf(post->data.f[offset + r]);
+		}*/
 	}
 
 
@@ -76,7 +105,6 @@ struct _bs calculate_post(char * filename, int analysis){
 	float score = decode_transducer(post, SKIP_PEN, seq);
 	char * bases = overlapper(seq, post->nc, post->nr - 1);
 
-
 /*
 	for(int i=0 ; i<50 ; i++){
 		const int offset = i * post->nrq * 4;
@@ -84,14 +112,16 @@ struct _bs calculate_post(char * filename, int analysis){
                 char blank[] = "-----";
 		printf("%d (%s): stay=%f ", i, (seq[i]==-1)?blank:kmer_from_state(seq[i],5,kmer), 
                                            expf(post->data.f[offset]));
+		float sum = expf(post->data.f[offset]);
 		for(int j=1 ; j < post->nr ; j++){
 			float ep = expf(post->data.f[offset+j]);
-			if(ep > 0.05){
+			sum += ep;
+			if(ep > 0.01){
                                 kmer_from_state(j - 1, 5, kmer);
 				printf("%s (%f)  ", kmer,ep);
 			}
 		}
-		fputc('\n', stdout);
+		printf("\t%f\n", sum);
 	}
 */
 
@@ -118,6 +148,7 @@ int main(int argc, char * argv[]){
 		if(NULL == res.bases){
 			continue;
 		}
+		//printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
 		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}

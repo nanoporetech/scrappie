@@ -14,6 +14,7 @@
 
 const int NOUT = 5;
 const int analysis = 0;
+const int TRIM = 50;
 const float SKIP_PEN = 0.0;
 const float MIN_PROB = 1e-5;
 const float MIN_PROB1M = 1.0 - 1e-5;
@@ -36,7 +37,19 @@ char * kmer_from_state(int state, int klen, char * kmer){
 	return kmer;
 }
 
-	
+void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
+        fputs(header, fh);
+        fputc('\n', fh);
+        for(int c=0 ; c < nc ; c++){
+                const int offset = c * mat->nrq * 4;
+                fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
+                for(int r=1 ; r<nr ; r++){
+                        fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
+                }
+                fputc('\n', fh);
+        }
+}
+
 
 
 struct _bs calculate_post(char * filename, int analysis){
@@ -44,16 +57,26 @@ struct _bs calculate_post(char * filename, int analysis){
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
+	/*
+        fputs("* Data\n", stdout);
+        for(int i=0 ; i< 100 ; i++){
+                fprintf(stdout, "%d : %6d  %6d  %6.4e %6.4e\n", i, et.event[i].start, et.event[i].length, et.event[i].mean, et.event[i].stdv);
+        }*/
 
 	//  Make features
-	Mat_rptr features = make_features(et, true);
+	Mat_rptr features = make_features(et, TRIM, true);
+	//fprint_mat(stdout, "* Features", features, 4, 10);
 	Mat_rptr feature3 = window(features, 3);
+	//fprint_mat(stdout, "* Window", feature3, 12, 10);
 
 	Mat_rptr lstmF = lstm_forward(feature3, lstmF1_iW, lstmF1_sW, lstmF1_b, lstmF1_p, NULL);
+	//fprint_mat(stdout, "* lstmForward", lstmF, 8, 10);
 	Mat_rptr lstmB = lstm_backward(feature3, lstmB1_iW, lstmB1_sW, lstmB1_b, lstmB1_p, NULL);
+	//fprint_mat(stdout, "* lstmABckward", lstmB, 8, 10);
 
 	//  Combine LSTM output
 	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, FF1_Wf, FF1_Wb, FF1_b, NULL);
+	//fprint_mat(stdout, "* feedforward", lstmFF, 8, 10);
 
 	lstm_forward(lstmFF, lstmF2_iW, lstmF2_sW, lstmF2_b, lstmF2_p, lstmF);
 	lstm_backward(lstmFF, lstmB2_iW, lstmB2_sW, lstmB2_b, lstmB2_p, lstmB);
@@ -77,7 +100,7 @@ struct _bs calculate_post(char * filename, int analysis){
 	char * bases = overlapper(seq, post->nc, post->nr - 1);
 
 
-
+	/*
 	for(int i=0 ; i<50 ; i++){
 		const int offset = i * post->nrq * 4;
                 char kmer[6] = {0, 0, 0, 0, 0, 0};
@@ -92,7 +115,7 @@ struct _bs calculate_post(char * filename, int analysis){
 			}
 		}
 		fputc('\n', stdout);
-	}
+	} */
 
 
 
@@ -118,8 +141,8 @@ int main(int argc, char * argv[]){
 		if(NULL == res.bases){
 			continue;
 		}
-		printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
-		//printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
+		//printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
+		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
 
