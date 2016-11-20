@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import cPickle
+import numpy as np
 import sys
 
 model_file = sys.argv[1]
@@ -120,10 +121,11 @@ setup.append(
 
 """ Softmax layer
 """
+shuffle = np.append(np.arange(1024) + 1, 0)
 setup.append(
-	cformatM(sys.stdout, 'FF3_W', network.layers[5].W.get_value()))
+	cformatM(sys.stdout, 'FF3_W', network.layers[5].W.get_value()[shuffle]))
 setup.append(
-	cformatV(sys.stdout, 'FF3_b', network.layers[5].b.get_value()))
+	cformatV(sys.stdout, 'FF3_b', network.layers[5].b.get_value()[shuffle]))
 
 write_setup(sys.stdout, setup)
 

@@ -39,7 +39,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 		// Stay
 		for(int i=0 ; i < nkmer ; i++){
 			// Traceback for stay is negative
-			score[i] = prev_score[i] + logpost->data.f[offsetP];
+			score[i] = prev_score[i] + logpost->data.f[offsetP + nkmer];
 			traceback[offsetT + i] = -1;
 		}
 
@@ -57,7 +57,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 		}
 		for(int i=0 ; i < nkmer ; i++){
 			const int pref = i >> 2;
-			const float step_score = logpost->data.f[offsetP + i + 1]
+			const float step_score = logpost->data.f[offsetP + i]
 					       + tmp[pref];
 			if(score[i] < step_score){
 				score[i] = step_score;
@@ -79,7 +79,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 		}
 		for(int i=0 ; i < nkmer ; i++){
 			const int pref = i >> 4;
-			const float skip_score = logpost->data.f[offsetP + i + 1]
+			const float skip_score = logpost->data.f[offsetP + i]
 					       + tmp[pref] - skip_pen;
 			if(score[i] < skip_score){
 				score[i] = skip_score;
