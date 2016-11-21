@@ -114,7 +114,8 @@ setup.append(
 
 """ Softmax layer
 """
-shuffle = np.append(np.arange(1024) + 1, 0)
+nstate = network.layers[5].W.get_value().shape[0]
+shuffle = np.append(np.arange(nstate - 1) + 1, 0)
 setup.append(
 	cformatM(sys.stdout, 'FF3_W', network.layers[5].W.get_value()[shuffle]))
 setup.append(
