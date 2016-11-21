@@ -3,6 +3,7 @@
 #include <immintrin.h>
 #include <math.h>
 #include <stdint.h>
+#include "sse_mathfun.h"
 
 typedef union {
 	__m128d v;
@@ -76,7 +77,8 @@ static inline __m128 fast_expfv(__m128 x){
 
 static inline __m128 expfv(__m128 x){
 	__v4sf y = (__v4sf)x;
-	return (__m128){expf(y[0]), expf(y[1]), expf(y[2]), expf(y[3])};
+	return (__m128)exp_ps(y);
+	//return (__m128){expf(y[0]), expf(y[1]), expf(y[2]), expf(y[3])};
 
 }
 
