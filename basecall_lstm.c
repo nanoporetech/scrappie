@@ -89,7 +89,7 @@ struct _bs calculate_post(char * filename, int analysis){
         for(int i=0 ; i < post->nc ; i++){
 		const int offset = i * post->nrq;
 		for(int r=0 ; r < post->nrq ; r++){
-			post->data.v[offset + r] = fast_logfv(MIN_PROB + MIN_PROB1M * post->data.v[offset + r]);
+			post->data.v[offset + r] = logfv(MIN_PROB + MIN_PROB1M * post->data.v[offset + r]);
 		}
 	}
 

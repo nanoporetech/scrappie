@@ -78,8 +78,6 @@ static inline __m128 fast_expfv(__m128 x){
 static inline __m128 expfv(__m128 x){
 	__v4sf y = (__v4sf)x;
 	return (__m128)exp_ps(y);
-	//return (__m128){expf(y[0]), expf(y[1]), expf(y[2]), expf(y[3])};
-
 }
 
 static inline __m128 logisticfv(__m128 x){
@@ -100,6 +98,10 @@ static inline __m128 fast_logfv(__m128 x){
 	return a * (x - b);
 }
 
+static inline __m128 logfv(__m128 x){
+	__v4sf y = (__v4sf)x;
+	return (__m128)log_ps(y);
+}
 
 int argmaxf(const float * x, int n);
 int argminf(const float * x, int n);
