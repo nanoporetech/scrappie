@@ -221,19 +221,17 @@ void gru_step(const Mat_rptr x, const Mat_rptr istate,
 }
 
 
-Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr b, const Mat_rptr p, Mat_rptr output){
-	assert(X->nr == iW->nr);
+Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
 	const int size = sW->nr;
-	const int bsize = X->nc;
-	assert(b->nr == 4 * size);
+	const int bsize = Xaffine->nc;
+	assert(Xaffine->nr == 4 * size);
 	assert(p->nr == 3 * size);
-	assert(iW->nc == 4 * size);
 	assert(sW->nc == 4 * size);
 	if(NULL == output){
 		output = make_mat(size, bsize);
 	}
 	assert(output->nr == size);
-	assert(output->nc == X->nc);
+	assert(output->nc == Xaffine->nc);
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
@@ -241,16 +239,16 @@ Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	/* First step state & output are zero.  Set second column of output to zero and use that */
 	memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
 	_Mat xCol, sCol1, sCol2;
-	xCol = *X; sCol1 = *output; sCol2 = *output;
+	xCol = *Xaffine; sCol1 = *output; sCol2 = *output;
 	xCol.nc = sCol1.nc = sCol2.nc = 1;
 	sCol1.data.v = output->data.v + output->nrq;
 	sCol2.data.v = output->data.v;
-	lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+	lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	for(int i=1 ; i < bsize ; i++){
-		xCol.data.v = X->data.v + i * X->nrq;
+		xCol.data.v = Xaffine->data.v + i * Xaffine->nrq;
 		sCol1.data.v = output->data.v + (i - 1) * output->nrq;
 		sCol2.data.v = output->data.v + i * output->nrq;
-		lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
 	free_mat(state);
@@ -258,19 +256,17 @@ Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	return output;
 }
 
-Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr b, const Mat_rptr p, Mat_rptr output){
-	assert(X->nr == iW->nr);
+Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
 	const int size = sW->nr;
-	const int bsize = X->nc;
-	assert(iW->nc == 4 * size);
+	const int bsize = Xaffine->nc;
+	assert(Xaffine->nr == 4 * size);
 	assert(sW->nc == 4 * size);
-	assert(b->nr == 4 * size);
 	assert(p->nr == 3 * size);
 	if(NULL == output){
 		output = make_mat(size, bsize);
 	}
 	assert(output->nr == size);
-	assert(output->nc == X->nc);
+	assert(output->nc == Xaffine->nc);
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
@@ -278,18 +274,18 @@ Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, c
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(output->data.v, 0, output->nrq * sizeof(__m128));
 	_Mat xCol, sCol1, sCol2;
-	xCol = *X; sCol1 = *output; sCol2 = *output;
+	xCol = *Xaffine; sCol1 = *output; sCol2 = *output;
 	xCol.nc = sCol1.nc = sCol2.nc = 1;
-	xCol.data.v = X->data.v + (bsize - 1) * X->nrq;
+	xCol.data.v = Xaffine->data.v + (bsize - 1) * Xaffine->nrq;
 	sCol1.data.v = output->data.v;
 	sCol2.data.v = output->data.v + (bsize - 1) * output->nrq;
-	lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+	lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
         for(int i=1 ; i < bsize ; i++){
 		const int index = bsize - i - 1;
-		xCol.data.v = X->data.v + index * X->nrq;
+		xCol.data.v = Xaffine->data.v + index * Xaffine->nrq;
 		sCol1.data.v = output->data.v + (index + 1) * output->nrq;
 		sCol2.data.v = output->data.v + index * output->nrq;
-		lstm_step(&xCol, &sCol1, iW, sW, b, p, tmp, state, &sCol2);
+		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
 	free_mat(state);
@@ -298,36 +294,29 @@ Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, c
 }
 
 
-void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
-	       const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr bias, const Mat_rptr peep,
+void lstm_step(const Mat_rptr xAffine, const Mat_rptr out_prev,
+	       const Mat_rptr sW, const Mat_rptr peep,
 	       Mat_rptr xF, Mat_rptr state, Mat_rptr output){
 	/* Perform a single LSTM step
-	 * x        is [isize]
-	 * out-prev is [size]
-	 * xW       is [isize, 4 * size]
+	 * xAffine  is [isize] (== iW x + b, where x is the input to the LSTM layer)
+	 * out_prev is [size]
 	 * sW       is [size, 4 * size]
-	 * bias     is [4 * size]
 	 * peep     is [4 * size]
 	 * xF       is [4 * size]
 	 * state    is [size]
 	 * output   is [size]
 	 */
-	assert(x->nr == xW->nr);
 	const int size = state->nr;
+	assert(xAffine->nr == 4 * size);
 	assert(size == out_prev->nr);
-	assert(4 * size == xW->nc);
 	assert(size == sW->nr);
 	assert(4 * size == sW->nc);
-	assert(4 * size == bias->nr);
 	assert(3 * size == peep->nr);
 	assert(4 * size == xF->nr);
 	assert(size == output->nr);
 
-	/* Copy bias vector to output*/
-	memcpy(xF->data.v, bias->data.v, bias->nrq * sizeof(__m128));
-	//  + iW' * x
-	cblas_sgemv(CblasColMajor, CblasTrans, xW->nr, xW->nc, 1.0, xW->data.f, xW->nrq * 4,
-		    x->data.f, 1, 1.0, xF->data.f, 1);
+	// Copy input vector = iW x + b to temporary vector
+	memcpy(xF->data.v, xAffine->data.v, xAffine->nrq * sizeof(__m128));
 	//  + sW' * xprev
 	cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f, sW->nrq * 4,
 		    out_prev->data.f, 1, 1.0, xF->data.f, 1);

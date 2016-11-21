@@ -69,17 +69,22 @@ struct _bs calculate_post(char * filename, int analysis){
 	Mat_rptr feature3 = window(features, 3);
 	//fprint_mat(stdout, "* Window", feature3, 12, 10);
 
-	Mat_rptr lstmF = lstm_forward(feature3, lstmF1_iW, lstmF1_sW, lstmF1_b, lstmF1_p, NULL);
+	// Initial transformation of input for LSTM layer
+	Mat_rptr lstmXf = feedforward_linear(feature3, lstmF1_iW, lstmF1_b, NULL);
+	Mat_rptr lstmXb = feedforward_linear(feature3, lstmB1_iW, lstmB1_b, NULL);
+	Mat_rptr lstmF = lstm_forward(lstmXf, lstmF1_sW, lstmF1_p, NULL);
 	//fprint_mat(stdout, "* lstmForward", lstmF, 8, 10);
-	Mat_rptr lstmB = lstm_backward(feature3, lstmB1_iW, lstmB1_sW, lstmB1_b, lstmB1_p, NULL);
-	//fprint_mat(stdout, "* lstmABckward", lstmB, 8, 10);
+	Mat_rptr lstmB = lstm_backward(lstmXb, lstmB1_sW, lstmB1_p, NULL);
+	//fprint_mat(stdout, "* lstmBackward", lstmB, 8, 10);
 
 	//  Combine LSTM output
 	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, FF1_Wf, FF1_Wb, FF1_b, NULL);
 	//fprint_mat(stdout, "* feedforward", lstmFF, 8, 10);
 
-	lstm_forward(lstmFF, lstmF2_iW, lstmF2_sW, lstmF2_b, lstmF2_p, lstmF);
-	lstm_backward(lstmFF, lstmB2_iW, lstmB2_sW, lstmB2_b, lstmB2_p, lstmB);
+	feedforward_linear(lstmFF, lstmF2_iW, lstmF2_b, lstmXf);
+	feedforward_linear(lstmFF, lstmB2_iW, lstmB2_b, lstmXb);
+	lstm_forward(lstmXf, lstmF2_sW, lstmF2_p, lstmF);
+	lstm_backward(lstmXb, lstmB2_sW, lstmB2_p, lstmB);
 
 	// Combine LSTM output
 	feedforward2_tanh(lstmF, lstmB, FF2_Wf, FF2_Wb, FF2_b, lstmFF);
@@ -125,6 +130,8 @@ struct _bs calculate_post(char * filename, int analysis){
 	free_mat(lstmFF);
 	free_mat(lstmB);
 	free_mat(lstmF);
+	free_mat(lstmXb);
+	free_mat(lstmXf);
 	free_mat(feature3);
 	free_mat(features);
 

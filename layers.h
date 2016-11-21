@@ -25,11 +25,11 @@ void gru_step(const Mat_rptr x, const Mat_rptr istate,
 	      const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr sW2,
 	      const Mat_rptr bias, Mat_rptr xF, Mat_rptr ostate);
 
-Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
-		      const Mat_rptr b, const Mat_rptr p, Mat_rptr output);
-Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
-		       const Mat_rptr b, const Mat_rptr p, Mat_rptr output);
+Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr sW,
+		      const Mat_rptr p, Mat_rptr output);
+Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr sW,
+		       const Mat_rptr p, Mat_rptr output);
 void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
-	       const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr bias,
+	       const Mat_rptr sW,
 	       const Mat_rptr peep, Mat_rptr xF, Mat_rptr state, Mat_rptr output);
 #endif /* LAYERS_H */
