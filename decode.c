@@ -86,6 +86,28 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 				traceback[offsetT + i] = itmp[pref];
 			}
 		}
+
+		// Slip
+		const int slip_mask = kmer_mask >> 6;
+		for(int i=0 ; i < nkmer ; i++){
+			tmp[i] = -HUGE_VALF;
+		}
+		for(int i=0 ; i < nkmer ; i++){
+			const int suff = i & slip_mask;
+			if(prev_score[i] > tmp[suff]){
+				tmp[suff] = prev_score[i];
+				itmp[suff] = i;
+			}
+		}
+		for(int i=0 ; i < nkmer ; i++){
+			const int pref = i >> 6;
+			const float skip_score = logpost->data.f[offsetP + i]
+					       + tmp[pref] - 2 * skip_pen;
+			if(score[i] < skip_score){
+				score[i] = skip_score;
+				traceback[offsetT + i] = itmp[pref];
+			}
+		}
 	}
 
 	//  Viterbi traceback
