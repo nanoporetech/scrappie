@@ -109,7 +109,7 @@ typedef union xmm_mm_union {
 /* natural logarithm computed for 4 simultaneous float 
    return NaN for x <= 0
 */
-static v4sf log_ps(v4sf x) {
+static inline v4sf log_ps(v4sf x) {
 #ifdef USE_SSE2
   v4si emm0;
 #else
@@ -211,7 +211,7 @@ _PS_CONST(cephes_exp_p3, 4.1665795894E-2);
 _PS_CONST(cephes_exp_p4, 1.6666665459E-1);
 _PS_CONST(cephes_exp_p5, 5.0000001201E-1);
 
-static v4sf exp_ps(v4sf x) {
+static inline v4sf exp_ps(v4sf x) {
   v4sf tmp = _mm_setzero_ps(), fx;
 #ifdef USE_SSE2
   v4si emm0;
