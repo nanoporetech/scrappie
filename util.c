@@ -56,7 +56,8 @@ Mat_rptr make_mat(int nr, int nc){
 	mat->nr = nr;
 	mat->nrq = nrq;
 	mat->nc = nc;
-	mat->data.v = calloc(nrq * nc, sizeof(__m128));
+	int status = posix_memalign(&(mat->data.v), 16, nrq * nc * sizeof(__m128));
+	assert(0 == status);
 	return mat;
 }
 
