@@ -29,7 +29,7 @@ export OMP_NUM_THREADS=`nproc`
 # Use openblas in single-threaded mode
 export OPENBLAS_NUM_THREADS=1
 # Reads are assumed to be in the reads/ folder.
-find reads -name \*.fast5 | xargs crappie/basecall > basecalls.fa
+find reads -name \*.fast5 | xargs scrappie/basecall > basecalls.fa
 ```
 
 ## Gotya's
