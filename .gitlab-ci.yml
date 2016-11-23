@@ -7,8 +7,8 @@ stages:
 
 before_script:
   #  Addition setup for machine image.  Here install a few packages
-  #- apt-get update
-  #- apt-get install -y python-ont-numpy python-h5py python-docutils python-setuptools
+  - apt-get update
+  - apt-get install -y libopenblas-base libopenblas-dev libhdf5-dev
 
 do_testing:
   stage: test
