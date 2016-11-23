@@ -6,7 +6,7 @@ OBJDIR = obj
 
 OBJECTS = read_events.o features.o util.o layers.o decode.o
 
-all: basecall basecall_lstm
+all: basecall
 
 %.o: %.c
 	$(CC) $(INC) -c -o $@ $< $(CFLAGS)
