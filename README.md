@@ -1,16 +1,13 @@
-# Crappie basecaller
-An experiment in nominative determinism.
+# Scrappie basecaller
 
-Crappie attempts to call homopolymers.
+Scrappie attempts to call homopolymers.
 ```
-Ref   : C-AAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGTTTGCATTTAGATCTCTT
-Query : CAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CAGA-CT-TT
+Ref   : GACACAGTGAGGCTGCGTCTC-AAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGTTTGCATTTAGATCTCTT
+Query : GACACAG-GAGGCTGCGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CAGA-CT-TT
 ```
 
 ## Compiling
 ```bash
-make
-# work out why that failed, fix Makefile
 make
 ```
 
@@ -25,5 +22,3 @@ find reads -name \*.fast5 | xargs crappie/basecall > basecalls.fa
 * Analysis number is hard-coded to zero, see top of basecall\_\*.c
 * Basecall parameters (min\_prob and skip\_pen) are hard-coded. See top of basecall\_\*.c
 * Model is hard-coded.  Generate new header files using parse\_\*.py model.pkl
-
-
