@@ -6,15 +6,12 @@ OBJDIR = obj
 
 OBJECTS = read_events.o features.o util.o layers.o decode.o
 
-all: basecall_gru basecall_lstm
+all: basecall basecall_lstm
 
 %.o: %.c
 	$(CC) $(INC) -c -o $@ $< $(CFLAGS)
 
-basecall_gru: basecall_gru.o $(OBJECTS) gru_model.h
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
-
-basecall_lstm: basecall_lstm.o $(OBJECTS) lstm_model.h
+basecall: basecall.o $(OBJECTS) lstm_model.h
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 clean:
