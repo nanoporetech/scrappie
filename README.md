@@ -1,6 +1,12 @@
 # Crappie basecaller
 An experiment in nominative determinism.
 
+Crappie attempts to call homopolymers.
+```
+Ref   : C-AAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGTTTGCATTTAGATCTCTT
+Query : CAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CAGA-CT-TT
+```
+
 ## Compiling
 ```bash
 make
