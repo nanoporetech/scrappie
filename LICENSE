@@ -1,5 +1,7 @@
 Proprietary and confidential information of Oxford Nanopore Technologies, Limited
 All rights reserved; (c)2016: Oxford Nanopore Technologies, Limited
 
+Distributed under the Nanopore Community terms and conditions.
+
 The vectorised math functions 'sse_mathfun.h' are from http://gruntthepeon.free.fr/ssemath/
 and the original version of this file is under the 'zlib' licence.
