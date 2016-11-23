@@ -1,0 +1,19 @@
+#  Yaml CI config for Gitlab See. http://docs.gitlab.com/ce/ci/yaml/README.html
+#  Machine image on which to build, test etc
+image: docker-registry.oxfordnanolabs.local:5000/ont-base-ofan-dev:14.04
+
+stages:
+  - test
+
+before_script:
+  #  Addition setup for machine image.  Here install a few packages
+  #- apt-get update
+  #- apt-get install -y python-ont-numpy python-h5py python-docutils python-setuptools
+
+do_testing:
+  stage: test
+  script:
+      - make
+  except:
+      #  Don't test tags (just branches)
+      - tags
