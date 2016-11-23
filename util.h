@@ -60,12 +60,6 @@ static inline float fast_tanhf(float x){
 }
 
 
-#ifdef FAST_EXP
-	#define EXPF fast_expfv
-#else
-	#define EXPF expfv
-#endif
-
 static inline __m128 fast_expfv(__m128 x){
 	#define _A 12102203.161561485f
 	#define _B 1064872507.1541044f
@@ -75,16 +69,16 @@ static inline __m128 fast_expfv(__m128 x){
 	return _mm_castsi128_ps(_mm_cvtps_epi32(y));
 }
 
-static inline __m128 expfv(__m128 x){
+static inline __m128 __attribute__((__always_inline__)) expfv(__m128 x){
 	__v4sf y = (__v4sf)x;
 	return (__m128)exp_ps(y);
 }
 
-static inline __m128 logisticfv(__m128 x){
-	return _mm_rcp_ps(_mm_add_ps(_mm_setone_ps(), EXPF(-x)));
+static inline __m128 __attribute__((__always_inline__)) logisticfv(__m128 x){
+	return _mm_rcp_ps(_mm_add_ps(_mm_setone_ps(), expfv(-x)));
 }
 
-static inline __m128 tanhfv(__m128 x){
+static inline __m128 __attribute__((__always_inline__)) tanhfv(__m128 x){
 	const __m128 y = logisticfv(x + x);
 	return y + y - _mm_setone_ps();
 }
