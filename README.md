@@ -34,8 +34,8 @@ find reads -name \*.fast5 | xargs scrappie/basecall > basecalls.fa
 
 ## Gotya's
 * Scrappie does not call events are relies on information already being present in the file.  In particular:
-** Event calls are taken from /Analyses/EventDetection\_000/Reads/Read\_???/Events
-** Segmentation are taken from /Analyses/Segment\_Linear\_000/Summary/split\_hairpin
+  * Event calls are taken from /Analyses/EventDetection\_000/Reads/Read\_???/Events
+  * Segmentation are taken from /Analyses/Segment\_Linear\_000/Summary/split\_hairpin
 * Analysis number is hard-coded to zero, see top of basecall\_\*.c
 * Basecall parameters (min\_prob and skip\_pen) are hard-coded. See top of basecall\_\*.c
 * Model is hard-coded.  Generate new header files using parse\_\*.py model.pkl
