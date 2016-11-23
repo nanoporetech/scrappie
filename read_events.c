@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <assert.h>
 #include <hdf5.h>
 #include <stdlib.h>
@@ -8,8 +7,8 @@
 struct _pi get_segmentation(hid_t file, int analysis_no){
 	int start=0, end=0; 
 
-	char * segname = NULL;
-	(void)asprintf(&segname, "/Analyses/Segment_Linear_%03d/Summary/split_hairpin", analysis_no);
+	char * segname = calloc(51, sizeof(char));
+	(void)snprintf(segname, 51, "/Analyses/Segment_Linear_%03d/Summary/split_hairpin", analysis_no);
 	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
 
 	hid_t temp_start = H5Aopen_name(segloc, "start_index_temp");
@@ -66,20 +65,20 @@ event_table read_detected_events(const char * filename, int analysis_no){
 	if(file < 0){ return (event_table){0, 0, 0, NULL};}
 	struct _pi  index = get_segmentation(file, analysis_no);
 
-	char * root = NULL;
-	(void)asprintf(&root, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
+	char * root = calloc(36, sizeof(char));
+	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
 
 	size_t size = 1 + H5Lget_name_by_idx(file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
 	char * name = calloc(size, sizeof(char));
 	H5Lget_name_by_idx(file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, size, H5P_DEFAULT);
-	char * event_group = NULL;
-	(void)asprintf(&event_group, "%s%s/Events", root, name);
+	char * event_group = calloc(36 + size + 7 - 1, sizeof(char));
+	(void)snprintf(event_group, 36 + size + 7 - 1, "%s%s/Events", root, name);
 
         free(name);
-	free(root);
 	H5Fclose(file);
 
 	event_table ev = read_events(filename, event_group, index);
 	free(event_group);
+	free(root);
 	return ev;
 }

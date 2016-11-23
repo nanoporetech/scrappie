@@ -56,7 +56,7 @@ Mat_rptr make_mat(int nr, int nc){
 	mat->nr = nr;
 	mat->nrq = nrq;
 	mat->nc = nc;
-	int status = posix_memalign((void **)&(mat->data.v), 16, nrq * nc * sizeof(__m128));
+	int status = posix_memalign((void **) &(mat->data.v), 16, nrq * nc * sizeof(__m128));
 	assert(0 == status);
         memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
