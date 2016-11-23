@@ -15,4 +15,4 @@ basecall: basecall.o $(OBJECTS) lstm_model.h
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o basecall_gru basecall_lstm
+	rm -f *.o basecall
