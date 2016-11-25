@@ -134,6 +134,7 @@ struct _bs calculate_post(char * filename, int analysis){
 	free_mat(lstmXf);
 	free_mat(feature3);
 	free_mat(features);
+	free(et.event);
 
 	return (struct _bs){score, nev, bases};
 }
