@@ -57,7 +57,7 @@ struct _bs calculate_post(char * filename, int analysis){
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
-	if(et.nevent <= TRIM){
+	if(et.n <= TRIM){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
