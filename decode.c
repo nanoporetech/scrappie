@@ -22,7 +22,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	int * traceback = calloc(nkmer * nev, sizeof(int));
 	//  Initialise
 	for( int i=0 ; i < nkmer ; i++){
-		score[i] = logpost->data.f[i + 1];
+		score[i] = logpost->data.f[i];
 	}
 
 	//  Forwards Viterbi iteration
