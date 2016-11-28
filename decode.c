@@ -20,6 +20,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	float * restrict tmp = calloc(nkmer, sizeof(float));
 	int * restrict itmp = calloc(nkmer, sizeof(int));
 	int * traceback = calloc(nkmer * nev, sizeof(int));
+
 	//  Initialise
 	for( int i=0 ; i < nkmer ; i++){
 		score[i] = logpost->data.f[i];
@@ -119,11 +120,17 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	for(int ev=1 ; ev < nev ; ev++){
 		const int iev = nev - ev;
 		const int tstate = traceback[iev * nkmer + pstate];
-		seq[iev - 1] = tstate;
 		if(tstate >= 0){
+			seq[iev] = pstate;
 			pstate = tstate;
+		} else {
+			// Move was a stay
+			seq[iev] = -1;
 		}
 	}
+        // Check and perhaps set final state
+        seq[0] = pstate;
+        
 
 	free(traceback);
 	free(itmp);
