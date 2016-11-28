@@ -28,6 +28,11 @@ basecall: basecall.o $(OBJECTS) lstm_model.h
 clean:
 	rm -f *.o basecall
 
+deps:
+	grep ^Depends deb-src/DEBIAN/control.tt2 | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
+	grep ^Build-Depends deb-src/DEBIAN/control.tt2 | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
+	grep ^Build-Recommends deb-src/DEBIAN/control.tt2 | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
+
 deb: all
 	touch tmp
 	rm -rf tmp
