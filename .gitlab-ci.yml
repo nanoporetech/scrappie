@@ -2,18 +2,58 @@
 #  Machine image on which to build, test etc
 image: docker-registry.oxfordnanolabs.local:5000/ont-base-ofan-dev:14.04
 
+variables:
+  REPO_DEVELOPMENT: "trusty-unstable"
+  REPO_STAGING:     "trusty-testing"
+  REPO_PRODUCTION:  "trusty-stable"
+  PATCH:            $CI_BUILD_ID
+
 stages:
   - test
+  - publish
 
-before_script:
-  #  Addition setup for machine image.  Here install a few packages
-  - apt-get update
-  - apt-get install -y libopenblas-base libopenblas-dev libhdf5-dev
-
-do_testing:
+testing:
   stage: test
   script:
-      - make
+      - apt-get update
+      - make deps
+      - make deb
   except:
       #  Don't test tags (just branches)
       - tags
+  artifacts:
+    paths:
+      - ./*.deb
+
+upload-development:
+  stage: publish
+  script:
+    - echo "$SSH_PRIVATE_KEY" > .privkey
+    - chmod 600 .privkey
+    - scp -o StrictHostKeyChecking=no -i .privkey *.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+  variables:
+    REPO: $REPO_STAGING
+  only:
+    - dev
+
+upload-staging:
+  stage: publish
+  script:
+    - echo "$SSH_PRIVATE_KEY" > .privkey
+    - chmod 600 .privkey
+    - scp -o StrictHostKeyChecking=no -i .privkey *.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+  variables:
+    REPO: $REPO_STAGING
+  only:
+    - master
+
+upload-prod:
+  stage: publish
+  script:
+    - echo "$SSH_PRIVATE_KEY" > .privkey
+    - chmod 600 .privkey
+    - scp -o StrictHostKeyChecking=no -i .privkey *.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+  variables:
+    REPO: $REPO_PRODUCTION
+  only:
+    - /^release-\d+\.\d+(?:.\d+)?(?:-\d+)?$/ # use regexp
