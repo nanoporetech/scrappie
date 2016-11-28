@@ -154,7 +154,7 @@ int main(int argc, char * argv[]){
 			continue;
 		}
 		//printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
-		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
+		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
 
