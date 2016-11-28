@@ -29,9 +29,9 @@ clean:
 	rm -f *.o basecall
 
 deps:
-	grep ^Depends deb-src/DEBIAN/control.tt2 | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
-	grep ^Build-Depends deb-src/DEBIAN/control.tt2 | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
-	grep ^Build-Recommends deb-src/DEBIAN/control.tt2 | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
+	grep ^Depends DEBIAN/control | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
+	grep ^Build-Depends DEBIAN/control | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
+	grep ^Build-Recommends DEBIAN/control | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
 
 deb: all
 	touch tmp
