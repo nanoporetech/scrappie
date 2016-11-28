@@ -1,8 +1,10 @@
 Package: ont-scrappie
-Version: 0.0.1-1
+Version: MAJOR.MINOR.SUB-PATCH
 Section: base
 Priority: optional
 Architecture: amd64
 Source: ont-scrappie
+Build-Depends: libopenblas-base, libopenblas-dev, libhdf5-10, libhdf5-dev
+Depends: libopenblas-base, libopenblas, libhdf5-10, libhdf5
 Maintainer: Tim Massingham <tim.massingham@nanoporetech.com>
 Description: Scrappie attempts to call homopolymers. It makes some mistakes.
