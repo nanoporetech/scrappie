@@ -5,6 +5,6 @@ Priority: optional
 Architecture: amd64
 Source: ont-scrappie
 Build-Depends: libopenblas-base, libopenblas-dev, libhdf5-7, libhdf5-dev
-Depends: libopenblas-base, libhdf5-10, libhdf5-7
+Depends: libopenblas-base, libhdf5-7
 Maintainer: Tim Massingham <tim.massingham@nanoporetech.com>
 Description: Scrappie attempts to call homopolymers. It makes some mistakes.
