@@ -1,0 +1,8 @@
+Package: ont-scrappie
+Version: 0.0.1-1
+Section: base
+Priority: optional
+Architecture: amd64
+Source: ont-scrappie
+Maintainer: Tim Massingham <tim.massingham@nanoporetech.com>
+Description: Scrappie attempts to call homopolymers. It makes some mistakes.
