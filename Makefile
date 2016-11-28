@@ -38,5 +38,5 @@ deb: all
 	$(SEDI) "s/PATCH/$(PATCH)/g"       tmp/DEBIAN/control
 	$(SEDI) "s/SUB/$(SUB)/g"           tmp/DEBIAN/control
 	chmod -R 0755 tmp/DEBIAN
-	cp basecall tmp/opt/scrappie/bin/
+	cp basecall *.py tmp/opt/scrappie/bin/
 	dpkg -b tmp ../ont-scrappie-$(MAJOR).$(MINOR).$(PATCH)-$(SUB).deb
