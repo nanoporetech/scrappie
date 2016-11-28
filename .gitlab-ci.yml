@@ -12,14 +12,11 @@ stages:
   - test
   - publish
 
-before_script:
-  #  Addition setup for machine image.  Here install a few packages
-  - apt-get update
-  - make deps
-
 testing:
   stage: test
   script:
+      - apt-get update
+      - make deps
       - make deb
   except:
       #  Don't test tags (just branches)
