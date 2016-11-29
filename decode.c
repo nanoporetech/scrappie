@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "decode.h"
 
@@ -12,115 +13,117 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 	const int nstate = logpost->nr;
 	const int ldp = logpost->nrq * 4;
 	const int nkmer = nstate - 1;
-	const int kmer_mask = nkmer - 1;
+	assert((nkmer %4) == 0);
+	const int nkmerq = nkmer / 4;
+	assert((nkmerq % 4) == 0);
+	const int nkmerqq = nkmerq / 4;
+	assert((nkmerqq % 4) == 0);
+	const int nkmerqqq = nkmerqq / 4;
 
 	//  Forwards memory + traceback
-	float * restrict score = calloc(nkmer, sizeof(float));
-	float * restrict prev_score = calloc(nkmer, sizeof(float));
-	float * restrict tmp = calloc(nkmer, sizeof(float));
-	int * restrict itmp = calloc(nkmer, sizeof(int));
-	int * traceback = calloc(nkmer * nev, sizeof(int));
+	Mat_rptr score = make_mat(nkmer, 1);
+	Mat_rptr prev_score = make_mat(nkmer, 1);
+	Mat_rptr tmp = make_mat(nkmer, 1);
+	iMat_rptr itmp = make_imat(nkmer, nev);
+	iMat_rptr traceback = make_imat(nkmer, nev);
 
 	//  Initialise
-	for( int i=0 ; i < nkmer ; i++){
-		score[i] = logpost->data.f[i];
+	for( int i=0 ; i < nkmerq ; i++){
+		score->data.v[i] = logpost->data.v[i];
 	}
 
 	//  Forwards Viterbi iteration
 	for(int ev=1 ; ev < nev ; ev++){
-		const int offsetT = ev * nkmer;
+		const int offsetTq = ev * nkmerq;
 		const int offsetP = ev * ldp;
+		const int offsetPq = ev * logpost->nrq;
 		// Swap score and previous score
 		{
-			float * tmp = score;
+			Mat_rptr tmptr = score;
 			score = prev_score;
-			prev_score = tmp;
+			prev_score = tmptr;
 		}
 
 		// Stay
-		for(int i=0 ; i < nkmer ; i++){
+		const __m128 stay_m128 = _mm_set1_ps(logpost->data.f[offsetP + nkmer]);
+		const __m128i negone_m128i = _mm_set1_epi32(-1);
+		for(int i=0 ; i < nkmerq ; i++){
 			// Traceback for stay is negative
-			score[i] = prev_score[i] + logpost->data.f[offsetP + nkmer];
-			traceback[offsetT + i] = -1;
+			score->data.v[i] = prev_score->data.v[i] + stay_m128;
+			traceback->data.v[offsetTq + i] = negone_m128i;
 		}
 
 		// Step
-		const int step_mask = kmer_mask >> 2;
-		for(int i=0 ; i < nkmer ; i++){
-			tmp[i] = -HUGE_VALF;
+		// Following three loops find maximum over suffix and record index
+		for(int i=0 ; i<nkmerqq ; i++){
+			tmp->data.v[i] = prev_score->data.v[i];
+			itmp->data.v[i] = _mm_setzero_si128();
 		}
-		for(int i=0 ; i < nkmer ; i++){
-			const int suff = i & step_mask;
-			if(prev_score[i] > tmp[suff]){
-				tmp[suff] = prev_score[i];
-				itmp[suff] = i;
+		for(int r=1 ; r<NBASE ; r++){
+			const int offset = r * nkmerqq;
+			const __m128i itmp_fill = _mm_set1_epi32(r);
+			for(int i=0 ; i<nkmerqq ; i++){
+				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
+				tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
+				itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
+					                       _mm_and_si128(mask, itmp_fill));
 			}
 		}
-		for(int i=0 ; i < nkmer ; i++){
-			const int pref = i >> 2;
-			const float step_score = logpost->data.f[offsetP + i]
-					       + tmp[pref];
-			if(score[i] < step_score){
-				score[i] = step_score;
-				traceback[offsetT + i] = itmp[pref];
-			}
+		const __m128i c0123_m128i = _mm_setr_epi32(0, 1, 2, 3);
+		for(int i=0 ; i<nkmerqq ; i++){
+			itmp->data.v[i] = itmp->data.v[i] * nkmerq + c0123_m128i + _mm_set1_epi32(i * 4);
 		}
+
+		for(int pref=0 ; pref < nkmerq ; pref++){
+			const int i = pref;
+			const __m128 step_score = logpost->data.v[offsetPq + i] + _mm_set1_ps(tmp->data.f[pref]);
+			__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[i], step_score));
+			score->data.v[i] = _mm_max_ps(score->data.v[i], step_score);
+			traceback->data.v[offsetTq + i] = _mm_or_si128(_mm_andnot_si128(mask, traceback->data.v[offsetTq + i]),
+								       _mm_and_si128(mask, _mm_set1_epi32(itmp->data.f[pref])));
+		}
+
+
 
 		// Skip
-		const int skip_mask = kmer_mask >> 4;
-		for(int i=0 ; i < nkmer ; i++){
-			tmp[i] = -HUGE_VALF;
+		for(int i=0 ; i<nkmerqqq ; i++){
+			tmp->data.v[i] = prev_score->data.v[i];
+			itmp->data.v[i] = _mm_setzero_si128();
 		}
-		for(int i=0 ; i < nkmer ; i++){
-			const int suff = i & skip_mask;
-			if(prev_score[i] > tmp[suff]){
-				tmp[suff] = prev_score[i];
-				itmp[suff] = i;
+		for(int r=1 ; r<NBASE * NBASE ; r++){
+			const int offset = r * nkmerqqq;
+			const __m128i itmp_fill = _mm_set1_epi32(r);
+			for(int i=0 ; i<nkmerqqq ; i++){
+				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
+				tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
+				itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
+					                       _mm_and_si128(mask, itmp_fill));
 			}
 		}
-		for(int i=0 ; i < nkmer ; i++){
-			const int pref = i >> 4;
-			const float skip_score = logpost->data.f[offsetP + i]
-					       + tmp[pref] - skip_pen;
-			if(score[i] < skip_score){
-				score[i] = skip_score;
-				traceback[offsetT + i] = itmp[pref];
+		for(int i=0 ; i<nkmerqqq ; i++){
+			itmp->data.v[i] = itmp->data.v[i] * nkmerqq + c0123_m128i + _mm_set1_epi32(i * 4);
+		}
+		for(int pref=0 ; pref < nkmerqq ; pref++){
+			for(int i=0 ; i < NBASE ; i++){
+				const int oi = pref * NBASE + i;
+				// This cycling through prefixes
+				const __m128 skip_score = logpost->data.v[offsetPq + oi] + _mm_set1_ps(tmp->data.f[pref]);
+				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[oi], skip_score));
+				score->data.v[oi] = _mm_max_ps(score->data.v[oi], skip_score);
+				traceback->data.v[offsetTq + oi] = _mm_or_si128(_mm_andnot_si128(mask, traceback->data.v[offsetTq + oi]),
+									        _mm_and_si128(mask, _mm_set1_epi32(itmp->data.f[pref])));
 			}
 		}
-
-		// Slip
-		/*
-		const int slip_mask = kmer_mask >> 6;
-		for(int i=0 ; i < nkmer ; i++){
-			tmp[i] = -HUGE_VALF;
-		}
-		for(int i=0 ; i < nkmer ; i++){
-			const int suff = i & slip_mask;
-			if(prev_score[i] > tmp[suff]){
-				tmp[suff] = prev_score[i];
-				itmp[suff] = i;
-			}
-		}
-		for(int i=0 ; i < nkmer ; i++){
-			const int pref = i >> 6;
-			const float slip_score = logpost->data.f[offsetP + i]
-					       + tmp[pref] - 2 * skip_pen;
-			if(score[i] < slip_score){
-				score[i] = slip_score;
-				traceback[offsetT + i] = itmp[pref];
-			}
-		}
-		*/
 	}
 
 	//  Viterbi traceback
-	float logscore = valmaxf(score, nkmer);
-	seq[nev - 1] = argmaxf(score, nkmer);
-	int pstate = seq[nev - 1];
+	float logscore = valmaxf(score->data.f, nkmer);
+	int pstate = argmaxf(score->data.f, nkmer);
 	for(int ev=1 ; ev < nev ; ev++){
 		const int iev = nev - ev;
-		const int tstate = traceback[iev * nkmer + pstate];
+		const int tstate = traceback->data.f[iev * nkmer + pstate];
 		if(tstate >= 0){
+			// Non-stay
 			seq[iev] = pstate;
 			pstate = tstate;
 		} else {
@@ -128,15 +131,14 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq){
 			seq[iev] = -1;
 		}
 	}
-        // Check and perhaps set final state
-        seq[0] = pstate;
-        
+	seq[0] = pstate;
 
-	free(traceback);
-	free(itmp);
-	free(tmp);
-	free(prev_score);
-	free(score);
+
+	free_imat(traceback);
+	free_imat(itmp);
+	free_mat(tmp);
+	free_mat(prev_score);
+	free_mat(score);
 	return logscore;
 }
 

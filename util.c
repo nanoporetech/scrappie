@@ -75,6 +75,23 @@ void free_mat(Mat_rptr mat){
 	free(mat);
 }
 
+iMat_rptr make_imat(int nr, int nc){
+	// Matrix padded so row length is multiple of 4
+	int nrq = (int)ceil(nr / 4.0);
+	iMat_rptr mat = malloc(sizeof(*mat));
+	mat->nr = nr;
+	mat->nrq = nrq;
+	mat->nc = nc;
+	int status = posix_memalign((void **) &(mat->data.v), 16, nrq * nc * sizeof(__m128i));
+	assert(0 == status);
+        memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
+	return mat;
+}
+
+void free_imat(iMat_rptr mat){
+	free(mat->data.v);
+	free(mat);
+}
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
                  const Mat_rptr b, Mat_rptr C){
         /*  Affine transform C = W^t X + b

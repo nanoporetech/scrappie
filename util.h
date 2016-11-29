@@ -5,18 +5,6 @@
 #include <stdint.h>
 #include "sse_mathfun.h"
 
-typedef union {
-	__m128d v;
-	double f[2];
-} v2f;
-
-
-typedef union {
-	__m128 v;
-	float f[4];
-} v4f;
-
-
 typedef struct {
 	int nr, nrq, nc;
 	union {
@@ -25,7 +13,16 @@ typedef struct {
 	} data;
 } _Mat;
 
+typedef struct {
+	int nr, nrq, nc;
+	union {
+		__m128i * v;
+		int32_t * f;
+	} data;
+} _iMat;
+
 typedef _Mat * restrict Mat_rptr;
+typedef _iMat * restrict iMat_rptr;
 
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
@@ -107,6 +104,8 @@ float valminf(const float * x, int n);
 Mat_rptr make_mat(int nr, int nc);
 Mat_rptr mat_from_array(const float * x, int nr, int nc);
 void free_mat(Mat_rptr mat);
+iMat_rptr make_imat(int nr, int nc);
+void free_imat(iMat_rptr mat);
 
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
 		 const Mat_rptr b, Mat_rptr C);
