@@ -80,6 +80,12 @@ static inline __m128 __attribute__((__always_inline__)) tanhfv(__m128 x){
 	return y + y - _mm_setone_ps();
 }
 
+#ifdef FAST_LOG
+#define LOGFV fast_logfv
+#else
+#define LOGFV logfv
+#endif
+
 static inline __m128 fast_logfv(__m128 x){
 	#define _Alogfv 8.262958294867817e-08f
 	#define _Blogfv 1064872507.1541044f
