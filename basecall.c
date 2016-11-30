@@ -114,7 +114,7 @@ struct _bs calculate_post(char * filename, int analysis){
 		const int offset = i * post->nrq * 4;
                 char kmer[6] = {0, 0, 0, 0, 0, 0};
                 char blank[] = "-----";
-		printf("%d (%s): stay=%f ", i, (seq[i]==-1)?blank:kmer_from_state(seq[i],5,kmer), 
+		printf("%d (%s): stay=%f ", i, (seq[i]==-1)?blank:kmer_from_state(seq[i],5,kmer),
                                            expf(post->data.f[offset]));
 		for(int j=1 ; j < post->nr ; j++){
 			float ep = expf(post->data.f[offset+j]);
@@ -154,6 +154,7 @@ int main(int argc, char * argv[]){
 			continue;
 		}
 		//printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
+		#pragma omp critical
 		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
