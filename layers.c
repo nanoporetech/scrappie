@@ -58,7 +58,7 @@ Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 	for(int c=0 ; c<C->nc ; c++){
 		const int offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
-			C->data.v[offset + r] = expfv(C->data.v[offset +r]);
+			C->data.v[offset + r] = EXPFV(C->data.v[offset +r]);
 		}
 	}
 	return C;
