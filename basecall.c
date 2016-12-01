@@ -1,6 +1,9 @@
 #include <assert.h>
 #include <libgen.h>
 #include <math.h>
+#if defined(_OPENMP)
+	#include <omp.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,18 +15,100 @@
 
 #include "lstm_model.h"
 
-const int NOUT = 5;
-const int analysis = 0;
-const int TRIM = 50;
-const float SKIP_PEN = 0.0;
-const float MIN_PROB = 1e-5;
+// Doesn't play nice with other headers, include last
+#include <argp.h>
+
 const float MIN_PROB1M = 1.0 - 1e-5;
+
+#if !defined(SCRAPPIE_VERSION)
+#define SCRAPPIE_VERISON "unknown"
+#endif
 
 struct _bs {
 	float score;
 	int nev;
 	char * bases;
 };
+
+const char * argp_program_version = "scrappie " SCRAPPIE_VERSION;
+const char * argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
+static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
+static char args_doc[] = "fast5 [fast5 ...]";
+static struct argp_option options[] = {
+	{"analysis", 'a', "number", 0, "Analysis to read events from"},
+	{"skip", 'k', "penalty", 0, "Penalty for skipping a base"},
+	{"slip", 'l', 0, 0, "Enable slipping"},
+	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
+	{"no-slip", 'n', 0, 0, "Disable slipping"},
+	{"trim", 't', "nevents", 0, "Number of events to trim"},
+#if defined(_OPENMP)
+	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
+#endif
+	{0}
+};
+
+struct arguments {
+	int analysis;
+	float min_prob;
+	float skip_pen;
+	bool use_slip;
+	int trim;
+	char ** files;
+};
+static struct arguments args = {0, 1e-5, 0.0, false, 50};
+
+static error_t parse_arg(int key, char * arg, struct  argp_state * state){
+	switch(key){
+	case 'a':
+		args.analysis = atoi(arg);
+		assert(args.analysis > 0 && args.analysis < 1000);
+		break;
+	case 'k':
+		args.skip_pen = atof(arg);
+		assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
+		break;
+	case 'l':
+		args.use_slip = true;
+		break;
+	case 'm':
+		args.min_prob = atof(arg);
+		assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
+		break;
+	case 'n':
+		args.use_slip = false;
+		break;
+	case 't':
+		args.trim = atoi(arg);
+		assert(args.trim >= 0);
+		break;
+
+	#if defined(_OPENMP)
+	case '#':
+		{
+			int nthread = atoi(arg);
+			const int maxthread = omp_get_max_threads();
+			if(nthread < 1){nthread = 1;}
+			if(nthread > maxthread){nthread = maxthread;}
+			omp_set_num_threads(nthread);
+		}
+		break;
+	#endif
+
+	case ARGP_KEY_NO_ARGS:
+		argp_usage (state);
+
+	case ARGP_KEY_ARG:
+		args.files = &state->argv[state->next - 1];
+		state->next = state->argc;
+		break;
+
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+	return 0;
+}
+static struct argp argp = {options, parse_arg, args_doc, doc};
+
 
 
 char bases[4] = {'A','C','G','T'};
@@ -52,12 +137,12 @@ void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
 
 
 
-struct _bs calculate_post(char * filename, int analysis){
-	event_table et = read_detected_events(filename, analysis);
+struct _bs calculate_post(char * filename){
+	event_table et = read_detected_events(filename, args.analysis);
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
-	if(et.n <= TRIM){
+	if(et.n <= args.trim){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
@@ -68,7 +153,7 @@ struct _bs calculate_post(char * filename, int analysis){
         }*/
 
 	//  Make features
-	Mat_rptr features = make_features(et, TRIM, true);
+	Mat_rptr features = make_features(et, args.trim, true);
 	//fprint_mat(stdout, "* Features", features, 4, 10);
 	Mat_rptr feature3 = window(features, 3);
 	//fprint_mat(stdout, "* Window", feature3, 12, 10);
@@ -95,39 +180,20 @@ struct _bs calculate_post(char * filename, int analysis){
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
 
+	const __m128 mpv = _mm_set1_ps(args.min_prob);
+	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
         for(int i=0 ; i < post->nc ; i++){
 		const int offset = i * post->nrq;
 		for(int r=0 ; r < post->nrq ; r++){
-			post->data.v[offset + r] = logfv(MIN_PROB + MIN_PROB1M * post->data.v[offset + r]);
+			post->data.v[offset + r] = LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
 		}
 	}
 
 
 	int nev = post->nc;
 	int * seq = calloc(post->nc, sizeof(int));
-	float score = decode_transducer(post, SKIP_PEN, seq);
+	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
 	char * bases = overlapper(seq, post->nc, post->nr - 1);
-
-
-	/*
-	for(int i=0 ; i<50 ; i++){
-		const int offset = i * post->nrq * 4;
-                char kmer[6] = {0, 0, 0, 0, 0, 0};
-                char blank[] = "-----";
-		printf("%d (%s): stay=%f ", i, (seq[i]==-1)?blank:kmer_from_state(seq[i],5,kmer), 
-                                           expf(post->data.f[offset]));
-		for(int j=1 ; j < post->nr ; j++){
-			float ep = expf(post->data.f[offset+j]);
-			if(ep > 0.05){
-                                kmer_from_state(j - 1, 5, kmer);
-				printf("%s (%f)  ", kmer,ep);
-			}
-		}
-		fputc('\n', stdout);
-	} */
-
-
-
 
 	free(seq);
 	free_mat(post);
@@ -144,17 +210,20 @@ struct _bs calculate_post(char * filename, int analysis){
 }
 
 int main(int argc, char * argv[]){
-	assert(argc > 1);
+	argp_parse(&argp, argc, argv, 0, 0, NULL);
 	setup();
 
+	int nfile = 0;
+	for( ; args.files[nfile] ; nfile++);
+
 	#pragma omp parallel for schedule(dynamic)
-	for(int fn=1 ; fn<argc ; fn++){
-		struct _bs res = calculate_post(argv[fn], analysis);
+	for(int fn=0 ; fn < nfile ; fn++){
+		struct _bs res = calculate_post(args.files[fn]);
 		if(NULL == res.bases){
 			continue;
 		}
-		//printf(">%s   %f (%d ev -> %lu bases)\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases));
-		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), res.score, res.nev, strlen(res.bases), res.bases);
+		#pragma omp critical
+		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
 
