@@ -20,7 +20,7 @@ testing:
       - make deb
   except:
       #  Don't test tags (just branches)
-      - tags
+      #- tags
   artifacts:
     paths:
       - ./*.deb
