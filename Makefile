@@ -24,26 +24,11 @@ all: basecall
 %.o: %.c
 	$(CC) $(INC) -c -o $@ $< $(CFLAGS)
 
-basecall.c: decode.h features.h layers.h read_events.h util.h lstm_model.h
-decode.c: decode.h
-decode.h: util.h
-features.c: features.h
-features.h: read_events.h util.h
-layers.c: layers.h util.h
-layers.h: util.h
-read_events.c: read_events.h
-util.c: util.h
-util.h: sse_mathfun.h
-
-
-
-
-
 basecall: basecall.o $(OBJECTS) lstm_model.h
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o basecall
+	rm -rf *.o basecall *.deb tmp/
 
 deps:
 	grep ^Depends DEBIAN/control | cut -d : -f 2 | sed 's/,/ /g' | sed 's/([^)]*)//g' | xargs apt-get install -y --force-yes
