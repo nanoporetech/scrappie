@@ -6,7 +6,7 @@ PATCH  ?= 1
 
 CC     ?= gcc
 LIBS    = -lblas -lhdf5 -lm  
-CFLAGS  = -Wall -Wno-unused-function -O3  -fopenmp   -march=core2 -ffast-math -std=c99 -DUSE_SSE2
+CFLAGS  = -Wall -Wno-unused-function -O3 -fopenmp -march=core2 -ffast-math -std=c99 -DUSE_SSE2
 OBJDIR  = obj
 OBJECTS = read_events.o features.o util.o layers.o decode.o
 SEDI    = sed -i
@@ -21,6 +21,21 @@ all: basecall
 
 %.o: %.c
 	$(CC) $(INC) -c -o $@ $< $(CFLAGS)
+
+basecall.c: decode.h features.h layers.h read_events.h util.h lstm_model.h
+decode.c: decode.h
+decode.h: util.h
+features.c: features.h
+features.h: read_events.h util.h
+layers.c: layers.h util.h
+layers.h: util.h
+read_events.c: read_events.h
+util.c: util.h
+util.h: sse_mathfun.h
+
+
+
+
 
 basecall: basecall.o $(OBJECTS) lstm_model.h
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
