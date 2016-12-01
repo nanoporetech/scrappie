@@ -8,7 +8,7 @@ SCRAPPIE_VERSION = $(MAJOR).$(MINOR).$(SUB)-$(PATCH)
 
 CC     ?= gcc
 LIBS    = -lblas -lhdf5 -lm
-CFLAGS  = -Wall -Wno-unused-function -O3 -fopenmp -march=core2 -ffast-math -std=c99 -DUSE_SSE2 -DSCRAPPIE_VERSION=\"$(SCRAPPIE_VERSION)\"
+CFLAGS  = -Wall -Wno-unused-function -O3 -fopenmp -march=core2 -ffast-math -std=c99 -DUSE_SSE2 -DSCRAPPIE_VERSION=\"$(SCRAPPIE_VERSION)\" -DNDEBUG
 OBJDIR  = obj
 OBJECTS = read_events.o features.o util.o layers.o decode.o
 SEDI    = sed -i
