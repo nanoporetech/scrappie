@@ -113,7 +113,7 @@ setup.append(
 
 """ Second feed forward layer
 """
-size = network.layers[2].insize // 2
+size = network.layers[4].insize // 2
 setup.append(
 	cformatM(sys.stdout, 'FF2_Wf', network.layers[4].W.get_value()[:, : size]))
 setup.append(
