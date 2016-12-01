@@ -2,7 +2,9 @@
 #include <assert.h>
 #include <libgen.h>
 #include <math.h>
-#include <omp.h>
+#if defined(_OPENMP)
+	#include <omp.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,8 +36,10 @@ static struct argp_option options[] = {
 	{"slip", 'l', 0, 0, "Enable slipping"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"no-slip", 'n', 0, 0, "Disable slipping"},
-	{"trim", 't', "events", 0, "Number of events to trim"},
-	{"threads", '#', "reads", 0, "Number of reads to call in parallel"},
+	{"trim", 't', "nevents", 0, "Number of events to trim"},
+#if defined(_OPENMP)
+	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
+#endif
 	{0}
 };
 
@@ -47,7 +51,7 @@ struct arguments {
 	int trim;
 	char ** files;
 };
-static struct arguments args = {1, 1e-5, 0.0, false, 50};
+static struct arguments args = {0, 1e-5, 0.0, false, 50};
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
@@ -73,6 +77,8 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		args.trim = atoi(arg);
 		assert(args.trim >= 0);
 		break;
+
+	#if defined(_OPENMP)
 	case '#':
 		{
 			int nthread = atoi(arg);
@@ -82,7 +88,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 			omp_set_num_threads(nthread);
 		}
 		break;
-
+	#endif
 
 	case ARGP_KEY_NO_ARGS:
 		argp_usage (state);
@@ -203,14 +209,17 @@ int main(int argc, char * argv[]){
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
 	setup();
 
+	int nfile = 0;
+	for( ; args.files[nfile] ; nfile++);
+
 	#pragma omp parallel for schedule(dynamic)
-	for(int fn=1 ; fn<argc ; fn++){
-		struct _bs res = calculate_post(argv[fn]);
+	for(int fn=0 ; fn < nfile ; fn++){
+		struct _bs res = calculate_post(args.files[fn]);
 		if(NULL == res.bases){
 			continue;
 		}
 		#pragma omp critical
-		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(argv[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
+		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
 
