@@ -105,7 +105,7 @@ struct _bs calculate_post(char * filename, int analysis){
 
 	int nev = post->nc;
 	int * seq = calloc(post->nc, sizeof(int));
-	float score = decode_transducer(post, SKIP_PEN, seq);
+	float score = decode_transducer(post, SKIP_PEN, seq, false);
 	char * bases = overlapper(seq, post->nc, post->nr - 1);
 
 
