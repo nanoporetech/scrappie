@@ -1,4 +1,3 @@
-#include <argp.h>
 #include <assert.h>
 #include <libgen.h>
 #include <math.h>
@@ -15,6 +14,9 @@
 #include "util.h"
 
 #include "lstm_model.h"
+
+// Doesn't play nice with other headers, include last
+#include <argp.h>
 
 const float MIN_PROB1M = 1.0 - 1e-5;
 
