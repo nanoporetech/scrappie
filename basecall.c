@@ -18,7 +18,9 @@
 
 const float MIN_PROB1M = 1.0 - 1e-5;
 
-#define SCRAPPIE_VERSION "0.0.0-1"
+#if !defined(SCRAPPIE_VERSION)
+#define SCRAPPIE_VERISON "unknown"
+#endif
 
 struct _bs {
 	float score;
@@ -26,7 +28,7 @@ struct _bs {
 	char * bases;
 };
 
-const char * argp_program_version = "scrappie "  SCRAPPIE_VERSION;
+const char * argp_program_version = "scrappie " SCRAPPIE_VERSION;
 const char * argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
 static char args_doc[] = "fast5 [fast5 ...]";
