@@ -119,7 +119,7 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 		gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
 	}
 
-	free_mat(tmp);
+	free_mat(&tmp);
 	return ostate;
 }
 
@@ -158,7 +158,7 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 		gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
 	}
 
-	free_mat(tmp);
+	free_mat(&tmp);
 	return ostate;
 }
 
@@ -251,8 +251,8 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
-	free_mat(state);
-	free_mat(tmp);
+	free_mat(&state);
+	free_mat(&tmp);
 	return output;
 }
 
@@ -288,8 +288,8 @@ Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr
 		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
-	free_mat(state);
-	free_mat(tmp);
+	free_mat(&state);
+	free_mat(&tmp);
 	return output;
 }
 
