@@ -108,6 +108,9 @@ Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
          *  C is [nk, nc] or NULL.  If NULL then C is allocated.
          */
 	assert(W->nr == X->nr);
+	if((NULL != C) && ((C->nr != W->nc) || (C->nc != X->nc))){
+		free_mat(&C);
+	}
         if(NULL == C){
         	C = make_mat(W->nc, X->nc);
         }
@@ -133,9 +136,8 @@ Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 	assert(Wb->nr == Xb->nr);
 	assert(Xf->nc == Xb->nc);
 	assert(Wf->nc == Wb->nc);
-	if((NULL != C) && (C->nr != Wf->nc) && (C->nc != Xf->nc)){
+	if((NULL != C) && ((C->nr != Wf->nc) || (C->nc != Xf->nc))){
 		free_mat(&C);
-		C = NULL;
 	}
 	if(NULL == C){
 		C = make_mat(Wf->nc, Xf->nc);
