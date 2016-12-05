@@ -18,7 +18,7 @@ testing:
       - apt-get update
       - make deps
       - make deb
-      - ./basecall reads/*.fast5 > test.fa && cmp reads.fa test.fa
+      - ./basecall --threads 1 reads/*.fast5 > test.fa && cmp reads.fa test.fa
   except:
       #  Don't test tags (just branches)
       #- tags
