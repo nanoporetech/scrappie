@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <cblas.h>
+#include <err.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,7 +58,9 @@ Mat_rptr make_mat(int nr, int nc){
 	mat->nrq = nrq;
 	mat->nc = nc;
 	int status = posix_memalign((void **) &(mat->data.v), 16, nrq * nc * sizeof(__m128));
-	assert(0 == status);
+	if(0 != status){
+		errx(status, "Error allocating memory in %s.\n", __func__);
+	}
         memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
 }
@@ -70,9 +73,10 @@ Mat_rptr mat_from_array(const float * x, int nr, int nc){
 	return res;
 }
 
-void free_mat(Mat_rptr mat){
-	free(mat->data.v);
-	free(mat);
+void free_mat(Mat_rptr * mat){
+	free((*mat)->data.v);
+	free(*mat);
+	*mat = NULL;
 }
 
 iMat_rptr make_imat(int nr, int nc){
@@ -83,14 +87,17 @@ iMat_rptr make_imat(int nr, int nc){
 	mat->nrq = nrq;
 	mat->nc = nc;
 	int status = posix_memalign((void **) &(mat->data.v), 16, nrq * nc * sizeof(__m128i));
-	assert(0 == status);
+	if(0 != status){
+		errx(status, "Error allocating memory in %s.\n", __func__);
+	}
         memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
 }
 
-void free_imat(iMat_rptr mat){
-	free(mat->data.v);
-	free(mat);
+void free_imat(iMat_rptr * mat){
+	free((*mat)->data.v);
+	free(*mat);
+	*mat = NULL;
 }
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
                  const Mat_rptr b, Mat_rptr C){
@@ -126,6 +133,10 @@ Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 	assert(Wb->nr == Xb->nr);
 	assert(Xf->nc == Xb->nc);
 	assert(Wf->nc == Wb->nc);
+	if((NULL != C) && (C->nr != Wf->nc) && (C->nc != Xf->nc)){
+		free_mat(&C);
+		C = NULL;
+	}
 	if(NULL == C){
 		C = make_mat(Wf->nc, Xf->nc);
 	}
