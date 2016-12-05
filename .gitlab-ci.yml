@@ -18,6 +18,7 @@ testing:
       - apt-get update
       - make deps
       - make deb
+      - ./basecall reads/*.fast5
   except:
       #  Don't test tags (just branches)
       #- tags
