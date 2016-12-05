@@ -234,7 +234,7 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 	assert(p->nr == 3 * size);
 	assert(sW->nc == 4 * size);
 	if((NULL != output) && ((output->nr != size) || (output->nc != bsize))){
-		free_mat(&ostate);
+		free_mat(&output);
 	}
 	if(NULL == output){
 		output = make_mat(size, bsize);
@@ -272,7 +272,7 @@ Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr
 	assert(sW->nc == 4 * size);
 	assert(p->nr == 3 * size);
 	if((NULL != output) && ((output->nr != size) || (output->nc != bsize))){
-		free_mat(&ostate);
+		free_mat(&output);
 	}
 	if(NULL == output){
 		output = make_mat(size, bsize);
