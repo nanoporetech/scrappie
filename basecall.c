@@ -170,13 +170,13 @@ struct _bs calculate_post(char * filename){
 	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, FF1_Wf, FF1_Wb, FF1_b, NULL);
 	//fprint_mat(stdout, "* feedforward", lstmFF, 8, 10);
 
-	feedforward_linear(lstmFF, lstmF2_iW, lstmF2_b, lstmXf);
-	feedforward_linear(lstmFF, lstmB2_iW, lstmB2_b, lstmXb);
-	lstm_forward(lstmXf, lstmF2_sW, lstmF2_p, lstmF);
-	lstm_backward(lstmXb, lstmB2_sW, lstmB2_p, lstmB);
+	lstmXf = feedforward_linear(lstmFF, lstmF2_iW, lstmF2_b, lstmXf);
+	lstmXb = feedforward_linear(lstmFF, lstmB2_iW, lstmB2_b, lstmXb);
+	lstmF = lstm_forward(lstmXf, lstmF2_sW, lstmF2_p, lstmF);
+	lstmB = lstm_backward(lstmXb, lstmB2_sW, lstmB2_p, lstmB);
 
 	// Combine LSTM output
-	feedforward2_tanh(lstmF, lstmB, FF2_Wf, FF2_Wb, FF2_b, lstmFF);
+	lstmFF = feedforward2_tanh(lstmF, lstmB, FF2_Wf, FF2_Wb, FF2_b, lstmFF);
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
 
@@ -196,14 +196,14 @@ struct _bs calculate_post(char * filename){
 	char * bases = overlapper(seq, post->nc, post->nr - 1);
 
 	free(seq);
-	free_mat(post);
-	free_mat(lstmFF);
-	free_mat(lstmB);
-	free_mat(lstmF);
-	free_mat(lstmXb);
-	free_mat(lstmXf);
-	free_mat(feature3);
-	free_mat(features);
+	free_mat(&post);
+	free_mat(&lstmFF);
+	free_mat(&lstmB);
+	free_mat(&lstmF);
+	free_mat(&lstmXb);
+	free_mat(&lstmXf);
+	free_mat(&feature3);
+	free_mat(&features);
 	free(et.event);
 
 	return (struct _bs){score, nev, bases};
@@ -222,8 +222,9 @@ int main(int argc, char * argv[]){
 		if(NULL == res.bases){
 			continue;
 		}
+		const int nbase = strlen(res.bases);
 		#pragma omp critical
-		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
+		printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
 		free(res.bases);
 	}
 

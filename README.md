@@ -13,7 +13,7 @@ Query : GACACAG-GAGGCTGCGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CA
 On Debian based systems, the following packages are sufficient (tested Ubuntu 14.04 and 16.04)
 * libopenblas-base
 * libopenblas-dev
-* libhdf5-10
+* libhdf5
 * libhdf5-dev
 
 ## Compiling
@@ -32,17 +32,35 @@ export OPENBLAS_NUM_THREADS=1
 find reads -name \*.fast5 | xargs basecall > basecalls.fa
 ```
 
+## Commandline options
+```
+basecall --help
+Usage: basecall [OPTION...] fast5 [fast5 ...]
+Scrappie basecaller -- scrappie attempts to call homopolymers
+
+  -#, --threads=nreads       Number of reads to call in parallel
+  -a, --analysis=number      Analysis to read events from
+  -k, --skip=penalty         Penalty for skipping a base
+  -l, --slip                 Enable slipping
+  -m, --min_prob=probability Minimum bound on probability of match
+  -n, --no-slip              Disable slipping
+  -t, --trim=nevents         Number of events to trim
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
+  -V, --version              Print program version
+```
+
 ## Gotya's
-* Scrappie does not call events are relies on information already being present in the fast5 files.  In particular:
-  * Event calls are taken from /Analyses/EventDetection\_000/Reads/Read\_???/Events
-  * Segmentation are taken from /Analyses/Segment\_Linear\_000/Summary/split\_hairpin
-* Analysis number is hard-coded to zero, see top of basecall\_\*.c
-* Basecall parameters (min\_prob and skip\_pen) are hard-coded. See top of basecall\_\*.c
-* Model is hard-coded.  Generate new header files using parse\_\*.py model.pkl
-* The output is in Fasta format and no per-base quality scores are provided.  The order of the fasta header is:
-  * filename
-  * total score
-  * number of events
-  * bases called
+* Scrappie does not call events and relies on this information already being present in the fast5 files.  In particular:
+  * Event calls are taken from /Analyses/EventDetection\_XXX/Reads/Read\_???/Events
+  * Segmentation are taken from /Analyses/Segment\_Linear\_XXX/Summary/split\_hairpin
+* Model is hard-coded.  Generate new header files using `parse_lstm.py model.pkl > lstm_model.h`
+* The output is in Fasta format and no per-base quality scores are provided.
+  * The sequence ID is the name of the file that was basecalled.
+  * The *description* element of the Fasta header is a JSON strong containing the following elements:
+    * normalised score
+    * number of events
+    * length of sequence called
+    * number of events per base called
 * The normalised score (- total score / number of events) correlates well with read accuracy.
 * Events with unusual rate metrics (number of event / bases called) may be unreliable.
