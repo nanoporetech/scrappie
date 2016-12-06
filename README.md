@@ -33,8 +33,8 @@ find reads -name \*.fast5 | xargs basecall > basecalls.fa
 ```
 
 ## Commandline options
-```bash
-./basecall --help
+```
+basecall --help
 Usage: basecall [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- scrappie attempts to call homopolymers
 
