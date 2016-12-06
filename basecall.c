@@ -223,7 +223,7 @@ int main(int argc, char * argv[]){
 			continue;
 		}
 		#pragma omp critical
-		printf(">%s   %f (%d ev -> %lu bases)\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
+		printf(">%s  { \"normalised_score\" : %f, \"nevents\" :  %d, \"nbases\" : %lu }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
 		free(res.bases);
 	}
 
