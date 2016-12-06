@@ -1,6 +1,6 @@
 MAJOR  ?= 0
 MINOR  ?= 0
-SUB    ?= 2
+SUB    ?= 3
 PATCH  ?= 1
 
 SCRAPPIE_VERSION = $(MAJOR).$(MINOR).$(SUB)-$(PATCH)
