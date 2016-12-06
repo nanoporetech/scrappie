@@ -32,6 +32,24 @@ export OPENBLAS_NUM_THREADS=1
 find reads -name \*.fast5 | xargs basecall > basecalls.fa
 ```
 
+## Commandline options
+```bash
+./basecall --help
+Usage: basecall [OPTION...] fast5 [fast5 ...]
+Scrappie basecaller -- scrappie attempts to call homopolymers
+
+  -#, --threads=nreads       Number of reads to call in parallel
+  -a, --analysis=number      Analysis to read events from
+  -k, --skip=penalty         Penalty for skipping a base
+  -l, --slip                 Enable slipping
+  -m, --min_prob=probability Minimum bound on probability of match
+  -n, --no-slip              Disable slipping
+  -t, --trim=nevents         Number of events to trim
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
+  -V, --version              Print program version
+```
+
 ## Gotya's
 * Scrappie does not call events are relies on information already being present in the fast5 files.  In particular:
   * Event calls are taken from /Analyses/EventDetection\_000/Reads/Read\_???/Events
