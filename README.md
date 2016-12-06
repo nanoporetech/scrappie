@@ -51,7 +51,7 @@ Scrappie basecaller -- scrappie attempts to call homopolymers
 ```
 
 ## Gotya's
-* Scrappie does not call events are relies on information already being present in the fast5 files.  In particular:
+* Scrappie does not call events and relies on this information already being present in the fast5 files.  In particular:
   * Event calls are taken from /Analyses/EventDetection\_XXX/Reads/Read\_???/Events
   * Segmentation are taken from /Analyses/Segment\_Linear\_XXX/Summary/split\_hairpin
 * Model is hard-coded.  Generate new header files using `parse_lstm.py model.pkl > lstm_model.h`
