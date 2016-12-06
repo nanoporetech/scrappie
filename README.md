@@ -13,7 +13,7 @@ Query : GACACAG-GAGGCTGCGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CA
 On Debian based systems, the following packages are sufficient (tested Ubuntu 14.04 and 16.04)
 * libopenblas-base
 * libopenblas-dev
-* libhdf5-10
+* libhdf5
 * libhdf5-dev
 
 ## Compiling
