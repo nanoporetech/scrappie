@@ -222,8 +222,9 @@ int main(int argc, char * argv[]){
 		if(NULL == res.bases){
 			continue;
 		}
+		const int nbase = strlen(res.bases);
 		#pragma omp critical
-		printf(">%s  { \"normalised_score\" : %f, \"nevents\" :  %d, \"nbases\" : %lu }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, strlen(res.bases), res.bases);
+		printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
 		free(res.bases);
 	}
 
