@@ -35,27 +35,29 @@ const char * argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-	{"analysis", 'a', "number", 0, "Analysis to read events from"},
-	{"skip", 'k', "penalty", 0, "Penalty for skipping a base"},
-	{"slip", 'l', 0, 0, "Enable slipping"},
-	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
-	{"no-slip", 'n', 0, 0, "Disable slipping"},
-	{"trim", 't', "nevents", 0, "Number of events to trim"},
+	{"analysis", 'a', "number", 0, "Analysis to read events from."},
+	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)."},
+	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match."},
+	{"skip", 's', "penalty", 0, "Penalty for skipping a base."},
+	{"trim", 't', "nevents", 0, "Number of events to trim."},
+	{"slip", 1, 0, 0, "Use slipping."},
+	{"no-slip", 2, 0, 0, "Disable slipping."},
 #if defined(_OPENMP)
-	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
+	{"threads", '#', "nreads", 0, "Number of reads to call in parallel."},
 #endif
 	{0}
 };
 
 struct arguments {
 	int analysis;
+	int limit;
 	float min_prob;
 	float skip_pen;
 	bool use_slip;
 	int trim;
 	char ** files;
 };
-static struct arguments args = {0, 1e-5, 0.0, false, 50};
+static struct arguments args = {0, 0, 1e-5, 0.0, false, 50};
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
@@ -63,23 +65,27 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		args.analysis = atoi(arg);
 		assert(args.analysis > 0 && args.analysis < 1000);
 		break;
-	case 'k':
-		args.skip_pen = atof(arg);
-		assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
-		break;
 	case 'l':
-		args.use_slip = true;
+		args.limit = atoi(arg);
+		assert(args.limit > 0);
 		break;
 	case 'm':
 		args.min_prob = atof(arg);
 		assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
 		break;
-	case 'n':
-		args.use_slip = false;
+	case 's':
+		args.skip_pen = atof(arg);
+		assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
 		break;
 	case 't':
 		args.trim = atoi(arg);
 		assert(args.trim >= 0);
+		break;
+	case 1:
+		args.use_slip = true;
+		break;
+	case 2:
+		args.use_slip = false;
 		break;
 
 	#if defined(_OPENMP)
@@ -215,6 +221,9 @@ int main(int argc, char * argv[]){
 
 	int nfile = 0;
 	for( ; args.files[nfile] ; nfile++);
+	if(args.limit != 0 && nfile > args.limit){
+		nfile = args.limit;
+	}
 
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
