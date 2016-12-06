@@ -115,9 +115,11 @@ float valminf(const float * x, int n);
 
 
 Mat_rptr make_mat(int nr, int nc);
+Mat_rptr remake_mat(Mat_rptr M, int nr, int nc);
 Mat_rptr mat_from_array(const float * x, int nr, int nc);
 void free_mat(Mat_rptr * mat);
 iMat_rptr make_imat(int nr, int nc);
+iMat_rptr remake_imat(iMat_rptr M, int nr, int nc);
 void free_imat(iMat_rptr * mat);
 
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,

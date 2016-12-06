@@ -96,14 +96,9 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 	assert(iW->nc == 3 * size);
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
-	if((NULL != ostate) && ((ostate->nr != size) || (ostate->nc != bsize))){
-		free_mat(&ostate);
-	}
-	if(NULL == ostate){
-		ostate = make_mat(size, bsize);
-	}
+	ostate = remake_mat(ostate, size, bsize);
 	assert(ostate->nr == size);
-	assert(ostate->nc == X->nc);
+	assert(ostate->nc == bsize);
 
 	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(3 * size, 1);
@@ -136,14 +131,9 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	assert(iW->nc == 3 * size);
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
-	if((NULL != ostate) && ((ostate->nr != size) || (ostate->nc != bsize))){
-		free_mat(&ostate);
-	}
-	if(NULL == ostate){
-		ostate = make_mat(size, bsize);
-	}
+	ostate = remake_mat(ostate, size, bsize);
 	assert(ostate->nr == size);
-	assert(ostate->nc == X->nc);
+	assert(ostate->nc == bsize);
 
 	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(3 * size, 1);
@@ -233,14 +223,9 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 	assert(Xaffine->nr == 4 * size);
 	assert(p->nr == 3 * size);
 	assert(sW->nc == 4 * size);
-	if((NULL != output) && ((output->nr != size) || (output->nc != bsize))){
-		free_mat(&output);
-	}
-	if(NULL == output){
-		output = make_mat(size, bsize);
-	}
+	output = remake_mat(output, size, bsize);
 	assert(output->nr == size);
-	assert(output->nc == Xaffine->nc);
+	assert(output->nc == bsize);
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
@@ -271,14 +256,9 @@ Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr
 	assert(Xaffine->nr == 4 * size);
 	assert(sW->nc == 4 * size);
 	assert(p->nr == 3 * size);
-	if((NULL != output) && ((output->nr != size) || (output->nc != bsize))){
-		free_mat(&output);
-	}
-	if(NULL == output){
-		output = make_mat(size, bsize);
-	}
+	output = remake_mat(output, size, bsize);
 	assert(output->nr == size);
-	assert(output->nc == Xaffine->nc);
+	assert(output->nc == bsize);
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);

@@ -65,6 +65,17 @@ Mat_rptr make_mat(int nr, int nc){
 	return mat;
 }
 
+Mat_rptr remake_mat(Mat_rptr M, int nr, int nc){
+	// Could be made more efficient when there is sufficent memory already allocated
+	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
+		if(NULL != M){
+			free_mat(&M);
+		}
+		M = make_mat(nr, nc);
+	}
+	return M;
+}
+
 Mat_rptr mat_from_array(const float * x, int nr, int nc){
 	Mat_rptr res = make_mat(nr, nc);
 	for(int col=0 ; col < nc ; col++){
@@ -94,11 +105,23 @@ iMat_rptr make_imat(int nr, int nc){
 	return mat;
 }
 
+iMat_rptr remake_imat(iMat_rptr M, int nr, int nc){
+	// Could be made more efficient when there is sufficent memory already allocated
+	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
+		if(NULL != M){
+			free_imat(&M);
+		}
+		M = make_imat(nr, nc);
+	}
+	return M;
+}
+
 void free_imat(iMat_rptr * mat){
 	free((*mat)->data.v);
 	free(*mat);
 	*mat = NULL;
 }
+
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
                  const Mat_rptr b, Mat_rptr C){
         /*  Affine transform C = W^t X + b
@@ -108,12 +131,7 @@ Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
          *  C is [nk, nc] or NULL.  If NULL then C is allocated.
          */
 	assert(W->nr == X->nr);
-	if((NULL != C) && ((C->nr != W->nc) || (C->nc != X->nc))){
-		free_mat(&C);
-	}
-        if(NULL == C){
-        	C = make_mat(W->nc, X->nc);
-        }
+        C = remake_mat(C, W->nc, X->nc);
 	assert(C->nr == W->nc);
 	assert(C->nc == X->nc);
 
@@ -136,12 +154,7 @@ Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 	assert(Wb->nr == Xb->nr);
 	assert(Xf->nc == Xb->nc);
 	assert(Wf->nc == Wb->nc);
-	if((NULL != C) && ((C->nr != Wf->nc) || (C->nc != Xf->nc))){
-		free_mat(&C);
-	}
-	if(NULL == C){
-		C = make_mat(Wf->nc, Xf->nc);
-	}
+	C = remake_mat(C, Wf->nc, Xf->nc);
 	assert(C->nr == Wf->nc);
 	assert(C->nc == Xf->nc);
 
