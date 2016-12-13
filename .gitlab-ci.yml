@@ -10,22 +10,32 @@ variables:
   BUILD_DIR:        "build_${CI_BUILD_ID}"
 
 stages:
+  - build
   - test
   - publish
 
-testing:
-  stage: test
+before_script:
+  - apt-get update
+  - apt-get install -y libopenblas-base libopenblas-dev libhdf5-7 libhdf5-dev cmake
+
+building:
+  stage: build
   script:
       - apt-get update
       - make deps
       - mkdir ${BUILD_DIR} && (cd ${BUILD_DIR} && cmake .. && make)
-      - ${BUILD_DIR}basecall --threads 1 reads/*.fast5 > test.fa
   except:
       #  Don't test tags (just branches)
       #- tags
   artifacts:
     paths:
       - ${BUILD_DIR}/*.deb
+      - ${BUILD_DIR}/basecall
+
+testing:
+  stage: test
+  script:
+      ${BUILD_DIR}/basecall --threads 1 reads/*.fast5 > test.fa
 
 upload-development:
   stage: publish
