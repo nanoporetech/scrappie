@@ -7,7 +7,7 @@ variables:
   REPO_STAGING:     "trusty-testing"
   REPO_PRODUCTION:  "trusty-stable"
   PATCH:            $CI_BUILD_ID
-  BUILD_DIR:        "build_${CI_BUILD_ID}"
+  BUILD_DIR:        "build"
 
 stages:
   - build
@@ -21,7 +21,7 @@ before_script:
 building:
   stage: build
   script:
-      - mkdir ${BUILD_DIR} && (cd ${BUILD_DIR} && cmake .. && make)
+      - mkdir ${BUILD_DIR} && (cd ${BUILD_DIR} && cmake .. && make && make package)
   except:
       #  Don't test tags (just branches)
       #- tags
