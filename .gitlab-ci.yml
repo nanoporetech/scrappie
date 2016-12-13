@@ -21,8 +21,6 @@ before_script:
 building:
   stage: build
   script:
-      - apt-get update
-      - make deps
       - mkdir ${BUILD_DIR} && (cd ${BUILD_DIR} && cmake .. && make)
   except:
       #  Don't test tags (just branches)
