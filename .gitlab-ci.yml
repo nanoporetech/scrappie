@@ -28,12 +28,12 @@ building:
   artifacts:
     paths:
       - ${BUILD_DIR}/*.deb
-      - ${BUILD_DIR}/basecall
+      - ${BUILD_DIR}/scrappie
 
 testing:
   stage: test
   script:
-      ${BUILD_DIR}/basecall --threads 1 reads/*.fast5 > test.fa
+      ${BUILD_DIR}/scrappie --threads 1 reads/*.fast5 > test.fa
 
 upload-development:
   stage: publish
