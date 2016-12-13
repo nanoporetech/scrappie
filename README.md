@@ -18,7 +18,7 @@ On Debian based systems, the following packages are sufficient (tested Ubuntu 14
 
 ## Compiling
 ```bash
-mkdir build && cmake .. && make
+mkdir build && cd build && cmake .. && make
 ```
 
 ## Running
