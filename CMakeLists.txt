@@ -14,7 +14,7 @@ set (CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSI
 set (CPACK_DEBIAN_PACKAGE_MAINTAINER "Tim Massingham <tim.massingham@nanoporetech.com>")
 set (CPACK_DEBIAN_PACKAGE_SECTION "base")
 set (CPACK_DEBIAN_PACKAGE_DEPENDS "libopenblas-base, libhdf5-7")
-set (CPACK_DEBIAN_BUILD_DEPENDS "libopenblas-base, libopenblas-dev, libhdf5-7, libhdf5-dev")
+set (CPACK_DEBIAN_BUILD_DEPENDS "libopenblas-base, libopenblas-dev, libhdf5-7, libhdf5-dev, cmake")
 set (CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_DEBIAN_PACKAGE_VERSION})
 set (CPACK_PACKAGING_INSTALL_PREFIX "/opt/scrappie")
 
