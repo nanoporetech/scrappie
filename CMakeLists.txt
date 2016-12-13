@@ -1,17 +1,29 @@
 cmake_minimum_required (VERSION 2.6)
-project (Scrappie)
+project (scrappie)
 
-set (Scrappie_VERSION_MAJOR 0)
-set (Scrappie_VERSION_MINOR 1)
-set (Scrappie_VERSION_SUB 0)
-set (Scrappie_VERSION_PATCH 0)
+include (InstallRequiredSystemLibraries)
+set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Scrappie is the technology demonstration platform for the Research algorithms' group.")
+set (CPACK_PACKAGE_VENDOR "Oxford Nanopore Technologies")
+set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
+set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENCE")
+set (CPACK_PACKAGE_VERSION_MAJOR 0)
+set (CPACK_PACKAGE_VERSION_MINOR 1)
+set (CPACK_PACKAGE_VERSION_PATCH 0)
+set (CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+
+set (CPACK_DEBIAN_PACKAGE_MAINTAINER "Tim Massingham <tim.massingham@nanoporetech.com>")
+set (CPACK_DEBIAN_PACKAGE_SECTION "base")
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "libopenblas-base, libhdf5-7")
+set (CPACK_DEBIAN_BUILD_DEPENDS "libopenblas-base, libopenblas-dev, libhdf5-7, libhdf5-dev")
+set (CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_DEBIAN_PACKAGE_VERSION})
+set (CPACK_PACKAGING_INSTALL_PREFIX "/opt/scrappie")
+
+set (CPACK_GENERATOR "TGZ;DEB")
+include (CPack)
+
 configure_file (
     "${PROJECT_SOURCE_DIR}/src/version.h.in"
     "${PROJECT_BINARY_DIR}/include/version.h"
-)
-configure_file (
-    "${PROJECT_SOURCE_DIR}/DEBIAN/control"
-    "${PROJECT_BINARY_DIR}/tmp/control"
 )
 
 include_directories ("${PROJECT_BINARY_DIR}/include")
