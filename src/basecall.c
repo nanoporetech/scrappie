@@ -12,6 +12,7 @@
 #include "layers.h"
 #include "read_events.h"
 #include "util.h"
+#include <version.h>
 
 #include "lstm_model.h"
 
@@ -21,7 +22,7 @@
 const float MIN_PROB1M = 1.0 - 1e-5;
 
 #if !defined(SCRAPPIE_VERSION)
-#define SCRAPPIE_VERISON "unknown"
+#define SCRAPPIE_VERSION "unknown"
 #endif
 
 struct _bs {

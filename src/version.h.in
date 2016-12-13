@@ -1,0 +1,10 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+#define Scrappie_VERSION_MAJOR @Scrappie_VERSION_MAJOR@
+#define Scrappie_VERSION_MINOR @Scrappie_VERSION_MINOR@
+#define Scrappie_VERSION_SUB @Scrappie_VERSION_SUB@
+#define Scrappie_VERSION_PATCH @Scrappie_VERSION_PATCH@
+
+
+#endif /* VERSION_H */

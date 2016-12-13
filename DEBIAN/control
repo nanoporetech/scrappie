@@ -1,5 +1,5 @@
 Package: ont-scrappie
-Version: SCRAPPIE_VERSION
+Version: @Scrappie_VERSION_MAJOR@.@Scrappie_VERSION_MINOR@.@Scrappie_VERSION_SUB@-@Scrappie_VERSION_PATCH@
 Section: base
 Priority: optional
 Architecture: amd64
