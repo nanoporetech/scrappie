@@ -6,34 +6,43 @@ variables:
   REPO_DEVELOPMENT: "trusty-unstable"
   REPO_STAGING:     "trusty-testing"
   REPO_PRODUCTION:  "trusty-stable"
-  PATCH:            $CI_BUILD_ID
+  CI_VERSION_PATCH: $CI_BUILD_ID
+  BUILD_DIR:        "build"
 
 stages:
+  - build
   - test
   - publish
 
-testing:
-  stage: test
+before_script:
+  - apt-get update
+  - apt-get install -y libopenblas-base libopenblas-dev libhdf5-7 libhdf5-dev cmake
+
+building:
+  stage: build
   script:
-      - apt-get update
-      - make deps
-      - make deb
-      - ./basecall --threads 1 reads/*.fast5 > test.fa
+      - mkdir ${BUILD_DIR} && (cd ${BUILD_DIR} && cmake .. && make && make package)
   except:
       #  Don't test tags (just branches)
       #- tags
   artifacts:
     paths:
-      - ./*.deb
+      - ${BUILD_DIR}/*.deb
+      - ${BUILD_DIR}/scrappie
+
+testing:
+  stage: test
+  script:
+      ${BUILD_DIR}/scrappie --threads 1 reads/*.fast5 > test.fa
 
 upload-development:
   stage: publish
   script:
     - echo "$SSH_PRIVATE_KEY" > .privkey
     - chmod 600 .privkey
-    - scp -o StrictHostKeyChecking=no -i .privkey *.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
   variables:
-    REPO: $REPO_STAGING
+    REPO: $REPO_DEVELOPMENT
   only:
     - dev
 
@@ -42,7 +51,7 @@ upload-staging:
   script:
     - echo "$SSH_PRIVATE_KEY" > .privkey
     - chmod 600 .privkey
-    - scp -o StrictHostKeyChecking=no -i .privkey *.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
   variables:
     REPO: $REPO_STAGING
   only:
@@ -53,7 +62,7 @@ upload-prod:
   script:
     - echo "$SSH_PRIVATE_KEY" > .privkey
     - chmod 600 .privkey
-    - scp -o StrictHostKeyChecking=no -i .privkey *.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
   variables:
     REPO: $REPO_PRODUCTION
   only:
