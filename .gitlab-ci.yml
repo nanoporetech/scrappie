@@ -42,7 +42,7 @@ upload-development:
     - chmod 600 .privkey
     - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
   variables:
-    REPO: $REPO_STAGING
+    REPO: $REPO_DEVELOPMENT
   only:
     - dev
 
