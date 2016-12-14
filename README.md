@@ -18,7 +18,7 @@ On Debian based systems, the following packages are sufficient (tested Ubuntu 14
 
 ## Compiling
 ```bash
-make
+mkdir build && cd build && cmake .. && make
 ```
 
 ## Running
@@ -34,8 +34,8 @@ find reads -name \*.fast5 | xargs basecall > basecalls.fa
 
 ## Commandline options
 ```
-basecall --help
-Usage: basecall [OPTION...] fast5 [fast5 ...]
+scrappie --help
+Usage: scrappie [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- scrappie attempts to call homopolymers
 
   -#, --threads=nreads       Number of reads to call in parallel
