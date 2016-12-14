@@ -6,7 +6,7 @@ variables:
   REPO_DEVELOPMENT: "trusty-unstable"
   REPO_STAGING:     "trusty-testing"
   REPO_PRODUCTION:  "trusty-stable"
-  PATCH:            $CI_BUILD_ID
+  CI_VERSION_PATCH: $CI_BUILD_ID
   BUILD_DIR:        "build"
 
 stages:
