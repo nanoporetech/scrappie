@@ -84,6 +84,28 @@ Mat_rptr mat_from_array(const float * x, int nr, int nc){
 	return res;
 }
 
+
+void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int nc){
+	assert(NULL != fh);
+	assert(NULL != Mat_rptr);
+	if(nr <= 0){nr = mat->nr;}
+	if(nc <= 0){nc = mat->nc;}
+
+	if(NULL != header){
+		fputs(header, fh);
+		fputc('\n', fh);
+	}
+        for(int c=0 ; c < nc ; c++){
+                const int offset = c * mat->nrq * 4;
+                fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
+                for(int r=1 ; r<nr ; r++){
+                        fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
+                }
+                fputc('\n', fh);
+        }
+}
+
+
 void free_mat(Mat_rptr * mat){
 	free((*mat)->data.v);
 	free(*mat);

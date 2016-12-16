@@ -134,20 +134,6 @@ char * kmer_from_state(int state, int klen, char * kmer){
 	return kmer;
 }
 
-void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
-        fputs(header, fh);
-        fputc('\n', fh);
-        for(int c=0 ; c < nc ; c++){
-                const int offset = c * mat->nrq * 4;
-                fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
-                for(int r=1 ; r<nr ; r++){
-                        fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
-                }
-                fputc('\n', fh);
-        }
-}
-
-
 
 struct _bs calculate_post(char * filename){
 	event_table et = read_detected_events(filename, args.analysis, args.segmentation);
