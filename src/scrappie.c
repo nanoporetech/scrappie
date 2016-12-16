@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "decode.h"
-#include "features.h"
+#include "nnfeatures.h"
 #include "layers.h"
 #include "read_events.h"
 #include "util.h"
