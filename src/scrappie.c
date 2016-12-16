@@ -187,7 +187,8 @@ struct _bs calculate_post(char * filename){
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
 
-	const __m128 mpv = _mm_set1_ps(args.min_prob);
+	const int nstate = FF3_b->nr;
+	const __m128 mpv = _mm_set1_ps(args.min_prob / nstate);
 	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
         for(int i=0 ; i < post->nc ; i++){
 		const int offset = i * post->nrq;
@@ -200,7 +201,7 @@ struct _bs calculate_post(char * filename){
 	int nev = post->nc;
 	int * seq = calloc(post->nc, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	char * bases = overlapper(seq, post->nc, post->nr - 1);
+	char * bases = overlapper(seq, post->nc, nstate - 1);
 
 	free(seq);
 	free_mat(&post);
