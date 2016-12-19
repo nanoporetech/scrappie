@@ -1,14 +1,17 @@
 #include <assert.h>
 #include <hdf5.h>
 #include <stdlib.h>
+#include <string.h>
 #include "read_events.h"
 
 
-struct _pi get_segmentation(hid_t file, int analysis_no){
+struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentation){
+	assert(NULL != segmentation);
 	int start=0, end=0; 
 
-	char * segname = calloc(51, sizeof(char));
-	(void)snprintf(segname, 51, "/Analyses/Segment_Linear_%03d/Summary/split_hairpin", analysis_no);
+        int segnamelen = strlen(segmentation) + 37;
+	char * segname = calloc(segnamelen, sizeof(char));
+	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/split_hairpin", segmentation, analysis_no);
 	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
 
 	hid_t temp_start = H5Aopen_name(segloc, "start_index_temp");
@@ -58,12 +61,12 @@ event_table read_events(const char * filename, const char * tablepath, struct _p
 }
 
 
-event_table read_detected_events(const char * filename, int analysis_no){
+event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation){
 	assert(NULL != filename);
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if(file < 0){ return (event_table){0, 0, 0, NULL};}
-	struct _pi  index = get_segmentation(file, analysis_no);
+	struct _pi  index = get_segmentation(file, analysis_no, segmentation);
 
 	char * root = calloc(36, sizeof(char));
 	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);

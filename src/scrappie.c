@@ -36,15 +36,16 @@ const char * argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-	{"analysis", 'a', "number", 0, "Analysis to read events from."},
-	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)."},
-	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match."},
-	{"skip", 's', "penalty", 0, "Penalty for skipping a base."},
-	{"trim", 't', "nevents", 0, "Number of events to trim."},
-	{"slip", 1, 0, 0, "Use slipping."},
-	{"no-slip", 2, 0, 0, "Disable slipping."},
+	{"analysis", 'a', "number", 0, "Analysis to read events from"},
+	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
+	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
+	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
+	{"trim", 't', "nevents", 0, "Number of events to trim"},
+	{"slip", 1, 0, 0, "Use slipping"},
+	{"no-slip", 2, 0, 0, "Disable slipping"},
+        {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
 #if defined(_OPENMP)
-	{"threads", '#', "nreads", 0, "Number of reads to call in parallel."},
+	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
 	{0}
 };
@@ -56,9 +57,10 @@ struct arguments {
 	float skip_pen;
 	bool use_slip;
 	int trim;
+	char * segmentation;
 	char ** files;
 };
-static struct arguments args = {0, 0, 1e-5, 0.0, false, 50};
+static struct arguments args = {0, 0, 1e-5, 0.0, false, 50, "Segment_Linear"};
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
@@ -87,6 +89,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 2:
 		args.use_slip = false;
+		break;
+	case 3:
+		args.segmentation = arg;
 		break;
 
 	#if defined(_OPENMP)
@@ -145,7 +150,7 @@ void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
 
 
 struct _bs calculate_post(char * filename){
-	event_table et = read_detected_events(filename, args.analysis);
+	event_table et = read_detected_events(filename, args.analysis, args.segmentation);
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
@@ -187,7 +192,8 @@ struct _bs calculate_post(char * filename){
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
 
-	const __m128 mpv = _mm_set1_ps(args.min_prob);
+	const int nstate = FF3_b->nr;
+	const __m128 mpv = _mm_set1_ps(args.min_prob / nstate);
 	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
         for(int i=0 ; i < post->nc ; i++){
 		const int offset = i * post->nrq;
@@ -200,7 +206,7 @@ struct _bs calculate_post(char * filename){
 	int nev = post->nc;
 	int * seq = calloc(post->nc, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	char * bases = overlapper(seq, post->nc, post->nr - 1);
+	char * bases = overlapper(seq, post->nc, nstate - 1);
 
 	free(seq);
 	free_mat(&post);

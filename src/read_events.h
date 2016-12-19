@@ -16,6 +16,6 @@ typedef struct {
 struct _pi { int x1, x2;};
 
 event_table read_events(const char * filename, const char * tablepath, struct _pi index);
-event_table read_detected_events(const char * filename, int analysis_no);
+event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation);
 
 #endif /* READ_EVENTS_H */
