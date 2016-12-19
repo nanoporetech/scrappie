@@ -36,16 +36,16 @@ const char * argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-	{"analysis", 'a', "number", 0, "Analysis to read events from."},
-	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)."},
-	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match."},
-	{"skip", 's', "penalty", 0, "Penalty for skipping a base."},
-	{"trim", 't', "nevents", 0, "Number of events to trim."},
-	{"slip", 1, 0, 0, "Use slipping."},
-	{"no-slip", 2, 0, 0, "Disable slipping."},
+	{"analysis", 'a', "number", 0, "Analysis to read events from"},
+	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
+	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
+	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
+	{"trim", 't', "nevents", 0, "Number of events to trim"},
+	{"slip", 1, 0, 0, "Use slipping"},
+	{"no-slip", 2, 0, 0, "Disable slipping"},
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
 #if defined(_OPENMP)
-	{"threads", '#', "nreads", 0, "Number of reads to call in parallel."},
+	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
 	{0}
 };
