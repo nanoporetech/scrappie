@@ -43,6 +43,7 @@ static struct argp_option options[] = {
 	{"trim", 't', "nevents", 0, "Number of events to trim."},
 	{"slip", 1, 0, 0, "Use slipping."},
 	{"no-slip", 2, 0, 0, "Disable slipping."},
+        {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel."},
 #endif
@@ -56,9 +57,10 @@ struct arguments {
 	float skip_pen;
 	bool use_slip;
 	int trim;
+	char * segmentation;
 	char ** files;
 };
-static struct arguments args = {0, 0, 1e-5, 0.0, false, 50};
+static struct arguments args = {0, 0, 1e-5, 0.0, false, 50, "Segment_Linear"};
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
@@ -87,6 +89,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 2:
 		args.use_slip = false;
+		break;
+	case 3:
+		args.segmentation = arg;
 		break;
 
 	#if defined(_OPENMP)
@@ -145,7 +150,7 @@ void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
 
 
 struct _bs calculate_post(char * filename){
-	event_table et = read_detected_events(filename, args.analysis);
+	event_table et = read_detected_events(filename, args.analysis, args.segmentation);
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
