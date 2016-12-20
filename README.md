@@ -30,8 +30,8 @@ export OMP_NUM_THREADS=`nproc`
 export OPENBLAS_NUM_THREADS=1
 # Reads are assumed to be in the reads/ folder.
 find reads -name \*.fast5 | xargs scrappie > basecalls.fa
-# Or using a strand list
-tail -n + 2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie > basecalls.fa
+# Or using a strand list (skipping first line)
+tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie > basecalls.fa
 ```
 
 ## Commandline options
