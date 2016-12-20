@@ -56,15 +56,15 @@ Scrappie basecaller -- scrappie attempts to call homopolymers
 
 ## Gotya's
 * Scrappie does not call events and relies on this information already being present in the fast5 files.  In particular:
-  * Event calls are taken from /Analyses/EventDetection\_XXX/Reads/Read\_???/Events
-  * Segmentation are taken from /Analyses/Segment\_Linear\_XXX/Summary/split\_hairpin
+  * Event calls are taken from /Analyses/EventDetection\_XXX/Reads/Read\_???/Events, where XXX is the number set by the `--analysis` flag.
+  * Segmentation is taken (by default) from /Analyses/Segment\_Linear\_XXX/Summary/split\_hairpin.  The group name for the segmentation data, here Segment\_Linear, can be set using the `--segmentation` flag.
 * Model is hard-coded.  Generate new header files using `parse_lstm.py model.pkl > lstm_model.h`
 * The output is in Fasta format and no per-base quality scores are provided.
   * The sequence ID is the name of the file that was basecalled.
   * The *description* element of the Fasta header is a JSON strong containing the following elements:
-    * normalised score
-    * number of events
-    * length of sequence called
-    * number of events per base called
+    * `normalised_score` Normalised score (total score / number of events).
+    * `nevents` Number of events
+    * `sequence_length` Length of sequence called
+    * `events_per_base` Number of events per base called
 * The normalised score (- total score / number of events) correlates well with read accuracy.
 * Events with unusual rate metrics (number of event / bases called) may be unreliable.
