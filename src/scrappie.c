@@ -43,6 +43,7 @@ static struct argp_option options[] = {
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, 0, "Disable slipping"},
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
+	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
@@ -57,9 +58,10 @@ struct arguments {
 	bool use_slip;
 	int trim;
 	char * segmentation;
+	char * dump;
 	char ** files;
 };
-static struct arguments args = {0, 0, 1e-5, 0.0, false, 50, "Segment_Linear"};
+static struct arguments args = {0, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
@@ -91,6 +93,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 3:
 		args.segmentation = arg;
+		break;
+	case 4:
+		args.dump = arg;
 		break;
 
 	#if defined(_OPENMP)
@@ -223,7 +228,13 @@ int main(int argc, char * argv[]){
 		nfile = args.limit;
 	}
 
-	hid_t hdf5out = H5Fcreate("test.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	hid_t hdf5out = -1;
+	if(NULL != args.dump){
+		hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
+		if(hdf5out < 0){
+			hdf5out = H5Fcreate(args.dump, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+		}
+	}
 
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
@@ -235,12 +246,16 @@ int main(int argc, char * argv[]){
 		#pragma omp critical
 		{
 			printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
-			write_annotated_events(hdf5out, basename(args.files[fn]), res.et);
+			if(hdf5out >= 0){
+				write_annotated_events(hdf5out, basename(args.files[fn]), res.et);
+			}
 		}
 		free(res.et.event);
 		free(res.bases);
 	}
 
-	H5Fclose(hdf5out);
+	if(hdf5out >= 0){
+		H5Fclose(hdf5out);
+	}
 	return EXIT_SUCCESS;
 }
