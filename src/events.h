@@ -1,5 +1,5 @@
-#ifndef READ_EVENTS_H
-#define READ_EVENTS_H
+#ifndef EVENTS_H
+#define EVENTS_H
 
 #include <stdint.h>
 
@@ -18,4 +18,4 @@ struct _pi { int x1, x2;};
 event_table read_events(const char * filename, const char * tablepath, struct _pi index);
 event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation);
 
-#endif /* READ_EVENTS_H */
+#endif /* EVENTS_H */

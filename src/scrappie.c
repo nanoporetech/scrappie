@@ -10,7 +10,7 @@
 #include "decode.h"
 #include "nnfeatures.h"
 #include "layers.h"
-#include "read_events.h"
+#include "events.h"
 #include "util.h"
 #include <version.h>
 
