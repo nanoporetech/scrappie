@@ -87,7 +87,7 @@ Mat_rptr mat_from_array(const float * x, int nr, int nc){
 
 void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int nc){
 	assert(NULL != fh);
-	assert(NULL != Mat_rptr);
+	assert(NULL != mat);
 	if(nr <= 0){nr = mat->nr;}
 	if(nc <= 0){nc = mat->nc;}
 
