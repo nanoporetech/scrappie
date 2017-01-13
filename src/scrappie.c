@@ -10,8 +10,6 @@
 #include "decode.h"
 #include "nnfeatures.h"
 #include "layers.h"
-#include "events.h"
-#include "util.h"
 #include <version.h>
 
 #include "lstm_model.h"
@@ -29,6 +27,7 @@ struct _bs {
 	float score;
 	int nev;
 	char * bases;
+	event_table et;
 };
 
 const char * argp_program_version = "scrappie " SCRAPPIE_VERSION;
@@ -136,6 +135,7 @@ char * kmer_from_state(int state, int klen, char * kmer){
 
 
 struct _bs calculate_post(char * filename){
+	const int WINLEN = 3;
 	event_table et = read_detected_events(filename, args.analysis, args.segmentation);
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
@@ -153,7 +153,7 @@ struct _bs calculate_post(char * filename){
 	//  Make features
 	Mat_rptr features = make_features(et, args.trim, true);
 	//fprint_mat(stdout, "* Features", features, 4, 10);
-	Mat_rptr feature3 = window(features, 3);
+	Mat_rptr feature3 = window(features, WINLEN);
 	//fprint_mat(stdout, "* Window", feature3, 12, 10);
 
 	// Initial transformation of input for LSTM layer
@@ -194,6 +194,12 @@ struct _bs calculate_post(char * filename){
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
 	char * bases = overlapper(seq, post->nc, nstate - 1);
 
+	const int woffset = (WINLEN - 1) / 2;  // Offset due to windowing.  Right padded
+	const int evoffset = et.start + args.trim + woffset;
+	for(int ev=0 ; ev < nev ; ev++){
+		et.event[ev + evoffset].state = 1 + seq[ev];
+	}
+
 	free(seq);
 	free_mat(&post);
 	free_mat(&lstmFF);
@@ -203,9 +209,8 @@ struct _bs calculate_post(char * filename){
 	free_mat(&lstmXf);
 	free_mat(&feature3);
 	free_mat(&features);
-	free(et.event);
 
-	return (struct _bs){score, nev, bases};
+	return (struct _bs){score, nev, bases, et};
 }
 
 int main(int argc, char * argv[]){
@@ -218,6 +223,8 @@ int main(int argc, char * argv[]){
 		nfile = args.limit;
 	}
 
+	hid_t hdf5out = H5Fcreate("test.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
 		struct _bs res = calculate_post(args.files[fn]);
@@ -226,9 +233,14 @@ int main(int argc, char * argv[]){
 		}
 		const int nbase = strlen(res.bases);
 		#pragma omp critical
-		printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
+		{
+			printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
+			write_annotated_events(hdf5out, basename(args.files[fn]), res.et);
+		}
+		free(res.et.event);
 		free(res.bases);
 	}
 
+	H5Fclose(hdf5out);
 	return EXIT_SUCCESS;
 }
