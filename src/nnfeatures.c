@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "features.h"
+#include "nnfeatures.h"
 
 Mat_rptr make_features(const event_table evtbl, int trim, bool normalise){
 	trim += evtbl.start;

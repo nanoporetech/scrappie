@@ -33,6 +33,6 @@ include_directories ("${PROJECT_BINARY_DIR}/include")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -O3 -fopenmp -march=core2 -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
 
-add_executable (scrappie src/scrappie.c src/decode.c src/features.c src/layers.c src/read_events.c src/util.c)
+add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/events.c src/util.c)
 target_link_libraries (scrappie blas hdf5 m)
 install (TARGETS scrappie DESTINATION bin)

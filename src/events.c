@@ -2,7 +2,7 @@
 #include <hdf5.h>
 #include <stdlib.h>
 #include <string.h>
-#include "read_events.h"
+#include "events.h"
 
 
 struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentation){
