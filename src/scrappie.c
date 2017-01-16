@@ -197,14 +197,17 @@ struct _bs calculate_post(char * filename){
 	int nev = post->nc;
 	int * seq = calloc(post->nc, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	char * bases = overlapper(seq, post->nc, nstate - 1);
+	int * pos = calloc(post->nc, sizeof(int));
+	char * bases = overlapper(seq, post->nc, nstate - 1, pos);
 
 	const int woffset = (WINLEN - 1) / 2;  // Offset due to windowing.  Right padded
 	const int evoffset = et.start + args.trim + woffset;
 	for(int ev=0 ; ev < nev ; ev++){
 		et.event[ev + evoffset].state = 1 + seq[ev];
+		et.event[ev + evoffset].pos = pos[ev];
 	}
 
+	free(pos);
 	free(seq);
 	free_mat(&post);
 	free_mat(&lstmFF);
