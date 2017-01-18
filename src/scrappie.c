@@ -41,7 +41,7 @@ static struct argp_option options[] = {
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
 	{"trim", 't', "nevents", 0, "Number of events to trim"},
 	{"slip", 1, 0, 0, "Use slipping"},
-	{"no-slip", 2, 0, 0, "Disable slipping"},
+	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
 	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 #if defined(_OPENMP)
