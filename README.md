@@ -42,12 +42,12 @@ Scrappie basecaller -- scrappie attempts to call homopolymers
 
   -#, --threads=nreads       Number of reads to call in parallel
   -a, --analysis=number      Analysis to read events from
+      --dump=filename        Dump annotated events to HDF5 file
   -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
   -m, --min_prob=probability Minimum bound on probability of match
-      --no-slip              Disable slipping
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=group   Fast5 group from which to reads segmentation
-      --slip                 Use slipping
+      --slip, --no-slip      Use slipping
   -t, --trim=nevents         Number of events to trim
   -?, --help                 Give this help list
       --usage                Give a short usage message

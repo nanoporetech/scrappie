@@ -4,6 +4,6 @@
 #include "util.h"
 
 float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool use_slip);
-char * overlapper(const int * seq, int n, int nkmer);
+char * overlapper(const int * seq, int n, int nkmer, int *pos);
 
 #endif  /* DECODE_H */

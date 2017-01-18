@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <hdf5.h>
 #include <stdlib.h>
 #include <string.h>
 #include "events.h"
@@ -42,7 +41,7 @@ event_table read_events(const char * filename, const char * tablepath, struct _p
 	hid_t space = H5Dget_space(dset);
 	H5Sget_simple_extent_dims (space, dims, NULL);
 	size_t nevent = dims[0];
-	event_t * events = malloc(nevent * sizeof(event_t));
+	event_t * events = calloc(nevent, sizeof(event_t));
 
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_INT);
@@ -51,7 +50,12 @@ event_table read_events(const char * filename, const char * tablepath, struct _p
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
 
-	H5Dvlen_reclaim (memtype, space, H5P_DEFAULT, events);
+	for(int ev=0 ; ev < nevent ; ev++){
+		// Negative means unassigned
+		events[ev].pos = -1;
+		events[ev].state = -1;
+	}
+
 	H5Tclose(memtype);
 	H5Sclose(space);
 	H5Dclose(dset);
@@ -76,12 +80,42 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	H5Lget_name_by_idx(file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, size, H5P_DEFAULT);
 	char * event_group = calloc(36 + size + 7 - 1, sizeof(char));
 	(void)snprintf(event_group, 36 + size + 7 - 1, "%s%s/Events", root, name);
-
         free(name);
-	H5Fclose(file);
 
 	event_table ev = read_events(filename, event_group, index);
 	free(event_group);
 	free(root);
+	H5Fclose(file);
+
 	return ev;
+}
+
+void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev){
+	// Memory representation
+	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
+	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_INT);
+	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_INT);
+	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
+	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
+	H5Tinsert(memtype, "pos", HOFFSET(event_t, pos), H5T_NATIVE_INT);
+	H5Tinsert(memtype, "state", HOFFSET(event_t, state), H5T_NATIVE_INT);
+	// File representation
+	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 * 6);
+	H5Tinsert(filetype, "start", 8 * 0, H5T_STD_I64LE);
+	H5Tinsert(filetype, "length", 8 * 1, H5T_STD_I64LE);
+	H5Tinsert(filetype, "mean", 8 * 2, H5T_IEEE_F64LE);
+	H5Tinsert(filetype, "stdv", 8 * 3, H5T_IEEE_F64LE);
+	H5Tinsert(filetype, "pos", 8 * 4, H5T_STD_I64LE);
+	H5Tinsert(filetype, "state", 8 * 5, H5T_STD_I64LE);
+	// Create dataset
+	hsize_t dims[1] = {ev.n};
+	hid_t space = H5Screate_simple(1, dims, NULL);
+	hid_t dset = H5Dcreate(hdf5file, readname, filetype, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	// Write data
+	H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, ev.event);
+
+	H5Dclose(dset);
+	H5Sclose(space);
+	H5Tclose(filetype);
+	H5Tclose(memtype);
 }

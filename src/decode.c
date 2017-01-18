@@ -215,7 +215,7 @@ int first_nonnegative(const int * seq, int n){
 
 
 const char base_lookup[4] = {'A', 'C', 'G', 'T'};
-char * overlapper(const int * seq, int n, int nkmer){
+char * overlapper(const int * seq, int n, int nkmer, int * pos){
 	assert(NULL != seq);
 	const int kmer_len = position_highest_bit(nkmer) / 2;
 
@@ -237,7 +237,7 @@ char * overlapper(const int * seq, int n, int nkmer){
 		assert(kprev >= 0);
 	}
 
-	// Initialise basespace sequence
+	// Initialise basespace sequence with terminating null
 	char * bases = calloc(length + 1, sizeof(char));
 	// Fill with first kmer
 	for(int kmer=seq[st], k=1 ; k <= kmer_len ; k++){
@@ -251,9 +251,15 @@ char * overlapper(const int * seq, int n, int nkmer){
 	for(int last_idx=kmer_len - 1, kprev=seq[st], k=st + 1 ; k < n ; k++){
 		if(seq[k] < 0){
 			// Short-cut stays
+			if(NULL != pos){
+				pos[k] = pos[k - 1];
+			}
 			continue;
 		}
 		int ol = overlap(kprev , seq[k], nkmer);
+		if(NULL != pos){
+			pos[k] = pos[k - 1] + ol;
+		}
 		kprev = seq[k];
 
                 for(int kmer=seq[k], i=0 ; i<ol ; i++){
