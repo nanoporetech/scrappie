@@ -183,10 +183,11 @@ struct _bs calculate_post(char * filename){
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
 
+	const int nev = post->nc;
 	const int nstate = FF3_b->nr;
 	const __m128 mpv = _mm_set1_ps(args.min_prob / nstate);
 	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
-        for(int i=0 ; i < post->nc ; i++){
+        for(int i=0 ; i < nev ; i++){
 		const int offset = i * post->nrq;
 		for(int r=0 ; r < post->nrq ; r++){
 			post->data.v[offset + r] = LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
@@ -194,11 +195,10 @@ struct _bs calculate_post(char * filename){
 	}
 
 
-	int nev = post->nc;
-	int * seq = calloc(post->nc, sizeof(int));
+	int * seq = calloc(nev, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	int * pos = calloc(post->nc, sizeof(int));
-	char * bases = overlapper(seq, post->nc, nstate - 1, pos);
+	int * pos = calloc(nev, sizeof(int));
+	char * bases = overlapper(seq, nev, nstate - 1, pos);
 
 	const int evoffset = et.start + args.trim;
 	for(int ev=0 ; ev < nev ; ev++){
