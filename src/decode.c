@@ -237,7 +237,7 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 		assert(kprev >= 0);
 	}
 
-	// Initialise basespace sequence
+	// Initialise basespace sequence with terminating null
 	char * bases = calloc(length + 1, sizeof(char));
 	// Fill with first kmer
 	for(int kmer=seq[st], k=1 ; k <= kmer_len ; k++){
