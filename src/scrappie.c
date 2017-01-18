@@ -36,6 +36,8 @@ static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolyme
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
 	{"analysis", 'a', "number", 0, "Analysis to read events from"},
+	{"dwell", 'd', 0, 0, "Perform dwell correction of homopolymer lengths"},
+	{"no-dwell", 5, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
@@ -52,6 +54,7 @@ static struct argp_option options[] = {
 
 struct arguments {
 	int analysis;
+	bool dwell_correction;
 	int limit;
 	float min_prob;
 	float skip_pen;
@@ -61,13 +64,16 @@ struct arguments {
 	char * dump;
 	char ** files;
 };
-static struct arguments args = {0, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
+static struct arguments args = {0, false, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 	case 'a':
 		args.analysis = atoi(arg);
 		assert(args.analysis > 0 && args.analysis < 1000);
+		break;
+	case 'd':
+		args.dwell_correction = true;
 		break;
 	case 'l':
 		args.limit = atoi(arg);
@@ -96,6 +102,8 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 4:
 		args.dump = arg;
+		break;
+	case 5: args.dwell_correction = false;
 		break;
 
 	#if defined(_OPENMP)
@@ -204,6 +212,18 @@ struct _bs calculate_post(char * filename){
 	for(int ev=0 ; ev < nev ; ev++){
 		et.event[ev + evoffset].state = 1 + seq[ev];
 		et.event[ev + evoffset].pos = pos[ev];
+	}
+
+	if(args.dwell_correction){
+		int * dwell = calloc(nev, sizeof(int));
+		for( int ev=0 ; ev < nev ; ev++){
+			dwell[ev] = et.event[ev + evoffset].length;
+		}
+
+		free(bases);
+		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1);
+
+		free(dwell);
 	}
 
 	free(pos);

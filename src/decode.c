@@ -213,6 +213,19 @@ int first_nonnegative(const int * seq, int n){
 	return st;
 }
 
+bool iskmerhomopolymer(int kmer, int klen){
+	const int b = kmer % 3;
+
+	for( int k=1 ; k < klen ; k++){
+		kmer >>= 2;
+		if(b != (kmer % 3)){
+			return false;
+		}
+		kmer >>= 2;
+	}
+
+	return true;
+}
 
 const char base_lookup[4] = {'A', 'C', 'G', 'T'};
 char * overlapper(const int * seq, int n, int nkmer, int * pos){
@@ -269,6 +282,139 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 		}
 		last_idx += ol;
 	}
+
+	return bases;
+}
+
+#define DWELLF 9.8382457
+int calibrated_dwell(float hdwell, int inhomo){
+	const int b = inhomo % 3;
+	return (int)roundf(hdwell / DWELLF);
+}
+
+char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int nkmer){
+	assert(NULL != seq);
+	assert(NULL != dwell);
+	const int kmer_len = position_highest_bit(nkmer) / 2;
+
+
+	//  Determine length of final sequence
+	int length = kmer_len;
+ 	//  Find first non-stay
+        const int st = first_nonnegative(seq, n);
+	assert(st != n);
+	int kprev = seq[st];
+	int inhomo = -1;
+	int hdwell = 0;
+	for(int k=st + 1 ; k < n ; k++){
+		/* Simple state machine tagged by inhomo
+		 * inhomo < 0  --  not in a homopolymer
+		 * inhomo >= 0  -- in homopolymer and value is homopolymer state
+                 */
+		if(seq[k] < 0){
+			// State is stay.  Short circuit rest of logic
+			if(inhomo >= 0){
+				// Accumate dwell if in homopolymer
+				hdwell += dwell[k];
+			}
+			continue;
+		}
+
+		if(seq[k] == inhomo){
+			// Not stay but still in same homopolymer
+			hdwell += dwell[k];
+			continue;
+		}
+
+		if(inhomo >= 0){
+			// Changed state.  Leave homopolymer
+			length += calibrated_dwell(hdwell, inhomo);
+			inhomo = -1;
+			hdwell = 0;
+		}
+
+		assert(seq[k] >= 0);
+		length += overlap(kprev , seq[k], nkmer);
+		kprev = seq[k];
+		assert(kprev >= 0);
+
+		if(iskmerhomopolymer(kprev, kmer_len)){
+			// Entered a new homopolymer
+			inhomo = kprev;
+			hdwell += dwell[k];
+		}
+	}
+
+	if(inhomo >= 0){
+		//  Correction for final homopolymer
+		length += calibrated_dwell(hdwell, inhomo);
+	}
+
+
+	// Initialise basespace sequence with terminating null
+	char * bases = calloc(length + 1, sizeof(char));
+	// Fill with first kmer
+	for(int kmer=seq[st], k=1 ; k <= kmer_len ; k++){
+		int b = kmer & 3;
+		kmer >>= 2;
+		bases[kmer_len - k] = base_lookup[b];
+	}
+
+
+	int last_idx = kmer_len - 1;
+	for(int kprev=seq[st], k=st + 1 ; k < n ; k++){
+		if(seq[k] < 0){
+			// State is stay.
+			if(inhomo >= 0){
+				// Accumate dwell if in homopolymer
+				hdwell += dwell[k];
+			}
+			continue;
+		}
+
+		if(seq[k] == inhomo){
+			// Not stay but still in same homopolymer
+			hdwell += dwell[k];
+			continue;
+		}
+
+		if(inhomo >= 0){
+			// Changed state.  Leave homopolymer
+			int hlen = calibrated_dwell(hdwell, inhomo);
+			char hbase = base_lookup[inhomo % 3];
+			for( int i=0 ; i < hlen ; i++, last_idx++){
+				bases[last_idx + 1] = hbase;
+			}
+			inhomo = -1;
+			hdwell = 0;
+		}
+
+		int ol = overlap(kprev , seq[k], nkmer);
+		kprev = seq[k];
+
+                for(int kmer=seq[k], i=0 ; i<ol ; i++){
+			int b = kmer & 3;
+			kmer >>= 2;
+			bases[last_idx + ol - i] = base_lookup[b];
+		}
+		last_idx += ol;
+
+		if(iskmerhomopolymer(kprev, kmer_len)){
+			// Entered a new homopolymer
+			inhomo = kprev;
+			hdwell += dwell[k];
+		}
+	}
+
+	if(inhomo >= 0){
+		//  Correction for final homopolymer
+		int hlen = calibrated_dwell(hdwell, inhomo);
+		char hbase = base_lookup[inhomo % 3];
+		for( int i=0 ; i < hlen ; i++, last_idx++){
+			bases[last_idx] = hbase;
+		}
+	}
+	assert(last_idx  + 1 == length);
 
 	return bases;
 }
