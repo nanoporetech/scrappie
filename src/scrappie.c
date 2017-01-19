@@ -66,9 +66,10 @@ struct arguments {
 };
 static struct arguments args = {0, false, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
 
+
 static dwell_model dm = {
-	9.8382457,
-	{2.1587565, 2.9004156, 6.9480399, 0.5906636}
+	10.0,
+	{0.0, 0.0, 0.0, 0.0}
 };
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -223,9 +224,36 @@ struct _bs calculate_post(char * filename){
 
 	if(args.dwell_correction){
 		int * dwell = calloc(nev, sizeof(int));
-		for( int ev=0 ; ev < nev ; ev++){
+		for(int ev=0 ; ev < nev ; ev ++){
 			dwell[ev] = et.event[ev + evoffset].length;
 		}
+
+		/*   Calibrate scaling factor for homopolymer estimation.
+		 *   Simple mean of the dwells of all 'step' movements in
+		 * the basecall.  Steps within homopolymers are ignored.
+		 *   A more complex calibration could be used.
+		 */
+		int tot_step_dwell = 0;
+		int nstep = 0;
+		for(int ev=0, ppos=-2, evdwell=0, pstate=-1 ; ev < nev ; ev++){
+			// Sum over dwell of all steps excluding those within homopolymers
+			if(et.event[ev + evoffset].pos == ppos){
+				// Stay. Accumulate dwell
+				evdwell += dwell[ev];
+				continue;
+			}
+
+			if(et.event[ev + evoffset].pos == ppos + 1 && et.event[ev + evoffset].state != pstate){
+				// Have a step that is not within a homopolymer
+				tot_step_dwell += evdwell;
+				nstep += 1;
+			}
+
+			evdwell = dwell[ev];
+			ppos = et.event[ev + evoffset].pos;
+			pstate = et.event[ev + evoffset].state;
+		}
+		dm.scale = (float)tot_step_dwell / nstep;
 
 		free(bases);
 		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
