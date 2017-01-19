@@ -66,6 +66,11 @@ struct arguments {
 };
 static struct arguments args = {0, false, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
 
+static dwell_model dm = {
+	9.8382457,
+	{2.1587565, 2.9004156, 6.9480399, 0.5906636}
+};
+
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 	case 'a':
@@ -74,6 +79,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 'd':
 		args.dwell_correction = true;
+		//dm.scale = atof(arg);
 		break;
 	case 'l':
 		args.limit = atoi(arg);
@@ -103,7 +109,8 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	case 4:
 		args.dump = arg;
 		break;
-	case 5: args.dwell_correction = false;
+	case 5:
+		args.dwell_correction = false;
 		break;
 
 	#if defined(_OPENMP)
@@ -221,7 +228,7 @@ struct _bs calculate_post(char * filename){
 		}
 
 		free(bases);
-		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1);
+		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
 
 		free(dwell);
 	}

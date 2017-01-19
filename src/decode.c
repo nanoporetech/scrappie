@@ -214,14 +214,13 @@ int first_nonnegative(const int * seq, int n){
 }
 
 bool iskmerhomopolymer(int kmer, int klen){
-	const int b = kmer % 3;
+	const int b = kmer & 3;
 
 	for( int k=1 ; k < klen ; k++){
 		kmer >>= 2;
-		if(b != (kmer % 3)){
+		if(b != (kmer & 3)){
 			return false;
 		}
-		kmer >>= 2;
 	}
 
 	return true;
@@ -286,13 +285,12 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 	return bases;
 }
 
-#define DWELLF 9.8382457
-int calibrated_dwell(float hdwell, int inhomo){
-	const int b = inhomo % 3;
-	return (int)roundf(hdwell / DWELLF);
+int calibrated_dwell(int hdwell, int inhomo, const dwell_model dm){
+	const int b = inhomo & 3;
+	return (int)roundf(((float)hdwell - dm.base_adj[b]) / dm.scale);
 }
 
-char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int nkmer){
+char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int nkmer, const dwell_model dm){
 	assert(NULL != seq);
 	assert(NULL != dwell);
 	const int kmer_len = position_highest_bit(nkmer) / 2;
@@ -328,7 +326,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 
 		if(inhomo >= 0){
 			// Changed state.  Leave homopolymer
-			length += calibrated_dwell(hdwell, inhomo);
+			length += calibrated_dwell(hdwell, inhomo, dm);
 			inhomo = -1;
 			hdwell = 0;
 		}
@@ -341,13 +339,13 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 		if(iskmerhomopolymer(kprev, kmer_len)){
 			// Entered a new homopolymer
 			inhomo = kprev;
-			hdwell += dwell[k];
+			hdwell = dwell[k];
 		}
 	}
 
 	if(inhomo >= 0){
 		//  Correction for final homopolymer
-		length += calibrated_dwell(hdwell, inhomo);
+		length += calibrated_dwell(hdwell, inhomo, dm);
 	}
 
 
@@ -362,6 +360,8 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 
 
 	int last_idx = kmer_len - 1;
+	inhomo = -1;
+	hdwell = 0;
 	for(int kprev=seq[st], k=st + 1 ; k < n ; k++){
 		if(seq[k] < 0){
 			// State is stay.
@@ -380,8 +380,8 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 
 		if(inhomo >= 0){
 			// Changed state.  Leave homopolymer
-			int hlen = calibrated_dwell(hdwell, inhomo);
-			char hbase = base_lookup[inhomo % 3];
+			int hlen = calibrated_dwell(hdwell, inhomo, dm);
+			char hbase = base_lookup[inhomo & 3];
 			for( int i=0 ; i < hlen ; i++, last_idx++){
 				bases[last_idx + 1] = hbase;
 			}
@@ -408,13 +408,16 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 
 	if(inhomo >= 0){
 		//  Correction for final homopolymer
-		int hlen = calibrated_dwell(hdwell, inhomo);
-		char hbase = base_lookup[inhomo % 3];
+		int hlen = calibrated_dwell(hdwell, inhomo, dm);
+		char hbase = base_lookup[inhomo & 3];
 		for( int i=0 ; i < hlen ; i++, last_idx++){
 			bases[last_idx] = hbase;
 		}
 	}
-	assert(last_idx  + 1 == length);
+	if(last_idx + 1 != length){
+		printf("last_idx %d length %d\n\n", last_idx, length);
+		assert(last_idx  + 1 == length);
+	}
 
 	return bases;
 }
