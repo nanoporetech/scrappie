@@ -64,7 +64,7 @@ struct arguments {
 	char * dump;
 	char ** files;
 };
-static struct arguments args = {0, false, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
+static struct arguments args = {0, true, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
