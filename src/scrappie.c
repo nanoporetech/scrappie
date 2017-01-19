@@ -67,11 +67,6 @@ struct arguments {
 static struct arguments args = {0, false, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
 
 
-static dwell_model dm = {
-	10.0,
-	{0.0, 0.0, 0.0, 0.0}
-};
-
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 	case 'a':
@@ -80,7 +75,6 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 'd':
 		args.dwell_correction = true;
-		//dm.scale = atof(arg);
 		break;
 	case 'l':
 		args.limit = atoi(arg);
@@ -253,7 +247,8 @@ struct _bs calculate_post(char * filename){
 			ppos = et.event[ev + evoffset].pos;
 			pstate = et.event[ev + evoffset].state;
 		}
-		dm.scale = (float)tot_step_dwell / nstep;
+		const float homo_scale = (float)tot_step_dwell / nstep;
+		const dwell_model dm = {homo_scale, {0.0f, 0.0f, 0.0f, 0.0f}};
 
 		free(bases);
 		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
