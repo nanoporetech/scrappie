@@ -8,10 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "decode.h"
-#include "features.h"
+#include "nnfeatures.h"
 #include "layers.h"
-#include "read_events.h"
-#include "util.h"
 #include <version.h>
 
 #include "lstm_model.h"
@@ -29,6 +27,7 @@ struct _bs {
 	float score;
 	int nev;
 	char * bases;
+	event_table et;
 };
 
 const char * argp_program_version = "scrappie " SCRAPPIE_VERSION;
@@ -37,13 +36,16 @@ static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolyme
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
 	{"analysis", 'a', "number", 0, "Analysis to read events from"},
+	{"dwell", 'd', 0, 0, "Perform dwell correction of homopolymer lengths"},
+	{"no-dwell", 5, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
 	{"trim", 't', "nevents", 0, "Number of events to trim"},
 	{"slip", 1, 0, 0, "Use slipping"},
-	{"no-slip", 2, 0, 0, "Disable slipping"},
+	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
+	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
@@ -52,21 +54,27 @@ static struct argp_option options[] = {
 
 struct arguments {
 	int analysis;
+	bool dwell_correction;
 	int limit;
 	float min_prob;
 	float skip_pen;
 	bool use_slip;
 	int trim;
 	char * segmentation;
+	char * dump;
 	char ** files;
 };
-static struct arguments args = {0, 0, 1e-5, 0.0, false, 50, "Segment_Linear"};
+static struct arguments args = {0, false, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
+
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 	case 'a':
 		args.analysis = atoi(arg);
 		assert(args.analysis > 0 && args.analysis < 1000);
+		break;
+	case 'd':
+		args.dwell_correction = true;
 		break;
 	case 'l':
 		args.limit = atoi(arg);
@@ -92,6 +100,12 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 3:
 		args.segmentation = arg;
+		break;
+	case 4:
+		args.dump = arg;
+		break;
+	case 5:
+		args.dwell_correction = false;
 		break;
 
 	#if defined(_OPENMP)
@@ -134,22 +148,9 @@ char * kmer_from_state(int state, int klen, char * kmer){
 	return kmer;
 }
 
-void fprint_mat(FILE * fh, char * header, Mat_rptr mat, int nr, int nc){
-        fputs(header, fh);
-        fputc('\n', fh);
-        for(int c=0 ; c < nc ; c++){
-                const int offset = c * mat->nrq * 4;
-                fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
-                for(int r=1 ; r<nr ; r++){
-                        fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
-                }
-                fputc('\n', fh);
-        }
-}
-
-
 
 struct _bs calculate_post(char * filename){
+	const int WINLEN = 3;
 	event_table et = read_detected_events(filename, args.analysis, args.segmentation);
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
@@ -167,7 +168,7 @@ struct _bs calculate_post(char * filename){
 	//  Make features
 	Mat_rptr features = make_features(et, args.trim, true);
 	//fprint_mat(stdout, "* Features", features, 4, 10);
-	Mat_rptr feature3 = window(features, 3);
+	Mat_rptr feature3 = window(features, WINLEN);
 	//fprint_mat(stdout, "* Window", feature3, 12, 10);
 
 	// Initial transformation of input for LSTM layer
@@ -192,10 +193,11 @@ struct _bs calculate_post(char * filename){
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
 
+	const int nev = post->nc;
 	const int nstate = FF3_b->nr;
 	const __m128 mpv = _mm_set1_ps(args.min_prob / nstate);
 	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
-        for(int i=0 ; i < post->nc ; i++){
+        for(int i=0 ; i < nev ; i++){
 		const int offset = i * post->nrq;
 		for(int r=0 ; r < post->nrq ; r++){
 			post->data.v[offset + r] = LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
@@ -203,11 +205,58 @@ struct _bs calculate_post(char * filename){
 	}
 
 
-	int nev = post->nc;
-	int * seq = calloc(post->nc, sizeof(int));
+	int * seq = calloc(nev, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	char * bases = overlapper(seq, post->nc, nstate - 1);
+	int * pos = calloc(nev, sizeof(int));
+	char * bases = overlapper(seq, nev, nstate - 1, pos);
 
+	const int evoffset = et.start + args.trim;
+	for(int ev=0 ; ev < nev ; ev++){
+		et.event[ev + evoffset].state = 1 + seq[ev];
+		et.event[ev + evoffset].pos = pos[ev];
+	}
+
+	if(args.dwell_correction){
+		int * dwell = calloc(nev, sizeof(int));
+		for(int ev=0 ; ev < nev ; ev ++){
+			dwell[ev] = et.event[ev + evoffset].length;
+		}
+
+		/*   Calibrate scaling factor for homopolymer estimation.
+		 *   Simple mean of the dwells of all 'step' movements in
+		 * the basecall.  Steps within homopolymers are ignored.
+		 *   A more complex calibration could be used.
+		 */
+		int tot_step_dwell = 0;
+		int nstep = 0;
+		for(int ev=0, ppos=-2, evdwell=0, pstate=-1 ; ev < nev ; ev++){
+			// Sum over dwell of all steps excluding those within homopolymers
+			if(et.event[ev + evoffset].pos == ppos){
+				// Stay. Accumulate dwell
+				evdwell += dwell[ev];
+				continue;
+			}
+
+			if(et.event[ev + evoffset].pos == ppos + 1 && et.event[ev + evoffset].state != pstate){
+				// Have a step that is not within a homopolymer
+				tot_step_dwell += evdwell;
+				nstep += 1;
+			}
+
+			evdwell = dwell[ev];
+			ppos = et.event[ev + evoffset].pos;
+			pstate = et.event[ev + evoffset].state;
+		}
+		const float homo_scale = (float)tot_step_dwell / nstep;
+		const dwell_model dm = {homo_scale, {0.0f, 0.0f, 0.0f, 0.0f}};
+
+		free(bases);
+		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
+
+		free(dwell);
+	}
+
+	free(pos);
 	free(seq);
 	free_mat(&post);
 	free_mat(&lstmFF);
@@ -217,9 +266,8 @@ struct _bs calculate_post(char * filename){
 	free_mat(&lstmXf);
 	free_mat(&feature3);
 	free_mat(&features);
-	free(et.event);
 
-	return (struct _bs){score, nev, bases};
+	return (struct _bs){score, nev, bases, et};
 }
 
 int main(int argc, char * argv[]){
@@ -232,6 +280,14 @@ int main(int argc, char * argv[]){
 		nfile = args.limit;
 	}
 
+	hid_t hdf5out = -1;
+	if(NULL != args.dump){
+		hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
+		if(hdf5out < 0){
+			hdf5out = H5Fcreate(args.dump, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+		}
+	}
+
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
 		struct _bs res = calculate_post(args.files[fn]);
@@ -240,9 +296,18 @@ int main(int argc, char * argv[]){
 		}
 		const int nbase = strlen(res.bases);
 		#pragma omp critical
-		printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
+		{
+			printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
+			if(hdf5out >= 0){
+				write_annotated_events(hdf5out, basename(args.files[fn]), res.et);
+			}
+		}
+		free(res.et.event);
 		free(res.bases);
 	}
 
+	if(hdf5out >= 0){
+		H5Fclose(hdf5out);
+	}
 	return EXIT_SUCCESS;
 }
