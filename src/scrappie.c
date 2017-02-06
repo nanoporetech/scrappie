@@ -217,6 +217,8 @@ struct _bs calculate_post(char * filename){
 	}
 
 	if(args.dwell_correction){
+		const float prior_scale = (et.event[nev + evoffset - 1].length + et.event[nev + evoffset - 1].start - et.event[evoffset].start) 
+					/ (float)strlen(bases);
 		int * dwell = calloc(nev, sizeof(int));
 		for(int ev=0 ; ev < nev ; ev ++){
 			dwell[ev] = et.event[ev + evoffset].length;
@@ -247,7 +249,8 @@ struct _bs calculate_post(char * filename){
 			ppos = et.event[ev + evoffset].pos;
 			pstate = et.event[ev + evoffset].state;
 		}
-		const float homo_scale = (float)tot_step_dwell / nstep;
+                // Estimate of scale with a prior with weight equal to a single observation.
+		const float homo_scale = (prior_scale + tot_step_dwell) / (1.0 + nstep);
 		const dwell_model dm = {homo_scale, {0.0f, 0.0f, 0.0f, 0.0f}};
 
 		free(bases);
