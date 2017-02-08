@@ -12,6 +12,7 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
 * 0.2 series: Post-hoc correction of homopolymer lengths from dwells.
+  * *release-0.2.4* Add document describing release history
   * *release-0.2.3* Bugfix: Segfault when there is insufficent steps to calibrate dwell scaling factor.
   * *release-0.2.2* Remove redundant Python scripts for dwell correct.
   * *release-0.2.1* Make dwell correction the default
