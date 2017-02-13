@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <err.h>
 #include <libgen.h>
 #include <math.h>
 #if defined(_OPENMP)
@@ -7,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "decode.h"
 #include "nnfeatures.h"
 #include "layers.h"
@@ -40,6 +42,7 @@ static struct argp_option options[] = {
 	{"no-dwell", 5, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
+	{"outformat", 'o', "format", 0, "Format to output reads (fasta or sam)"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
 	{"trim", 't', "nevents", 0, "Number of events to trim"},
 	{"slip", 1, 0, 0, "Use slipping"},
@@ -52,11 +55,14 @@ static struct argp_option options[] = {
 	{0}
 };
 
+enum format { FORMAT_FASTA, FORMAT_SAM};
+
 struct arguments {
 	int analysis;
 	bool dwell_correction;
 	int limit;
 	float min_prob;
+	enum format outformat;
 	float skip_pen;
 	bool use_slip;
 	int trim;
@@ -64,7 +70,7 @@ struct arguments {
 	char * dump;
 	char ** files;
 };
-static struct arguments args = {0, true, 0, 1e-5, 0.0, false, 50, "Segment_Linear", NULL};
+static struct arguments args = {0, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -83,6 +89,15 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	case 'm':
 		args.min_prob = atof(arg);
 		assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
+		break;
+	case 'o':
+		if(0 == strcasecmp("fasta", arg)){
+			args.outformat = FORMAT_FASTA;
+		} else if(0 == strcasecmp("sam", arg)){
+			args.outformat = FORMAT_SAM;
+		} else {
+			errx(EXIT_FAILURE, "Unrecognised format");
+		}
 		break;
 	case 's':
 		args.skip_pen = atof(arg);
@@ -273,6 +288,16 @@ struct _bs calculate_post(char * filename){
 	return (struct _bs){score, nev, bases, et};
 }
 
+int fprintf_fasta(FILE * fp, const char * readname, const struct _bs res){
+	const int nbase = strlen(res.bases);
+	return fprintf(fp, ">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", readname, -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
+}
+
+int fprintf_sam(FILE * fp, const char * readname, const struct _bs res){
+	return fprintf(fp, "%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", readname, res.bases);
+}
+
+
 int main(int argc, char * argv[]){
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
 	setup();
@@ -297,10 +322,20 @@ int main(int argc, char * argv[]){
 		if(NULL == res.bases){
 			continue;
 		}
-		const int nbase = strlen(res.bases);
+
 		#pragma omp critical
 		{
-			printf(">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", basename(args.files[fn]), -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
+			switch(args.outformat){
+			case FORMAT_FASTA:
+				fprintf_fasta(stdout, basename(args.files[fn]), res);
+				break;
+			case FORMAT_SAM:
+				fprintf_sam(stdout, basename(args.files[fn]), res);
+				break;
+			default:
+				errx(EXIT_FAILURE, "Unrecognised output format");
+			}
+
 			if(hdf5out >= 0){
 				write_annotated_events(hdf5out, basename(args.files[fn]), res.et);
 			}
