@@ -46,7 +46,7 @@ Scrappie basecaller -- scrappie attempts to call homopolymers
       --dump=filename        Dump annotated events to HDF5 file
   -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
   -m, --min_prob=probability Minimum bound on probability of match
-  -o, --outformat=format     Format to output reads (fasta or sam)
+  -o, --outformat=format     Format to output reads (FASTA or SAM)
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=group   Fast5 group from which to reads segmentation
       --slip, --no-slip      Use slipping
@@ -57,15 +57,17 @@ Scrappie basecaller -- scrappie attempts to call homopolymers
 ```
 
 ## Output formats
-Scrappie current supports two ouput formats
-### Fasta
-When the output is set to fasta (default) then some metadata is stored in the description
+Scrappie current supports two ouput formats, FASTA and SAM.
+
+### FASTA
+When the output is set to FASTA (default) then some metadata is stored in the description
   * The sequence ID is the name of the file that was basecalled.
-  * The *description* element of the Fasta header is a JSON string containing the following elements:
+  * The *description* element of the FASTA header is a JSON string containing the following elements:
     * `normalised_score` Normalised score (total score / number of events).
     * `nevents` Number of events
     * `sequence_length` Length of sequence called
     * `events_per_base` Number of events per base called
+
 ### SAM
 Scrappie can emit SAM "alignment" lines containing the sequences but no quality information.  No other fields, include a SAM header are emitted.  A BAM file can be obtained using `samtools` (tested with version 0.1.19-96b5f2294a) as follows:
 

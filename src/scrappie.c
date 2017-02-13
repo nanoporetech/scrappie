@@ -42,7 +42,7 @@ static struct argp_option options[] = {
 	{"no-dwell", 5, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
-	{"outformat", 'o', "format", 0, "Format to output reads (fasta or sam)"},
+	{"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
 	{"trim", 't', "nevents", 0, "Number of events to trim"},
 	{"slip", 1, 0, 0, "Use slipping"},
@@ -91,9 +91,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
 		break;
 	case 'o':
-		if(0 == strcasecmp("fasta", arg)){
+		if(0 == strcasecmp("FASTA", arg)){
 			args.outformat = FORMAT_FASTA;
-		} else if(0 == strcasecmp("sam", arg)){
+		} else if(0 == strcasecmp("SAM", arg)){
 			args.outformat = FORMAT_SAM;
 		} else {
 			errx(EXIT_FAILURE, "Unrecognised format");
