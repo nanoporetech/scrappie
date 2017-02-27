@@ -39,10 +39,10 @@ typedef _Mat * restrict Mat_rptr;
 typedef _iMat * restrict iMat_rptr;
 
 /* Create a vector of  ones.  */
-extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__))
         _mm_setone_ps (void){ return __extension__ (__m128){ 1.0f, 1.0f, 1.0f, 1.0f}; }
 
-extern __inline __m128d __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+extern __inline __m128d __attribute__((__gnu_inline__, __always_inline__))
 	_mm_setone_pd (void){ return __extension__ (__m128d){ 1.0, 1.0 }; }
 
 
