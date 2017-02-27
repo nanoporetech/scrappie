@@ -12,7 +12,7 @@ Mat_rptr make_features(const event_table evtbl, int trim, bool normalise){
 			evtbl.event[ev + trim].mean,
 			evtbl.event[ev + trim].stdv,
 			(float)evtbl.event[ev + trim].length,
-			fabsf(evtbl.event[ev + trim].mean - evtbl.event[ev + 1 + trim].mean));
+			(float)fabs(evtbl.event[ev + trim].mean - evtbl.event[ev + 1 + trim].mean));
 	}
 	features->data.v[nevent - 1] = _mm_setr_ps(
 			evtbl.event[evtbl.end - 1].mean,

@@ -16,10 +16,13 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	const int nkmer = nstate - 1;
 	assert((nkmer %4) == 0);
 	const int nkmerq = nkmer / 4;
+	const __m128i nkmerqv = _mm_set1_epi32(nkmerq);
 	assert((nkmerq % 4) == 0);
 	const int nkmerqq = nkmerq / 4;
+	const __m128i nkmerqqv = _mm_set1_epi32(nkmerqq);
 	assert((nkmerqq % 4) == 0);
 	const int nkmerqqq = nkmerqq / 4;
+	const __m128i nkmerqqqv = _mm_set1_epi32(nkmerqqq);
 	assert((nkmerqqq % 4) == 0);
 	const int nkmerqqqq = nkmerqqq / 4;
 
@@ -74,7 +77,9 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		}
 		const __m128i c0123_m128i = _mm_setr_epi32(0, 1, 2, 3);
 		for(int i=0 ; i<nkmerqq ; i++){
-			itmp->data.v[i] = itmp->data.v[i] * nkmerq + c0123_m128i + _mm_set1_epi32(i * 4);
+			itmp->data.v[i] = _mm_add_epi32(
+							_mm_mul_epi32(itmp->data.v[i], nkmerqv),
+							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
 
 		for(int pref=0 ; pref < nkmerq ; pref++){
@@ -105,13 +110,15 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 			}
 		}
 		for(int i=0 ; i<nkmerqqq ; i++){
-			itmp->data.v[i] = itmp->data.v[i] * nkmerqq + c0123_m128i + _mm_set1_epi32(i * 4);
+			itmp->data.v[i] = _mm_add_epi32(
+							_mm_mul_epi32(itmp->data.v[i], nkmerqqv),
+							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
 		for(int pref=0 ; pref < nkmerqq ; pref++){
 			for(int i=0 ; i < NBASE ; i++){
 				const int oi = pref * NBASE + i;
 				// This cycling through prefixes
-				const __m128 skip_score = logpost->data.v[offsetPq + oi] 
+				const __m128 skip_score = logpost->data.v[offsetPq + oi]
                                                         + _mm_set1_ps(tmp->data.f[pref])
 							- skip_penv;
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[oi], skip_score));
@@ -139,13 +146,15 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 				}
 			}
 			for(int i=0 ; i<nkmerqqqq ; i++){
-				itmp->data.v[i] = itmp->data.v[i] * nkmerqqq + c0123_m128i + _mm_set1_epi32(i * 4);
+				itmp->data.v[i] = _mm_add_epi32(
+								_mm_mul_epi32(itmp->data.v[i], nkmerqqqv),
+								_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 			}
 			for(int pref=0 ; pref < nkmerqqq ; pref++){
 				for(int i=0 ; i < NBASE * NBASE; i++){
 					const int oi = pref * NBASE * NBASE + i;
 					// This cycling through prefixes
-					const __m128 skip_score = logpost->data.v[offsetPq + oi] 
+					const __m128 skip_score = logpost->data.v[offsetPq + oi]
 								+ _mm_set1_ps(tmp->data.f[pref])
 								- slip_penv;
 					__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[oi], skip_score));
