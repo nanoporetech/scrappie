@@ -43,7 +43,7 @@ endif(HAS_OPENMP)
 
 # Find right hdf5 file
 include(CheckIncludeFile)
-check_include_file("hdf5.h" STANDARD_HDF5)
+check_include_file("hdf5.h" HDF5_STANDARD)
 if(HDF5_STANDARD)
 	set(HDF5 "hdf5")
 else(HDF5_STANDARD)
