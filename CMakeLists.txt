@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.0)
 project (scrappie)
 
 include (InstallRequiredSystemLibraries)
@@ -29,17 +29,35 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
+add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/events.c src/util.c)
+
 include_directories ("${PROJECT_BINARY_DIR}/include")
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -O3 -fopenmp -march=native -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
+# Check for OpenMP support in compiler
+include(CheckCCompilerFlag)
+check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
+if(HAS_OPENMP)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+endif(HAS_OPENMP)
 
-add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/events.c src/util.c)
-target_link_libraries (scrappie blas m)
+# Find right hdf5 file
+include(CheckIncludeFile)
+check_include_file("hdf5.h" STANDARD_HDF5)
+if(HDF5_STANDARD)
+	set(HDF5 "hdf5")
+else(HDF5_STANDARD)
+	check_include_file("hdf5/serial/hdf5.h" HDF5_SERIAL)
+	if(HDF5_SERIAL)
+		set(HDF5 "hdf5_serial")
+		target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
+	endif(HDF5_SERIAL)
+endif(HDF5_STANDARD)
+
+
+
+target_link_libraries (scrappie blas ${HDF5} m)
 if(APPLE)
-	target_link_libraries (scrappie hdf5 argp)
+	target_link_libraries (scrappie argp)
 endif(APPLE)
-if(DEBIAN)
-	target_link_libraries(scrappie hdf5_serial)
-	target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
-endif(DEBIAN)
 install (TARGETS scrappie DESTINATION bin)
