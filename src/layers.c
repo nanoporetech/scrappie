@@ -1,5 +1,9 @@
 #include <assert.h>
-#include <cblas.h>
+#ifdef __APPLE__
+	#include <Accelerate/Accelerate.h>
+#else
+	#include <cblas.h>
+#endif
 #include <math.h>
 #include <string.h>
 #include "layers.h"
