@@ -60,4 +60,5 @@ target_link_libraries (scrappie blas ${HDF5} m)
 if (APPLE)
 	target_link_libraries (scrappie argp)
 endif (APPLE)
+
 install (TARGETS scrappie DESTINATION bin)
