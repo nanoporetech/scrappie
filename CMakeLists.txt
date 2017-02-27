@@ -31,8 +31,15 @@ configure_file (
 
 include_directories ("${PROJECT_BINARY_DIR}/include")
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -O3 -fopenmp -march=core2 -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -O3 -fopenmp -march=native -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
 
 add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/events.c src/util.c)
-target_link_libraries (scrappie blas hdf5 m)
+target_link_libraries (scrappie blas m)
+if(APPLE)
+	target_link_libraries (scrappie hdf5 argp)
+endif(APPLE)
+if(DEBIAN)
+	target_link_libraries(scrappie hdf5_serial)
+	target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
+endif(DEBIAN)
 install (TARGETS scrappie DESTINATION bin)
