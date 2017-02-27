@@ -2,8 +2,12 @@
 #include <err.h>
 #include <libgen.h>
 #include <math.h>
+
 #if defined(_OPENMP)
 	#include <omp.h>
+	#warning "_OPENMP defined"
+#else
+	#warning "_OPENMP not defined"
 #endif
 #include <stdio.h>
 #include <stdlib.h>
