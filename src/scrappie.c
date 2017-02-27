@@ -5,9 +5,9 @@
 
 #if defined(_OPENMP)
 	#include <omp.h>
-	#warning "_OPENMP defined"
+	#error "_OPENMP defined"
 #else
-	#warning "_OPENMP not defined"
+	#error "_OPENMP not defined"
 #endif
 #include <stdio.h>
 #include <stdlib.h>
