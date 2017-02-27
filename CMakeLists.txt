@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.4)
+cmake_minimum_required (VERSION 2.6)
 project (scrappie)
 
 include (InstallRequiredSystemLibraries)
@@ -8,7 +8,7 @@ set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
 set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENCE")
 set (CPACK_PACKAGE_VERSION_MAJOR 0)
 set (CPACK_PACKAGE_VERSION_MINOR 2)
-set (CPACK_PACKAGE_VERSION_PATCH 5)
+set (CPACK_PACKAGE_VERSION_PATCH 6)
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
 	COMMAND git log -1 --format=%h
