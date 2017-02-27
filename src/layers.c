@@ -1,6 +1,6 @@
 #include <assert.h>
 #ifdef __APPLE__
-	#include <Accelerate.h>
+	#include <Accelerate/Accelerate.h>
 #else
 	#include <cblas.h>
 #endif
