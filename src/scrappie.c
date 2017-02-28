@@ -49,7 +49,7 @@ static struct argp_option options[] = {
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
-	{"seganalyis", 7, "number", 0, "Analysis number to read seqmentation from"},
+	{"segmentation_analysis", 7, "number", 0, "Analysis number to read seqmentation from"},
 	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 	{"albacore", 7, 0, 0, "Assume fast5 have been called using Albacore"},
 	{"no-albacore", 8, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
