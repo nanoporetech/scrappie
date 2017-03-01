@@ -15,13 +15,13 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	const int ldp = logpost->nrq * 4;
 	const int nkmer = nstate - 1;
 	assert((nkmer %4) == 0);
-	const int nkmerq = nkmer / 4;
+	const int32_t nkmerq = nkmer / 4;
 	const __m128i nkmerqv = _mm_set1_epi32(nkmerq);
 	assert((nkmerq % 4) == 0);
-	const int nkmerqq = nkmerq / 4;
+	const int32_t nkmerqq = nkmerq / 4;
 	const __m128i nkmerqqv = _mm_set1_epi32(nkmerqq);
 	assert((nkmerqq % 4) == 0);
-	const int nkmerqqq = nkmerqq / 4;
+	const int32_t nkmerqqq = nkmerqq / 4;
 	const __m128i nkmerqqqv = _mm_set1_epi32(nkmerqqq);
 	assert((nkmerqqq % 4) == 0);
 	const int nkmerqqqq = nkmerqqq / 4;
@@ -78,7 +78,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		const __m128i c0123_m128i = _mm_setr_epi32(0, 1, 2, 3);
 		for(int i=0 ; i<nkmerqq ; i++){
 			itmp->data.v[i] = _mm_add_epi32(
-							_mm_mul_epi32(itmp->data.v[i], nkmerqv),
+							_mm_mullo_epi32(itmp->data.v[i], nkmerqv),
 							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
 
@@ -111,7 +111,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		}
 		for(int i=0 ; i<nkmerqqq ; i++){
 			itmp->data.v[i] = _mm_add_epi32(
-							_mm_mul_epi32(itmp->data.v[i], nkmerqqv),
+							_mm_mullo_epi32(itmp->data.v[i], nkmerqqv),
 							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
 		for(int pref=0 ; pref < nkmerqq ; pref++){
@@ -147,7 +147,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 			}
 			for(int i=0 ; i<nkmerqqqq ; i++){
 				itmp->data.v[i] = _mm_add_epi32(
-								_mm_mul_epi32(itmp->data.v[i], nkmerqqqv),
+								_mm_mullo_epi32(itmp->data.v[i],  nkmerqqqv),
 								_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 			}
 			for(int pref=0 ; pref < nkmerqqq ; pref++){
