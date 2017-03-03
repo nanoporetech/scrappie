@@ -4,9 +4,11 @@
 #include "events.h"
 
 
+struct _pi { int x1, x2;};
+
 struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentation){
 	assert(NULL != segmentation);
-	int start=0, end=0; 
+	int start=0, end=0;
 
         int segnamelen = strlen(segmentation) + 37;
 	char * segname = calloc(segnamelen, sizeof(char));
@@ -27,7 +29,8 @@ struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentati
 	return (struct _pi){start, end};
 }
 
-event_table read_events(const char * filename, const char * tablepath, struct _pi index){
+
+event_table read_events(const char * filename, const char * tablepath){
 	assert(NULL != filename);
 	assert(NULL != tablepath);
 	hsize_t dims[1];
@@ -44,8 +47,8 @@ event_table read_events(const char * filename, const char * tablepath, struct _p
 	event_t * events = calloc(nevent, sizeof(event_t));
 
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
-	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_INT);
-	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_INT);
+	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
+	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
@@ -61,16 +64,15 @@ event_table read_events(const char * filename, const char * tablepath, struct _p
 	H5Dclose(dset);
 	H5Fclose(file);
 
-	return (event_table){nevent, index.x1, index.x2, events};
+	return (event_table){nevent, 0, nevent, events};
 }
 
 
-event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation){
+event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation, int seganalysis_no){
 	assert(NULL != filename);
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if(file < 0){ return (event_table){0, 0, 0, NULL};}
-	struct _pi  index = get_segmentation(file, analysis_no, segmentation);
 
 	char * root = calloc(36, sizeof(char));
 	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
@@ -82,13 +84,37 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	(void)snprintf(event_group, 36 + size + 7 - 1, "%s%s/Events", root, name);
         free(name);
 
-	event_table ev = read_events(filename, event_group, index);
+	event_table ev = read_events(filename, event_group);
 	free(event_group);
 	free(root);
+
+
+	struct _pi  index = get_segmentation(file, seganalysis_no, segmentation);
+        ev.start = index.x1;
+	ev.end = index.x2;
 	H5Fclose(file);
 
 	return ev;
 }
+
+
+event_table read_albacore_events(const char * filename, int analysis_no, const char * section){
+	assert(NULL != filename);
+
+	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if(file < 0){ return (event_table){0, 0, 0, NULL};}
+
+	const int loclen = 45 + strlen(section);
+	char * event_group = calloc(loclen, sizeof(char));
+	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
+
+	event_table ev = read_events(filename, event_group);
+	free(event_group);
+	H5Fclose(file);
+
+	return ev;
+}
+
 
 void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev){
 	// Memory representation
