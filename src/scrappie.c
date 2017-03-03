@@ -51,8 +51,8 @@ static struct argp_option options[] = {
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
 	{"segmentation-analysis", 7, "number", 0, "Analysis number to read seqmentation from"},
 	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
-	{"albacore", 7, 0, 0, "Assume fast5 have been called using Albacore"},
-	{"no-albacore", 8, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
+	{"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
+	{"no-albacore", 9, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
@@ -129,15 +129,14 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		args.dwell_correction = false;
 		break;
 	case 7:
-<<<<<<< HEAD
-		args.albacore = true;
-		break;
-	case 8:
-		args.albacore = false;
-=======
 		args.seganalysis = atoi(arg);
 		assert(args.seganalysis > 0 && args.seganalysis < 1000);
->>>>>>> Allow segmentation to set independently from analysis
+		break;
+	case 8:
+		args.albacore = true;
+		break;
+	case 9:
+		args.albacore = false;
 		break;
 
 	#if defined(_OPENMP)
@@ -183,15 +182,11 @@ char * kmer_from_state(int state, int klen, char * kmer){
 
 struct _bs calculate_post(char * filename){
 	const int WINLEN = 3;
-<<<<<<< HEAD
 
 	event_table et = args.albacore ?
 		read_albacore_events(filename, args.analysis, "template") :
-		read_detected_events(filename, args.analysis, args.segmentation);
+		read_detected_events(filename, args.analysis, args.segmentation, args.seganalysis);
 
-=======
-	event_table et = read_detected_events(filename, args.analysis, args.segmentation, args.seganalysis);
->>>>>>> Allow segmentation to set independently from analysis
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
