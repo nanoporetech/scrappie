@@ -8,7 +8,7 @@ struct _pi { int x1, x2;};
 
 struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentation){
 	assert(NULL != segmentation);
-	int start=0, end=0; 
+	int start=0, end=0;
 
         int segnamelen = strlen(segmentation) + 37;
 	char * segname = calloc(segnamelen, sizeof(char));
@@ -68,7 +68,7 @@ event_table read_events(const char * filename, const char * tablepath){
 }
 
 
-event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation){
+event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation, int seganalysis_no){
 	assert(NULL != filename);
 
 	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -89,7 +89,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	free(root);
 
 
-	struct _pi  index = get_segmentation(file, analysis_no, segmentation);
+	struct _pi  index = get_segmentation(file, seganalysis_no, segmentation);
         ev.start = index.x1;
 	ev.end = index.x2;
 	H5Fclose(file);
