@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project (scrappie)
+project (scrappie C)
 
 include (InstallRequiredSystemLibraries)
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Scrappie is the technology demonstration platform for the Research algorithms' group.")
