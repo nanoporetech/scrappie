@@ -38,7 +38,7 @@ const char * argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-	{"analysis", 'a', "number", 0, "Analysis to read events from"},
+	{"analysis", 'a', "number", -1, "Analysis to read events from"},
 	{"dwell", 5, 0, 0, "Perform dwell correction of homopolymer lengths"},
 	{"no-dwell", 6, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
@@ -49,7 +49,7 @@ static struct argp_option options[] = {
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
         {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
-	{"segmentation-analysis", 7, "number", 0, "Analysis number to read seqmentation from"},
+	{"segmentation-analysis", 7, "number", -1, "Analysis number to read seqmentation from"},
 	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 	{"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
 	{"no-albacore", 9, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
@@ -76,14 +76,14 @@ struct arguments {
 	char ** files;
 	bool albacore;
 };
-static struct arguments args = {0, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false};
+static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 	case 'a':
 		args.analysis = atoi(arg);
-		assert(args.analysis > 0 && args.analysis < 1000);
+		assert(args.analysis >= -1 && args.analysis < 1000);
 		break;
 	case 'l':
 		args.limit = atoi(arg);
@@ -130,7 +130,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 7:
 		args.seganalysis = atoi(arg);
-		assert(args.seganalysis > 0 && args.seganalysis < 1000);
+		assert(args.seganalysis >= -1 && args.seganalysis < 1000);
 		break;
 	case 8:
 		args.albacore = true;
@@ -320,9 +320,6 @@ int fprintf_sam(FILE * fp, const char * readname, const struct _bs res){
 
 int main(int argc, char * argv[]){
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	if(args.seganalysis < 0){
-		args.seganalysis = args.analysis;
-	}
 	setup();
 
 	int nfile = 0;

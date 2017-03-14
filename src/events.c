@@ -5,6 +5,37 @@
 
 
 struct _pi { int x1, x2;};
+struct _gop_data {
+	const char * prefix;
+	int latest;
+};
+
+herr_t group_op_func (hid_t loc_id, const char *name, const H5L_info_t *info,
+			void *operator_data){
+	struct _gop_data * gop = (struct _gop_data *) operator_data;
+	if(strncmp(name, gop->prefix, strlen(gop->prefix)) == 0){
+		const size_t name_l = strlen(name);
+		int analysis_number = atoi(name + name_l - 3);
+		if(analysis_number > gop->latest){
+			gop->latest = analysis_number;
+		}
+	}
+
+	return 0;
+}
+
+int get_latest_group(hid_t file, const char * root, const char * prefix){
+	assert(NULL != root);
+	assert(NULL != prefix);
+
+	struct _gop_data gop_data = {prefix, -1};
+        hid_t grp = H5Gopen(file, root, H5P_DEFAULT);
+	herr_t status = H5Literate(grp, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, group_op_func, &gop_data);
+	H5Gclose(grp);
+
+	return gop_data.latest;
+}
+
 
 struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentation){
 	assert(NULL != segmentation);
@@ -12,6 +43,10 @@ struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentati
 
         int segnamelen = strlen(segmentation) + 37;
 	char * segname = calloc(segnamelen, sizeof(char));
+	if(analysis_no < 0){
+		analysis_no = get_latest_group(file, "/Analyses", segmentation);
+	}
+	printf("Going to use %d for segmentation\n", analysis_no);
 	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/split_hairpin", segmentation, analysis_no);
 	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
 
@@ -26,6 +61,7 @@ struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentati
 
 	H5Gclose(segloc);
 	free(segname);
+	assert(start < end);
 	return (struct _pi){start, end};
 }
 
@@ -75,6 +111,10 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	if(file < 0){ return (event_table){0, 0, 0, NULL};}
 
 	char * root = calloc(36, sizeof(char));
+	if(analysis_no < 0){
+		analysis_no = get_latest_group(file, "/Analyses", "EventDetection");
+	}
+	printf("Going to use %d for events\n", analysis_no);
 	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
 
 	size_t size = 1 + H5Lget_name_by_idx(file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
@@ -90,8 +130,8 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 
 
 	struct _pi  index = get_segmentation(file, seganalysis_no, segmentation);
-        ev.start = index.x1;
-	ev.end = index.x2;
+        ev.start = (index.x1 >= 0) ? index.x1 : 0;
+	ev.end = (index.x2 <= ev.end) ? index.x2 : ev.end;
 	H5Fclose(file);
 
 	return ev;
@@ -106,6 +146,10 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 
 	const int loclen = 45 + strlen(section);
 	char * event_group = calloc(loclen, sizeof(char));
+	if(analysis_no < 0){
+		analysis_no = get_latest_group(file, "/Analyses", "Basecall_1D_");
+	}
+	printf("Going to use %d for events\n", analysis_no);
 	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
 
 	event_table ev = read_events(filename, event_group);
