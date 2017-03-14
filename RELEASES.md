@@ -15,7 +15,7 @@ The intention is that behaviour will be stable within a series, with only bug fi
     * *release-0.2.8*
         * Updated model.
 	* Use Kahan summation during normalisation.
-	* Buidl scripts don't require presence of C++ compiler.
+	* Build scripts don't require presence of C++ compiler.
     * *release-0.2.7*
         * Allow segmentation to be taken from different analysis to event detection.
         * Basic support for recalling files produced by Albacore.
