@@ -39,8 +39,8 @@ int get_latest_group(hid_t file, const char * root, const char * prefix){
 	}
 
 	herr_t status = H5Literate(grp, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, group_op_func, &gop_data);
-	if(status < 0){
-		warnx("Error trying to find group of form '%s/%s_XXX'.\n", root, prefix);
+	if(status < 0 || gop_data.latest < 0){
+		warnx("Error trying to find segmenation group of form '%s/%s_XXX'.\n", root, prefix);
 	}
 	H5Gclose(grp);
 
@@ -77,6 +77,8 @@ struct _range get_segmentation(hid_t file, int analysis_no, const char * segment
 	if(temp_end > 0){
 		H5Aread(temp_end, H5T_NATIVE_INT, &segcoord.end);
 		H5Aclose(temp_end);
+		// Use Python-like convention where final index is exclusive upper bound
+		segcoord.end += 1;
 	} else {
 		warnx("Segmentation group '%s' does not contain 'end_index_temp' attribute.\n", segmentation);
 	}
@@ -148,6 +150,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	assert(NULL != filename);
 	assert(NULL != segmentation);
 	event_table ev = {0, 0, 0, NULL};
+	const size_t rootstr_len = 36;
 
 	hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if (hdf5file < 0) {
@@ -161,19 +164,19 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	}
 
 	//  Find group name of read (take first if there are multiple)
-	char * root = calloc(36, sizeof(char));
-	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
-	size_t size = H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
+	char * root = calloc(rootstr_len, sizeof(char));
+	(void)snprintf(root, rootstr_len, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
+	ssize_t size = H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
 	if(size < 0){
 		warnx("Failed find read name under %s\n", root);
 		goto cleanup1;
 	}
 	char * name = calloc(1 + size, sizeof(char));
-	H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, size, H5P_DEFAULT);
+	H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, 1 + size, H5P_DEFAULT);
 
 	//  Prepare event group
-	char * event_group = calloc(36 + size + 7 - 1, sizeof(char));
-	(void)snprintf(event_group, 36 + size + 7 - 1, "%s%s/Events", root, name);
+	char * event_group = calloc(rootstr_len + size + 7, sizeof(char));
+	(void)snprintf(event_group, rootstr_len + size + 7, "%s%s/Events", root, name);
         free(name);
 	ev = read_events(hdf5file, event_group);
 	free(event_group);
