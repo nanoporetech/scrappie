@@ -76,14 +76,14 @@ struct arguments {
 	char ** files;
 	bool albacore;
 };
-static struct arguments args = {0, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false};
+static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 	case 'a':
 		args.analysis = atoi(arg);
-		assert(args.analysis > 0 && args.analysis < 1000);
+		assert(args.analysis >= -1 && args.analysis < 1000);
 		break;
 	case 'l':
 		args.limit = atoi(arg);
@@ -130,7 +130,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 7:
 		args.seganalysis = atoi(arg);
-		assert(args.seganalysis > 0 && args.seganalysis < 1000);
+		assert(args.seganalysis >= -1 && args.seganalysis < 1000);
 		break;
 	case 8:
 		args.albacore = true;
@@ -190,7 +190,9 @@ struct _bs calculate_post(char * filename){
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
-	if(et.n <= args.trim){
+	const int nevent = et.end - et.start;
+	if(nevent <= 2 * args.trim){
+		warnx("Too few events in %s to call (%d after segmenation, originally %lu).", filename, nevent, et.n);
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
@@ -320,9 +322,6 @@ int fprintf_sam(FILE * fp, const char * readname, const struct _bs res){
 
 int main(int argc, char * argv[]){
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	if(args.seganalysis < 0){
-		args.seganalysis = args.analysis;
-	}
 	setup();
 
 	int nfile = 0;
@@ -343,6 +342,7 @@ int main(int argc, char * argv[]){
 	for(int fn=0 ; fn < nfile ; fn++){
 		struct _bs res = calculate_post(args.files[fn]);
 		if(NULL == res.bases){
+			warnx("No basecall returned for %s", args.files[fn]);
 			continue;
 		}
 

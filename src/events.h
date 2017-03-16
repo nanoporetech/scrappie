@@ -16,7 +16,6 @@ typedef struct {
 } event_table;
 
 
-event_table read_events(const char * filename, const char * tablepath);
 event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation, int seganalysis_no);
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section);
 
