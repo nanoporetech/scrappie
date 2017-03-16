@@ -163,12 +163,12 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	//  Find group name of read (take first if there are multiple)
 	char * root = calloc(36, sizeof(char));
 	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
-	size_t size = 1 + H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
+	size_t size = H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
 	if(size < 0){
 		warnx("Failed find read name under %s\n", root);
 		goto cleanup1;
 	}
-	char * name = calloc(size, sizeof(char));
+	char * name = calloc(1 + size, sizeof(char));
 	H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, size, H5P_DEFAULT);
 
 	//  Prepare event group
