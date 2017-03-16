@@ -11,26 +11,27 @@
 
 
 
-Mat_rptr window(const Mat_rptr input, int w){
+Mat_rptr window(const Mat_rptr input, int w, int stride){
 	if(NULL == input){
 		// Input is NULL due to previous errors. Propagate
 		return NULL;
 	}
-	assert(w > 0 && (w%2) == 1);
-	const int wh = w / 2;
+	assert(w > 0);
+	const int wh = (w + 1) / 2;
 
-	Mat_rptr output = make_mat(input->nr * w, input->nc);
+	Mat_rptr output = make_mat(input->nr * w, (int)ceilf(input->nc / (float)stride));
 
 	for(int col=0 ; col<output->nc ; col++){
 		// First and last columns are special cases
 		const size_t out_offset = col * output->nrq * 4;
-		for(int i=0, w1=col-wh ; w1<=col+wh ; w1++){
-			if(w1<0 || w1>=input->nc){
+		const int icol = col * stride;
+		for (int i = 0, w1 = (icol - wh + 1); w1 <= icol + wh; w1++) {
+			if(w1 < 0 || w1 >= input->nc){
 				i += input->nr;
 				continue;
 			}
 			const size_t in_offset = w1 * input->nrq * 4;
-			for(int row=0 ; row<input->nr ; row++, i++){
+			for(int row=0 ; row < input->nr ; row++, i++){
 				output->data.f[out_offset + i] = input->data.f[in_offset + row];
 			}
 		}
@@ -38,6 +39,70 @@ Mat_rptr window(const Mat_rptr input, int w){
 
 	return output;
 }
+
+
+/**  Convolution of the input data
+ *  @param X Input data matrix (features x nobs)
+ *  @param W Filter matrix (winlen * features x nfilter)
+ *
+ *  The input is padded with zeros such that the resultant matrix has the
+ *  same size as the input (under a stride of 1).
+ *
+ *  Note: The rows of the input matrix X are padded with zeros to make them
+ *  a multiple of the SSE vector size (4).  The filter matrix must have been
+ *  expanded accordingly.
+ **/
+Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, int stride, Mat_rptr C) {
+	assert((W->nrq % X->nrq) == 0);     // Length of filter is compatible with number of features
+	const int winlen = W->nr / X->nr;
+	// Multiple of stride greater or equal to winlen
+	const int ldC = iceil(winlen, stride);
+	const int ldX = stride * ldC;
+	// Padding
+	const int padL = (winlen - 1) / 2;
+	const int padR = winlen / 2;
+	const int Cnc = iceil(X->nc, stride);
+	C = remake_mat(C, W->nc, Cnc);
+	// Left-hand side edge case where only part of the filter covers the input
+	for (int w = 0; w < padL; w += stride) {
+		const int offsetW = X->nrq * 4 * (padL - w);
+		cblas_sgemv(CblasColMajor, CblasTrans, W->nr - offsetW, W->nc,
+			1.0, W->data.f + offsetW, W->nrq * 4,
+			X->data.f, 1, 0.0, C->data.f + C->nrq * 4 * (w / stride),
+			1);
+	}
+	const int offsetC_L = C->nrq * 4 * iceil(padL, stride);
+	const int shiftX_L = (stride - (padL % stride)) % stride;
+	const int offsetX_L = shiftX_L * X->nrq * 4;
+	for (int w = 0; w < winlen; w += stride) {
+		/*  Multiply reshaped X matrix by filter matrix
+		 *  The rows of X are padded by zeros to make a multiple of 4.
+		 *  Input matrix 'X'
+		 *   - stride is X->nrq * 4 * ldC
+		 *   - offset by X->nrq * 4 * w (w rows)
+		 *   - Ncolumns is (X->nc - w) / ldX + adjustment if a final window fits
+		 *  Filter matrix needs to be padded appropriately for the padding of X.
+		 */
+		const int Xnc = (X->nc - shiftX_L - w) / ldX + (((X->nc - shiftX_L - w) % ldX) >= winlen);
+		cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, W->nc, Xnc, W->nr,
+			1.0, W->data.f, W->nrq * 4,
+			X->data.f + X->nrq * 4 * w + offsetX_L, X->nrq * 4 * ldX,
+			0.0, C->data.f + C->nrq * 4 * w + offsetC_L,
+			C->nrq * 4 * ldC);
+	}
+	// Right-hand side edge case where only part of the filter covers the input
+	const int offsetC_R = C->nrq * 4 * ifloor(padL + X->nc - winlen + 1, stride);
+	const int offsetX_R = offsetX_L + X->nrq * 4 * ifloor(X->nc - shiftX_L - winlen + 1, stride) * stride;
+	for (int w = (X->nc - shiftX_L - winlen + 1) % stride; w < padR; w += stride) {
+        const int offsetW = X->nrq * 4 * (padR - w);
+		cblas_sgemv(CblasColMajor, CblasTrans, W->nr - offsetW, W->nc, 1.0,
+			W->data.f, W->nrq * 4,
+			X->data.f + offsetX_R + X->nrq * 4 * w, 1, 0.0,
+			C->data.f + offsetC_R + C->nrq * 4 * (w / stride), 1);
+	}
+	return C;
+}
+
 
 Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
 		         const Mat_rptr b, Mat_rptr C){
@@ -86,6 +151,7 @@ Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 	return C;
 }
 
+
 Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
               const Mat_rptr b, Mat_rptr C){
 	assert(NULL != W);
@@ -116,6 +182,7 @@ Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 	}
 	return C;
 }
+
 
 Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
 	assert(NULL != iW);
@@ -160,6 +227,7 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 	tmp = free_mat(tmp);
 	return ostate;
 }
+
 
 Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
 	assert(NULL != iW);
@@ -310,6 +378,7 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 	state = free_mat(tmp);
 	return output;
 }
+
 
 Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
 	assert(NULL != sW);

@@ -88,6 +88,12 @@ Mat_rptr remake_mat(Mat_rptr M, int nr, int nc){
 	return M;
 }
 
+void zero_mat(Mat_rptr M) {
+	assert(NULL != M);
+	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(float));
+}
+
+
 Mat_rptr mat_from_array(const float * x, int nr, int nc){
 	Mat_rptr res = make_mat(nr, nc);
 	for(int col=0 ; col < nc ; col++){
@@ -159,6 +165,12 @@ iMat_rptr free_imat(iMat_rptr mat){
 	}
 	return NULL;
 }
+
+void zero_imat(iMat_rptr M) {
+	assert(NULL != M);
+	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));
+}
+
 
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
                  const Mat_rptr b, Mat_rptr C){
