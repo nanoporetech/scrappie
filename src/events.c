@@ -34,13 +34,13 @@ int get_latest_group(hid_t file, const char * root, const char * prefix){
 	struct _gop_data gop_data = {prefix, -1};
         hid_t grp = H5Gopen(file, root, H5P_DEFAULT);
 	if(grp < 0){
-		warnx("Failed to open group '%s' at %s:%d\n", root, __FILE__, __LINE__);
+		warnx("Failed to open group '%s' at %s:%d.", root, __FILE__, __LINE__);
 		return gop_data.latest;
 	}
 
 	herr_t status = H5Literate(grp, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, group_op_func, &gop_data);
 	if(status < 0 || gop_data.latest < 0){
-		warnx("Error trying to find segmenation group of form '%s/%s_XXX'.\n", root, prefix);
+		warnx("Error trying to find segmenation group of form '%s/%s_XXX'.", root, prefix);
 	}
 	H5Gclose(grp);
 
@@ -61,7 +61,7 @@ struct _range get_segmentation(hid_t file, int analysis_no, const char * segment
 	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/split_hairpin", segmentation, analysis_no);
 	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
 	if(segloc < 0){
-		warnx("Failed to open group '%s' to read segmentation from.\n", segname);
+		warnx("Failed to open group '%s' to read segmentation from.", segname);
 		goto clean1;
 	}
 
@@ -70,7 +70,7 @@ struct _range get_segmentation(hid_t file, int analysis_no, const char * segment
 		H5Aread(temp_start, H5T_NATIVE_INT, &segcoord.start);
 		H5Aclose(temp_start);
 	} else {
-		warnx("Segmentation group '%s'does not contain 'start_index_temp' attribute.\n", segmentation);
+		warnx("Segmentation group '%s'does not contain 'start_index_temp' attribute.", segmentation);
 	}
 
 	hid_t temp_end = H5Aopen_name(segloc, "end_index_temp");
@@ -80,7 +80,7 @@ struct _range get_segmentation(hid_t file, int analysis_no, const char * segment
 		// Use Python-like convention where final index is exclusive upper bound
 		segcoord.end += 1;
 	} else {
-		warnx("Segmentation group '%s' does not contain 'end_index_temp' attribute.\n", segmentation);
+		warnx("Segmentation group '%s' does not contain 'end_index_temp' attribute.", segmentation);
 	}
 
 
@@ -98,13 +98,13 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 
 	hid_t dset = H5Dopen(hdf5file, tablepath, H5P_DEFAULT);
 	if(dset < 0){
-		warnx("Failed to open dataset '%s' to read events from\n", tablepath);
+		warnx("Failed to open dataset '%s' to read events from.", tablepath);
 		return ev;
 	}
 
 	hid_t space = H5Dget_space(dset);
 	if(space < 0){
-		warnx("Failed to create copy of dataspace for event table %s", tablepath);
+		warnx("Failed to create copy of dataspace for event table %s.", tablepath);
 		goto clean1;
 	}
 
@@ -114,7 +114,7 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 	event_t * events = calloc(nevent, sizeof(event_t));
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	if(memtype < 0){
-		warnx("Failed to create memory representation for event table %s:%d\n", __FILE__, __LINE__);
+		warnx("Failed to create memory representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
 	}
 	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
@@ -123,7 +123,7 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
 	if(status < 0){
-		warnx("Failed to read events out of dataset %s\n", tablepath);
+		warnx("Failed to read events out of dataset %s.", tablepath);
 		goto clean3;
 	}
 
@@ -154,7 +154,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 
 	hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if (hdf5file < 0) {
-		warnx("Failed to open %s for reading\n", filename);
+		warnx("Failed to open %s for reading.", filename);
 		return ev;
 	}
 
@@ -168,7 +168,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	(void)snprintf(root, rootstr_len, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
 	ssize_t size = H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
 	if(size < 0){
-		warnx("Failed find read name under %s\n", root);
+		warnx("Failed find read name under %s.", root);
 		goto cleanup1;
 	}
 	char * name = calloc(1 + size, sizeof(char));
@@ -201,7 +201,7 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 
 	hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if(hdf5file < 0){
-		warnx("Failed to open %s for reading\n", filename);
+		warnx("Failed to open %s for reading.", filename);
 		return ev;
 	}
 
@@ -225,7 +225,7 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	// Memory representation
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	if(memtype < 0){
-		warnx("Failed to create memroy representation for event table %s:%d\n", __FILE__, __LINE__);
+		warnx("Failed to create memroy representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean1;
 	}
 	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_INT);
@@ -238,7 +238,7 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	// File representation
 	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 * 6);
 	if(filetype < 0){
-		warnx("Failed to create file representation for event table %s:%d\n", __FILE__, __LINE__);
+		warnx("Failed to create file representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
 	}
 
@@ -253,12 +253,12 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	hsize_t dims[1] = {ev.n};
 	hid_t space = H5Screate_simple(1, dims, NULL);
 	if(space < 0){
-		warnx("Failed to allocate dataspace for event table %s:%d\n", __FILE__, __LINE__);
+		warnx("Failed to allocate dataspace for event table %s:%d.", __FILE__, __LINE__);
 		goto clean3;
 	}
 	hid_t dset = H5Dcreate(hdf5file, readname, filetype, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	if(dset < 0){
-		warnx("Failed to create dataset for event table %s:%d\n", __FILE__, __LINE__);
+		warnx("Failed to create dataset for event table %s:%d.", __FILE__, __LINE__);
 		goto clean4;
 	}
 
@@ -266,7 +266,7 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	// Write data
 	herr_t writeret = H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, ev.event);
 	if(writeret < 0){
-		warnx("Failed to write dataset for event table %s:%d\n", __FILE__, __LINE__);
+		warnx("Failed to write dataset for event table %s:%d.", __FILE__, __LINE__);
 	}
 
 clean4:

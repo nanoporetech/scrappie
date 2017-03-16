@@ -192,7 +192,7 @@ struct _bs calculate_post(char * filename){
 	}
 	const int nevent = et.end - et.start;
 	if(nevent <= 2 * args.trim){
-		warnx("Too few events in %s to call (%d after segmenation, originally %lu).\n", filename, nevent, et.n);
+		warnx("Too few events in %s to call (%d after segmenation, originally %lu).", filename, nevent, et.n);
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
@@ -342,7 +342,7 @@ int main(int argc, char * argv[]){
 	for(int fn=0 ; fn < nfile ; fn++){
 		struct _bs res = calculate_post(args.files[fn]);
 		if(NULL == res.bases){
-			warnx("No basecall returned for %s\n", args.files[fn]);
+			warnx("No basecall returned for %s", args.files[fn]);
 			continue;
 		}
 
