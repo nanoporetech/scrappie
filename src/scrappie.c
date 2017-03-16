@@ -192,7 +192,7 @@ struct _bs calculate_post(char * filename){
 	}
 	const int nevent = et.end - et.start;
 	if(nevent <= 2 * args.trim){
-		warnx("Too few events in %s to call (%d after segmenation, originally %d).\n", filename, nevent, et.n);
+		warnx("Too few events in %s to call (%d after segmenation, originally %lu).\n", filename, nevent, et.n);
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
