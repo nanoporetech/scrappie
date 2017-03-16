@@ -1,10 +1,13 @@
 #include <assert.h>
+#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 #include "events.h"
 
+event_table read_events(hid_t hdf5file, const char * tablepath);
 
-struct _pi { int x1, x2;};
+
+struct _range { int start, end;};
 struct _gop_data {
 	const char * prefix;
 	int latest;
@@ -30,107 +33,159 @@ int get_latest_group(hid_t file, const char * root, const char * prefix){
 
 	struct _gop_data gop_data = {prefix, -1};
         hid_t grp = H5Gopen(file, root, H5P_DEFAULT);
+	if(grp < 0){
+		warnx("Failed to open group '%s' at %s:%d\n", root, __FILE__, __LINE__);
+		return gop_data.latest;
+	}
+
 	herr_t status = H5Literate(grp, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, group_op_func, &gop_data);
+	if(status < 0){
+		warnx("Error trying to find group of form '%s/%s_XXX'.\n", root, prefix);
+	}
 	H5Gclose(grp);
 
 	return gop_data.latest;
 }
 
 
-struct _pi get_segmentation(hid_t file, int analysis_no, const char * segmentation){
+struct _range get_segmentation(hid_t file, int analysis_no, const char * segmentation){
 	assert(NULL != segmentation);
-	int start=0, end=0;
+	struct _range segcoord = {-1, -1};
 
         int segnamelen = strlen(segmentation) + 37;
 	char * segname = calloc(segnamelen, sizeof(char));
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(file, "/Analyses", segmentation);
+		if(analysis_no < 0){ return segcoord; }
 	}
 	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/split_hairpin", segmentation, analysis_no);
 	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
+	if(segloc < 0){
+		warnx("Failed to open group '%s' to read segmentation from.\n", segname);
+		goto clean1;
+	}
 
 	hid_t temp_start = H5Aopen_name(segloc, "start_index_temp");
-	H5Aread(temp_start, H5T_NATIVE_INT, &start);
-	H5Aclose(temp_start);
+	if(temp_start > 0){
+		H5Aread(temp_start, H5T_NATIVE_INT, &segcoord.start);
+		H5Aclose(temp_start);
+	} else {
+		warnx("Segmentation group '%s'does not contain 'start_index_temp' attribute.\n", segmentation);
+	}
 
 	hid_t temp_end = H5Aopen_name(segloc, "end_index_temp");
-	H5Aread(temp_end, H5T_NATIVE_INT, &end);
-	H5Aclose(temp_end);
+	if(temp_end > 0){
+		H5Aread(temp_end, H5T_NATIVE_INT, &segcoord.end);
+		H5Aclose(temp_end);
+	} else {
+		warnx("Segmentation group '%s' does not contain 'end_index_temp' attribute.\n", segmentation);
+	}
 
 
 	H5Gclose(segloc);
+clean1:
 	free(segname);
-	assert(start < end);
-	return (struct _pi){start, end};
+
+	return segcoord;
 }
 
 
-event_table read_events(const char * filename, const char * tablepath){
-	assert(NULL != filename);
+event_table read_events(hid_t hdf5file, const char * tablepath){
 	assert(NULL != tablepath);
-	hsize_t dims[1];
+	event_table ev = {0, 0, 0, NULL};
 
-
-	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-	if(file < 0){ return (event_table){0, 0, 0, NULL};}
-
-	hid_t dset = H5Dopen(file, tablepath, H5P_DEFAULT);
+	hid_t dset = H5Dopen(hdf5file, tablepath, H5P_DEFAULT);
+	if(dset < 0){
+		warnx("Failed to open dataset '%s' to read events from\n", tablepath);
+		return ev;
+	}
 
 	hid_t space = H5Dget_space(dset);
+	if(space < 0){
+		warnx("Failed to create copy of dataspace for event table %s", tablepath);
+		goto clean1;
+	}
+
+	hsize_t dims[1];
 	H5Sget_simple_extent_dims (space, dims, NULL);
 	size_t nevent = dims[0];
 	event_t * events = calloc(nevent, sizeof(event_t));
-
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
+	if(memtype < 0){
+		warnx("Failed to create memory representation for event table %s:%d\n", __FILE__, __LINE__);
+		goto clean2;
+	}
 	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
+	if(status < 0){
+		warnx("Failed to read events out of dataset %s\n", tablepath);
+		goto clean3;
+	}
 
 	for(int ev=0 ; ev < nevent ; ev++){
 		// Negative means unassigned
 		events[ev].pos = -1;
 		events[ev].state = -1;
 	}
+	ev = (event_table){nevent, 0, nevent, events};
 
+
+clean3:
 	H5Tclose(memtype);
+clean2:
 	H5Sclose(space);
+clean1:
 	H5Dclose(dset);
-	H5Fclose(file);
 
-	return (event_table){nevent, 0, nevent, events};
+	return ev;
 }
 
 
 event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation, int seganalysis_no){
 	assert(NULL != filename);
+	assert(NULL != segmentation);
+	event_table ev = {0, 0, 0, NULL};
 
-	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-	if(file < 0){ return (event_table){0, 0, 0, NULL};}
-
-	char * root = calloc(36, sizeof(char));
-	if(analysis_no < 0){
-		analysis_no = get_latest_group(file, "/Analyses", "EventDetection");
+	hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if (hdf5file < 0) {
+		warnx("Failed to open %s for reading\n", filename);
+		return ev;
 	}
-	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
 
-	size_t size = 1 + H5Lget_name_by_idx(file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
+	if(analysis_no < 0){
+		analysis_no = get_latest_group(hdf5file, "/Analyses", "EventDetection");
+		if(analysis_no < 0){ return ev; }
+	}
+
+	//  Find group name of read (take first if there are multiple)
+	char * root = calloc(36, sizeof(char));
+	(void)snprintf(root, 36, "/Analyses/EventDetection_%03d/Reads/", analysis_no);
+	size_t size = 1 + H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
+	if(size < 0){
+		warnx("Failed find read name under %s\n", root);
+		goto cleanup1;
+	}
 	char * name = calloc(size, sizeof(char));
-	H5Lget_name_by_idx(file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, size, H5P_DEFAULT);
+	H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, size, H5P_DEFAULT);
+
+	//  Prepare event group
 	char * event_group = calloc(36 + size + 7 - 1, sizeof(char));
 	(void)snprintf(event_group, 36 + size + 7 - 1, "%s%s/Events", root, name);
         free(name);
-
-	event_table ev = read_events(filename, event_group);
+	ev = read_events(hdf5file, event_group);
 	free(event_group);
+
+	//  Add segmentation information
+	struct _range  segcoord = get_segmentation(hdf5file, seganalysis_no, segmentation);
+        ev.start = (segcoord.start >= 0) ? segcoord.start : 0;
+	ev.end = (segcoord.end >= 0 && segcoord.end <= ev.end) ? segcoord.end : ev.end;
+
+cleanup1:
 	free(root);
-
-
-	struct _pi  index = get_segmentation(file, seganalysis_no, segmentation);
-        ev.start = (index.x1 >= 0) ? index.x1 : 0;
-	ev.end = (index.x2 <= ev.end) ? index.x2 : ev.end;
-	H5Fclose(file);
+	H5Fclose(hdf5file);
 
 	return ev;
 }
@@ -138,20 +193,26 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section){
 	assert(NULL != filename);
+	assert(NULL != section);
+	event_table ev = {0, 0, 0, NULL};
 
-	hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-	if(file < 0){ return (event_table){0, 0, 0, NULL};}
+	hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if(hdf5file < 0){
+		warnx("Failed to open %s for reading\n", filename);
+		return ev;
+	}
 
 	const int loclen = 45 + strlen(section);
 	char * event_group = calloc(loclen, sizeof(char));
 	if(analysis_no < 0){
-		analysis_no = get_latest_group(file, "/Analyses", "Basecall_1D_");
+		analysis_no = get_latest_group(hdf5file, "/Analyses", "Basecall_1D_");
+		if(analysis_no < 0){ return ev; }
 	}
 	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
 
-	event_table ev = read_events(filename, event_group);
+	ev = read_events(hdf5file, event_group);
 	free(event_group);
-	H5Fclose(file);
+	H5Fclose(hdf5file);
 
 	return ev;
 }
@@ -160,29 +221,57 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev){
 	// Memory representation
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
+	if(memtype < 0){
+		warnx("Failed to create memroy representation for event table %s:%d\n", __FILE__, __LINE__);
+		goto clean1;
+	}
 	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_INT);
 	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_INT);
 	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "pos", HOFFSET(event_t, pos), H5T_NATIVE_INT);
 	H5Tinsert(memtype, "state", HOFFSET(event_t, state), H5T_NATIVE_INT);
+
 	// File representation
 	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 * 6);
+	if(filetype < 0){
+		warnx("Failed to create file representation for event table %s:%d\n", __FILE__, __LINE__);
+		goto clean2;
+	}
+
 	H5Tinsert(filetype, "start", 8 * 0, H5T_STD_I64LE);
 	H5Tinsert(filetype, "length", 8 * 1, H5T_STD_I64LE);
 	H5Tinsert(filetype, "mean", 8 * 2, H5T_IEEE_F64LE);
 	H5Tinsert(filetype, "stdv", 8 * 3, H5T_IEEE_F64LE);
 	H5Tinsert(filetype, "pos", 8 * 4, H5T_STD_I64LE);
 	H5Tinsert(filetype, "state", 8 * 5, H5T_STD_I64LE);
+
 	// Create dataset
 	hsize_t dims[1] = {ev.n};
 	hid_t space = H5Screate_simple(1, dims, NULL);
+	if(space < 0){
+		warnx("Failed to allocate dataspace for event table %s:%d\n", __FILE__, __LINE__);
+		goto clean3;
+	}
 	hid_t dset = H5Dcreate(hdf5file, readname, filetype, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	// Write data
-	H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, ev.event);
+	if(dset < 0){
+		warnx("Failed to create dataset for event table %s:%d\n", __FILE__, __LINE__);
+		goto clean4;
+	}
 
+
+	// Write data
+	herr_t writeret = H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, ev.event);
+	if(writeret < 0){
+		warnx("Failed to write dataset for event table %s:%d\n", __FILE__, __LINE__);
+	}
+
+clean4:
 	H5Dclose(dset);
+clean3:
 	H5Sclose(space);
+clean2:
 	H5Tclose(filetype);
+clean1:
 	H5Tclose(memtype);
 }
