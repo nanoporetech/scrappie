@@ -122,6 +122,10 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	event_t * events = calloc(nevent, sizeof(event_t));
+	if(NULL == events){
+		warnx("Failed to allocate memory for events");
+		goto clean3;
+	}
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
 	if(status < 0){
 		free(events);
