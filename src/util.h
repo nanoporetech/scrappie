@@ -1,6 +1,6 @@
 #ifndef UTIL_H
 #define UTIL_H
-#include <smmintrin.h>
+#include <immintrin.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
