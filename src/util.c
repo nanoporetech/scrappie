@@ -108,7 +108,7 @@ void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int 
 		fputc('\n', fh);
 	}
         for(int c=0 ; c < nc ; c++){
-                const int offset = c * mat->nrq * 4;
+                const size_t offset = c * mat->nrq * 4;
                 fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
                 for(int r=1 ; r<nr ; r++){
                         fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
@@ -234,7 +234,7 @@ void row_normalise_inplace(Mat_rptr C){
 		return;
 	}
 	for(int col=0 ; col < C->nc ; col++){
-		const int offset = col * C->nrq;
+		const size_t offset = col * C->nrq;
 		__m128 sum = _mm_setzero_ps();
 		for(int row=0 ; row < C->nrq ; row++){
 			sum += C->data.v[offset + row];
@@ -257,7 +257,7 @@ float max_mat(const Mat_rptr x){
 	}
 	float amax = x->data.f[0];
 	for(int col=0 ; col < x->nc ; col++){
-		const int offset = col * x->nrq * 4;
+		const size_t offset = col * x->nrq * 4;
 		for(int r=0 ; r < x->nr ; r++){
 			if(amax < x->data.f[offset + r]){
 				amax = x->data.f[offset + r];
@@ -274,7 +274,7 @@ float min_mat(const Mat_rptr x){
 	}
 	float amin = x->data.f[0];
 	for(int col=0 ; col < x->nc ; col++){
-		const int offset = col * x->nrq * 4;
+		const size_t offset = col * x->nrq * 4;
 		for(int r=0 ; r < x->nr ; r++){
 			if(amin < x->data.f[offset + r]){
 				amin = x->data.f[offset + r];
@@ -293,7 +293,7 @@ int argmax_mat(const Mat_rptr x){
 	int imax = 0;
 
 	for(int col=0 ; col < x->nc ; col++){
-		const int offset = col * x->nrq * 4;
+		const size_t offset = col * x->nrq * 4;
 		for(int r=0 ; r < x->nr ; r++){
 			if(amax < x->data.f[offset + r]){
 				amax = x->data.f[offset + r];
@@ -313,7 +313,7 @@ int argmin_mat(const Mat_rptr x){
 	int imin = 0;
 
 	for(int col=0 ; col < x->nc ; col++){
-		const int offset = col * x->nrq * 4;
+		const size_t offset = col * x->nrq * 4;
 		for(int r=0 ; r < x->nr ; r++){
 			if(amin < x->data.f[offset + r]){
 				amin = x->data.f[offset + r];

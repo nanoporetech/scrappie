@@ -40,9 +40,9 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 
 	//  Forwards Viterbi iteration
 	for(int ev=1 ; ev < nev ; ev++){
-		const int offsetTq = ev * nkmerq;
-		const int offsetP = ev * ldp;
-		const int offsetPq = ev * logpost->nrq;
+		const size_t offsetTq = ev * nkmerq;
+		const size_t offsetP = ev * ldp;
+		const size_t offsetPq = ev * logpost->nrq;
 		// Swap score and previous score
 		{
 			Mat_rptr tmptr = score;
@@ -66,7 +66,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 			itmp->data.v[i] = _mm_setzero_si128();
 		}
 		for(int r=1 ; r<NBASE ; r++){
-			const int offset = r * nkmerqq;
+			const size_t offset = r * nkmerqq;
 			const __m128i itmp_fill = _mm_set1_epi32(r);
 			for(int i=0 ; i<nkmerqq ; i++){
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
@@ -83,7 +83,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		}
 
 		for(int pref=0 ; pref < nkmerq ; pref++){
-			const int i = pref;
+			const size_t i = pref;
 			const __m128 step_score = logpost->data.v[offsetPq + i] + _mm_set1_ps(tmp->data.f[pref]);
 			__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[i], step_score));
 			score->data.v[i] = _mm_max_ps(score->data.v[i], step_score);
@@ -100,7 +100,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 			itmp->data.v[i] = _mm_setzero_si128();
 		}
 		for(int r=1 ; r<NBASE * NBASE ; r++){
-			const int offset = r * nkmerqqq;
+			const size_t offset = r * nkmerqqq;
 			const __m128i itmp_fill = _mm_set1_epi32(r);
 			for(int i=0 ; i<nkmerqqq ; i++){
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
@@ -116,7 +116,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		}
 		for(int pref=0 ; pref < nkmerqq ; pref++){
 			for(int i=0 ; i < NBASE ; i++){
-				const int oi = pref * NBASE + i;
+				const size_t oi = pref * NBASE + i;
 				// This cycling through prefixes
 				const __m128 skip_score = logpost->data.v[offsetPq + oi]
                                                         + _mm_set1_ps(tmp->data.f[pref])
@@ -136,7 +136,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 				itmp->data.v[i] = _mm_setzero_si128();
 			}
 			for(int r=1 ; r<NBASE * NBASE * NBASE; r++){
-				const int offset = r * nkmerqqqq;
+				const size_t offset = r * nkmerqqqq;
 				const __m128i itmp_fill = _mm_set1_epi32(r);
 				for(int i=0 ; i<nkmerqqqq ; i++){
 					__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
@@ -152,7 +152,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 			}
 			for(int pref=0 ; pref < nkmerqqq ; pref++){
 				for(int i=0 ; i < NBASE * NBASE; i++){
-					const int oi = pref * NBASE * NBASE + i;
+					const size_t oi = pref * NBASE * NBASE + i;
 					// This cycling through prefixes
 					const __m128 skip_score = logpost->data.v[offsetPq + oi]
 								+ _mm_set1_ps(tmp->data.f[pref])
