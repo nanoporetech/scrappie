@@ -111,11 +111,9 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 
 	hsize_t dims[1];
 	H5Sget_simple_extent_dims (space, dims, NULL);
-	size_t nevent = dims[0];
-	event_t * events = calloc(nevent, sizeof(event_t));
+	const size_t nevent = dims[0];
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	if(memtype < 0){
-	        free(events);
 		warnx("Failed to create memory representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
 	}
@@ -123,8 +121,10 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
+	event_t * events = calloc(nevent, sizeof(event_t));
 	herr_t status = H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
 	if(status < 0){
+		free(events);
 		warnx("Failed to read events out of dataset %s.", tablepath);
 		goto clean3;
 	}
