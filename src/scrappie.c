@@ -199,7 +199,7 @@ struct _bs calculate_post(char * filename){
 
 	//  Make features
 	Mat_rptr features = make_features(et, args.trim, true);
-	Mat_rptr feature3 = window(features, WINLEN);
+	Mat_rptr feature3 = window(features, WINLEN, 1);
 	features = free_mat(features);
 
 	// Initial transformation of input for LSTM layer

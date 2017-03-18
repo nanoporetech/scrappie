@@ -113,16 +113,24 @@ int argminf(const float * x, int n);
 float valmaxf(const float * x, int n);
 float valminf(const float * x, int n);
 
+static inline int iceil(int x, int y) {
+	return (x + y - 1) / y;
+}
 
+static inline int ifloor(int x, int y) {
+	return x / y;
+}
 
 Mat_rptr make_mat(int nr, int nc);
 Mat_rptr remake_mat(Mat_rptr M, int nr, int nc);
+void zero_mat(Mat_rptr M);
 Mat_rptr mat_from_array(const float * x, int nr, int nc);
 void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int nc);
 Mat_rptr free_mat(Mat_rptr mat);
 iMat_rptr make_imat(int nr, int nc);
 iMat_rptr remake_imat(iMat_rptr M, int nr, int nc);
 iMat_rptr free_imat(iMat_rptr mat);
+void zero_imat(iMat_rptr M);
 
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
 		 const Mat_rptr b, Mat_rptr C);
