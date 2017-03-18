@@ -89,7 +89,7 @@ Mat_rptr remake_mat(Mat_rptr M, int nr, int nc){
 }
 
 void zero_mat(Mat_rptr M) {
-	assert(NULL != M);
+	if(NULL != M){ return; }
 	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(float));
 }
 
@@ -167,7 +167,7 @@ iMat_rptr free_imat(iMat_rptr mat){
 }
 
 void zero_imat(iMat_rptr M) {
-	assert(NULL != M);
+	if(NULL != M){ return; }
 	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));
 }
 
