@@ -52,12 +52,13 @@ struct _range get_segmentation(hid_t file, int analysis_no, const char * segment
 	assert(NULL != segmentation);
 	struct _range segcoord = {-1, -1};
 
-        int segnamelen = strlen(segmentation) + 37;
-	char * segname = calloc(segnamelen, sizeof(char));
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(file, "/Analyses", segmentation);
 		if(analysis_no < 0){ return segcoord; }
 	}
+
+        int segnamelen = strlen(segmentation) + 37;
+	char * segname = calloc(segnamelen, sizeof(char));
 	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/split_hairpin", segmentation, analysis_no);
 	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
 	if(segloc < 0){
@@ -114,6 +115,7 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 	event_t * events = calloc(nevent, sizeof(event_t));
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	if(memtype < 0){
+	        free(events);
 		warnx("Failed to create memory representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
 	}
@@ -205,12 +207,13 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 		return ev;
 	}
 
-	const int loclen = 45 + strlen(section);
-	char * event_group = calloc(loclen, sizeof(char));
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(hdf5file, "/Analyses", "Basecall_1D_");
 		if(analysis_no < 0){ return ev; }
 	}
+
+	const int loclen = 45 + strlen(section);
+	char * event_group = calloc(loclen, sizeof(char));
 	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
 
 	ev = read_events(hdf5file, event_group);
