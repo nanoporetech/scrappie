@@ -11,11 +11,11 @@
 #include <string.h>
 #include <strings.h>
 #include "decode.h"
-#include "nnfeatures.h"
-#include "layers.h"
+#include "networks.h"
 #include <version.h>
 
-#include "nanonet_lstm_events.h"
+void scrappie_network_setup(void);
+
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
@@ -181,7 +181,6 @@ char * kmer_from_state(int state, int klen, char * kmer){
 
 
 struct _bs calculate_post(char * filename){
-	const int WINLEN = 3;
 
 	event_table et = args.albacore ?
 		read_albacore_events(filename, args.analysis, "template") :
@@ -197,50 +196,13 @@ struct _bs calculate_post(char * filename){
 		return (struct _bs){0, 0, NULL};
 	}
 
-	//  Make features
-	Mat_rptr features = make_features(et, args.trim, true);
-	Mat_rptr feature3 = window(features, WINLEN, 1);
-	features = free_mat(features);
-
-	// Initial transformation of input for LSTM layer
-	Mat_rptr lstmXf = feedforward_linear(feature3, lstmF1_iW, lstmF1_b, NULL);
-	Mat_rptr lstmXb = feedforward_linear(feature3, lstmB1_iW, lstmB1_b, NULL);
-	feature3 = free_mat(feature3);
-	Mat_rptr lstmF = lstm_forward(lstmXf, lstmF1_sW, lstmF1_p, NULL);
-	Mat_rptr lstmB = lstm_backward(lstmXb, lstmB1_sW, lstmB1_p, NULL);
-
-	//  Combine LSTM output
-	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, FF1_Wf, FF1_Wb, FF1_b, NULL);
-
-	lstmXf = feedforward_linear(lstmFF, lstmF2_iW, lstmF2_b, lstmXf);
-	lstmXb = feedforward_linear(lstmFF, lstmB2_iW, lstmB2_b, lstmXb);
-	lstmF = lstm_forward(lstmXf, lstmF2_sW, lstmF2_p, lstmF);
-	lstmXf = free_mat(lstmXf);
-	lstmB = lstm_backward(lstmXb, lstmB2_sW, lstmB2_p, lstmB);
-	lstmXb = free_mat(lstmXb);
-
-	// Combine LSTM output
-	lstmFF = feedforward2_tanh(lstmF, lstmB, FF2_Wf, FF2_Wb, FF2_b, lstmFF);
-	lstmF = free_mat(lstmF);
-	lstmB = free_mat(lstmB);
-
-	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
-	lstmFF = free_mat(lstmFF);
+	Mat_rptr post = nanonet_posterior(et, args.trim, args.min_prob, true);
 	if(NULL == post){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
-
 	const int nev = post->nc;
-	const int nstate = FF3_b->nr;
-	const __m128 mpv = _mm_set1_ps(args.min_prob / nstate);
-	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
-        for(int i=0 ; i < nev ; i++){
-		const size_t offset = i * post->nrq;
-		for(int r=0 ; r < post->nrq ; r++){
-			post->data.v[offset + r] = LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
-		}
-	}
+	const int nstate = post->nr;
 
 
 	int * seq = calloc(nev, sizeof(int));

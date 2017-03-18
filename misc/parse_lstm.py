@@ -28,7 +28,7 @@ def cformatV(fh, name, X):
 
 
 def write_setup(fh, setup):
-    fh.write('void setup(void){\n')
+    fh.write('void scrappie_network_setup(void){\n')
     fh.write(''.join(map(lambda x: '\t' + x, setup)))
     fh.write('}\n')
 
