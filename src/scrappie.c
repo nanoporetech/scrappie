@@ -298,14 +298,14 @@ struct _bs calculate_post(char * filename){
 
 	free(pos);
 	free(seq);
-	free_mat(&post);
-	free_mat(&lstmFF);
-	free_mat(&lstmB);
-	free_mat(&lstmF);
-	free_mat(&lstmXb);
-	free_mat(&lstmXf);
-	free_mat(&feature3);
-	free_mat(&features);
+	post = free_mat(post);
+	lstmFF = free_mat(lstmFF);
+	lstmB = free_mat(lstmB);
+	lstmF = free_mat(lstmF);
+	lstmXb = free_mat(lstmXb);
+	lstmXf = free_mat(lstmXf);
+	feature3 = free_mat(feature3);
+	features = free_mat(features);
 
 	return (struct _bs){score, nev, bases, et};
 }

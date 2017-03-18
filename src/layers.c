@@ -12,7 +12,10 @@
 
 
 Mat_rptr window(const Mat_rptr input, int w){
-	assert(NULL != input);
+	if(NULL == input){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 	assert(w > 0 && (w%2) == 1);
 	const int wh = w / 2;
 
@@ -38,6 +41,8 @@ Mat_rptr window(const Mat_rptr input, int w){
 
 Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
 		         const Mat_rptr b, Mat_rptr C){
+	assert(NULL != W);
+	assert(NULL != b);
 	C = affine_map(X, W, b, C);
 	return C;
 }
@@ -45,7 +50,14 @@ Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
 
 Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
 	               const Mat_rptr b, Mat_rptr C){
+	assert(NULL != W);
+	assert(NULL != b);
 	C = affine_map(X, W, b, C);
+	if(NULL == C){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
+
 	for(int c=0 ; c<C->nc ; c++){
 		const int offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
@@ -58,7 +70,13 @@ Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
 
 Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 	              const Mat_rptr b, Mat_rptr C){
+	assert(NULL != W);
+	assert(NULL != b);
 	C = affine_map(X, W, b, C);
+	if(NULL == C){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 	for(int c=0 ; c<C->nc ; c++){
 		const int offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
@@ -70,6 +88,8 @@ Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 
 Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
               const Mat_rptr b, Mat_rptr C){
+	assert(NULL != W);
+	assert(NULL != b);
 	C = feedforward_exp(X, W, b, C);
 	row_normalise_inplace(C);
 	return C;
@@ -79,7 +99,14 @@ Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
 Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 	  	       const Mat_rptr Wf, const Mat_rptr Wb,
 	               const Mat_rptr b, Mat_rptr C){
+	assert(NULL != Wf);
+	assert(NULL != Wb);
+	assert(NULL != b);
 	C = affine_map2(Xf, Xb, Wf, Wb, b, C);
+	if(NULL == C){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 
 	for(int c=0 ; c<C->nc ; c++){
 		const int offset = c * C->nrq;
@@ -91,6 +118,14 @@ Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 }
 
 Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
+	assert(NULL != iW);
+	assert(NULL != sW);
+	assert(NULL != sW2);
+	assert(NULL != b);
+	if(NULL == X){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 	assert(X->nr == iW->nr);
 	const int bsize = X->nc;
 	const int size = sW2->nc;
@@ -101,8 +136,9 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
 	ostate = remake_mat(ostate, size, bsize);
-	assert(ostate->nr == size);
-	assert(ostate->nc == bsize);
+	if(NULL == ostate){
+		return NULL;
+	}
 
 	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(3 * size, 1);
@@ -121,11 +157,19 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 		gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
 	}
 
-	free_mat(&tmp);
+	tmp = free_mat(tmp);
 	return ostate;
 }
 
 Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
+	assert(NULL != iW);
+	assert(NULL != sW);
+	assert(NULL != sW2);
+	assert(NULL != b);
+	if(NULL == X){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 	assert(X->nr == iW->nr);
 	const int size = sW2->nc;
 	const int bsize = X->nc;
@@ -136,8 +180,9 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
 	ostate = remake_mat(ostate, size, bsize);
-	assert(ostate->nr == size);
-	assert(ostate->nc == bsize);
+	if(NULL == ostate){
+		return NULL;
+	}
 
 	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(3 * size, 1);
@@ -158,7 +203,7 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 		gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
 	}
 
-	free_mat(&tmp);
+	tmp = free_mat(tmp);
 	return ostate;
 }
 
@@ -176,6 +221,11 @@ void gru_step(const Mat_rptr x, const Mat_rptr istate,
 	 * xF     is [3 * size]
 	 * ostate is [size]
 	 */
+	assert(NULL != x);
+	assert(NULL != xW);
+	assert(NULL != sW);
+	assert(NULL != sW2);
+	assert(NULL != bias);
 	assert(x->nr == xW->nr);
 	const int size = istate->nr;
 	assert(3 * size == xW->nc);
@@ -222,14 +272,21 @@ void gru_step(const Mat_rptr x, const Mat_rptr istate,
 
 
 Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
+	assert(NULL != sW);
+	assert(NULL != p);
+	if(NULL == Xaffine){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 	const int size = sW->nr;
 	const int bsize = Xaffine->nc;
 	assert(Xaffine->nr == 4 * size);
 	assert(p->nr == 3 * size);
 	assert(sW->nc == 4 * size);
 	output = remake_mat(output, size, bsize);
-	assert(output->nr == size);
-	assert(output->nc == bsize);
+	if(NULL == output){
+		return NULL;
+	}
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
@@ -249,20 +306,27 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
-	free_mat(&state);
-	free_mat(&tmp);
+	state = free_mat(state);
+	state = free_mat(tmp);
 	return output;
 }
 
 Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
+	assert(NULL != sW);
+	assert(NULL != p);
+	if(NULL == Xaffine){
+		// Input is NULL due to previous errors. Propagate
+		return NULL;
+	}
 	const int size = sW->nr;
 	const int bsize = Xaffine->nc;
 	assert(Xaffine->nr == 4 * size);
 	assert(sW->nc == 4 * size);
 	assert(p->nr == 3 * size);
 	output = remake_mat(output, size, bsize);
-	assert(output->nr == size);
-	assert(output->nc == bsize);
+	if(NULL == output){
+		return NULL;
+	}
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
@@ -284,8 +348,8 @@ Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr
 		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
-	free_mat(&state);
-	free_mat(&tmp);
+	state = free_mat(state);
+	tmp = free_mat(tmp);
 	return output;
 }
 
@@ -302,6 +366,13 @@ void lstm_step(const Mat_rptr xAffine, const Mat_rptr out_prev,
 	 * state    is [size]
 	 * output   is [size]
 	 */
+	assert(NULL != xAffine);
+	assert(NULL != out_prev);
+	assert(NULL != sW);
+	assert(NULL != peep);
+	assert(NULL != xF);
+	assert(NULL != state);
+	assert(NULL != output);
 	const int size = state->nr;
 	assert(xAffine->nr == 4 * size);
 	assert(size == out_prev->nr);

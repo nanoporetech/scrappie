@@ -184,11 +184,11 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	seq[0] = pstate;
 
 
-	free_imat(&traceback);
-	free_imat(&itmp);
-	free_mat(&tmp);
-	free_mat(&prev_score);
-	free_mat(&score);
+	traceback = free_imat(traceback);
+	itmp = free_imat(itmp);
+	tmp = free_mat(tmp);
+	prev_score = free_mat(prev_score);
+	score = free_mat(score);
 	return logscore;
 }
 
