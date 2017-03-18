@@ -15,7 +15,7 @@
 #include "layers.h"
 #include <version.h>
 
-#include "lstm_model.h"
+#include "nanonet_lstm_events.h"
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
@@ -316,7 +316,7 @@ int fprintf_sam(FILE * fp, const char * readname, const struct _bs res){
 
 int main(int argc, char * argv[]){
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	setup();
+	scrappie_network_setup();
 
 	int nfile = 0;
 	for( ; args.files[nfile] ; nfile++);
