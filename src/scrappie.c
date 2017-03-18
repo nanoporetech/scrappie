@@ -196,39 +196,40 @@ struct _bs calculate_post(char * filename){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
-	/*
-        fputs("* Data\n", stdout);
-        for(int i=0 ; i< 100 ; i++){
-                fprintf(stdout, "%d : %6d  %6d  %6.4e %6.4e\n", i, et.event[i].start, et.event[i].length, et.event[i].mean, et.event[i].stdv);
-        }*/
 
 	//  Make features
 	Mat_rptr features = make_features(et, args.trim, true);
-	//fprint_mat(stdout, "* Features", features, 4, 10);
 	Mat_rptr feature3 = window(features, WINLEN);
-	//fprint_mat(stdout, "* Window", feature3, 12, 10);
+	features = free_mat(features);
 
 	// Initial transformation of input for LSTM layer
 	Mat_rptr lstmXf = feedforward_linear(feature3, lstmF1_iW, lstmF1_b, NULL);
 	Mat_rptr lstmXb = feedforward_linear(feature3, lstmB1_iW, lstmB1_b, NULL);
+	feature3 = free_mat(feature3);
 	Mat_rptr lstmF = lstm_forward(lstmXf, lstmF1_sW, lstmF1_p, NULL);
-	//fprint_mat(stdout, "* lstmForward", lstmF, 8, 10);
 	Mat_rptr lstmB = lstm_backward(lstmXb, lstmB1_sW, lstmB1_p, NULL);
-	//fprint_mat(stdout, "* lstmBackward", lstmB, 8, 10);
 
 	//  Combine LSTM output
 	Mat_rptr lstmFF = feedforward2_tanh(lstmF, lstmB, FF1_Wf, FF1_Wb, FF1_b, NULL);
-	//fprint_mat(stdout, "* feedforward", lstmFF, 8, 10);
 
 	lstmXf = feedforward_linear(lstmFF, lstmF2_iW, lstmF2_b, lstmXf);
 	lstmXb = feedforward_linear(lstmFF, lstmB2_iW, lstmB2_b, lstmXb);
 	lstmF = lstm_forward(lstmXf, lstmF2_sW, lstmF2_p, lstmF);
+	lstmXf = free_mat(lstmXf);
 	lstmB = lstm_backward(lstmXb, lstmB2_sW, lstmB2_p, lstmB);
+	lstmXb = free_mat(lstmXb);
 
 	// Combine LSTM output
 	lstmFF = feedforward2_tanh(lstmF, lstmB, FF2_Wf, FF2_Wb, FF2_b, lstmFF);
+	lstmF = free_mat(lstmF);
+	lstmB = free_mat(lstmB);
 
 	Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
+	lstmFF = free_mat(lstmFF);
+	if(NULL == post){
+		free(et.event);
+		return (struct _bs){0, 0, NULL};
+	}
 
 	const int nev = post->nc;
 	const int nstate = FF3_b->nr;
@@ -244,6 +245,7 @@ struct _bs calculate_post(char * filename){
 
 	int * seq = calloc(nev, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
+	post = free_mat(post);
 	int * pos = calloc(nev, sizeof(int));
 	char * bases = overlapper(seq, nev, nstate - 1, pos);
 
@@ -298,14 +300,6 @@ struct _bs calculate_post(char * filename){
 
 	free(pos);
 	free(seq);
-	free_mat(&post);
-	free_mat(&lstmFF);
-	free_mat(&lstmB);
-	free_mat(&lstmF);
-	free_mat(&lstmXb);
-	free_mat(&lstmXf);
-	free_mat(&feature3);
-	free_mat(&features);
 
 	return (struct _bs){score, nev, bases, et};
 }

@@ -11,6 +11,8 @@
 #include "util.h"
 
 int argmaxf(const float * x, int n){
+	assert(n > 0);
+	if(NULL == x){ return -1; }
 	int imax = 0;
 	float vmax = x[0];
 	for(int i=1 ; i<n ; i++){
@@ -23,6 +25,8 @@ int argmaxf(const float * x, int n){
 }
 
 int argminf(const float * x, int n){
+	assert(n > 0);
+	if(NULL == x){ return -1; }
 	int imin = 0;
 	float vmin = x[0];
 	for(int i=1 ; i<n ; i++){
@@ -35,6 +39,8 @@ int argminf(const float * x, int n){
 }
 
 float valmaxf(const float * x, int n){
+	assert(n > 0);
+	if(NULL == x){ return NAN; }
 	float vmax = x[0];
 	for(int i=1 ; i<n ; i++){
 		if(x[i] > vmax){
@@ -45,6 +51,8 @@ float valmaxf(const float * x, int n){
 }
 
 float valminf(const float * x, int n){
+	assert(n > 0);
+	if(NULL == x){ return NAN; }
 	float vmin = x[0];
 	for(int i=1 ; i<n ; i++){
 		if(x[i] > vmin){
@@ -63,7 +71,9 @@ Mat_rptr make_mat(int nr, int nc){
 	mat->nc = nc;
 	int status = posix_memalign((void **) &(mat->data.v), 16, nrq * nc * sizeof(__m128));
 	if(0 != status){
-		errx(status, "Error allocating memory in %s.\n", __func__);
+		warnx("Error allocating memory in %s.\n", __func__);
+		free(mat);
+		return NULL;
 	}
         memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
@@ -72,9 +82,7 @@ Mat_rptr make_mat(int nr, int nc){
 Mat_rptr remake_mat(Mat_rptr M, int nr, int nc){
 	// Could be made more efficient when there is sufficent memory already allocated
 	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
-		if(NULL != M){
-			free_mat(&M);
-		}
+		M = free_mat(M);
 		M = make_mat(nr, nc);
 	}
 	return M;
@@ -110,10 +118,12 @@ void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int 
 }
 
 
-void free_mat(Mat_rptr * mat){
-	free((*mat)->data.v);
-	free(*mat);
-	*mat = NULL;
+Mat_rptr free_mat(Mat_rptr mat){
+	if(NULL != mat){
+		free(mat->data.v);
+		free(mat);
+	}
+	return NULL;
 }
 
 iMat_rptr make_imat(int nr, int nc){
@@ -125,7 +135,9 @@ iMat_rptr make_imat(int nr, int nc){
 	mat->nc = nc;
 	int status = posix_memalign((void **) &(mat->data.v), 16, nrq * nc * sizeof(__m128i));
 	if(0 != status){
-		errx(status, "Error allocating memory in %s.\n", __func__);
+		warnx("Error allocating memory in %s.\n", __func__);
+		free(mat);
+		return NULL;
 	}
         memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
@@ -134,18 +146,18 @@ iMat_rptr make_imat(int nr, int nc){
 iMat_rptr remake_imat(iMat_rptr M, int nr, int nc){
 	// Could be made more efficient when there is sufficent memory already allocated
 	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
-		if(NULL != M){
-			free_imat(&M);
-		}
+		M = free_imat(M);
 		M = make_imat(nr, nc);
 	}
 	return M;
 }
 
-void free_imat(iMat_rptr * mat){
-	free((*mat)->data.v);
-	free(*mat);
-	*mat = NULL;
+iMat_rptr free_imat(iMat_rptr mat){
+	if(NULL != mat){
+		free(mat->data.v);
+		free(mat);
+	}
+	return NULL;
 }
 
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
@@ -156,10 +168,17 @@ Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
          *  b is [nk]
          *  C is [nk, nc] or NULL.  If NULL then C is allocated.
          */
+	if(NULL == X){
+		// Input NULL due to earlier failure.  Propagate
+		return NULL;
+	}
+	assert(NULL != W);
+	assert(NULL != b);
 	assert(W->nr == X->nr);
         C = remake_mat(C, W->nc, X->nc);
-	assert(C->nr == W->nc);
-	assert(C->nc == X->nc);
+	if(NULL == C){
+		return NULL;
+	}
 
         /* Copy bias */
         for( int c = 0 ; c < C->nc; c++){
@@ -176,13 +195,21 @@ Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
 Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 		  const Mat_rptr Wf, const Mat_rptr Wb,
 		  const Mat_rptr b, Mat_rptr C){
+	if(NULL == Xf || NULL == Xb){
+		// Input NULL due to earlier failure.  Propagate
+		return NULL;
+	}
+	assert(NULL != Wf);
+	assert(NULL != Wb);
+	assert(NULL != b);
 	assert(Wf->nr == Xf->nr);
 	assert(Wb->nr == Xb->nr);
 	assert(Xf->nc == Xb->nc);
 	assert(Wf->nc == Wb->nc);
 	C = remake_mat(C, Wf->nc, Xf->nc);
-	assert(C->nr == Wf->nc);
-	assert(C->nc == Xf->nc);
+	if(NULL == C){
+		return NULL;
+	}
 
         /* Copy bias */
         for( int c = 0 ; c < C->nc; c++){
@@ -202,7 +229,10 @@ __m128 mask(int i){
 }
 
 void row_normalise_inplace(Mat_rptr C){
-	assert(NULL != C);
+	if(NULL == C){
+		// Input NULL due to earlier failure.  Propagate
+		return;
+	}
 	for(int col=0 ; col < C->nc ; col++){
 		const int offset = col * C->nrq;
 		__m128 sum = _mm_setzero_ps();
@@ -221,6 +251,10 @@ void row_normalise_inplace(Mat_rptr C){
 }
 
 float max_mat(const Mat_rptr x){
+	if(NULL == x){
+		// Input NULL due to earlier failure.  Propagate
+		return NAN;
+	}
 	float amax = x->data.f[0];
 	for(int col=0 ; col < x->nc ; col++){
 		const int offset = col * x->nrq * 4;
@@ -234,6 +268,10 @@ float max_mat(const Mat_rptr x){
 }
 
 float min_mat(const Mat_rptr x){
+	if(NULL == x){
+		// Input NULL due to earlier failure.  Propagate
+		return NAN;
+	}
 	float amin = x->data.f[0];
 	for(int col=0 ; col < x->nc ; col++){
 		const int offset = col * x->nrq * 4;
@@ -246,7 +284,11 @@ float min_mat(const Mat_rptr x){
 	return amin;
 }
 
-float argmax_mat(const Mat_rptr x){
+int argmax_mat(const Mat_rptr x){
+	if(NULL == x){
+		// Input NULL due to earlier failure.  Propagate
+		return -1;
+	}
 	float amax = x->data.f[0];
 	int imax = 0;
 
@@ -262,7 +304,11 @@ float argmax_mat(const Mat_rptr x){
 	return imax;
 }
 
-float argmin_mat(const Mat_rptr x){
+int argmin_mat(const Mat_rptr x){
+	if(NULL == x){
+		// Input NULL due to earlier failure.  Propagate
+		return -1;
+	}
 	float amin = x->data.f[0];
 	int imin = 0;
 
