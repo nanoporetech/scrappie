@@ -59,7 +59,7 @@ Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
 	}
 
 	for(int c=0 ; c<C->nc ; c++){
-		const int offset = c * C->nrq;
+		const size_t offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
 			C->data.v[offset + r] = tanhfv(C->data.v[offset +r]);
 		}
@@ -78,7 +78,7 @@ Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 		return NULL;
 	}
 	for(int c=0 ; c<C->nc ; c++){
-		const int offset = c * C->nrq;
+		const size_t offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
 			C->data.v[offset + r] = EXPFV(C->data.v[offset +r]);
 		}
@@ -109,7 +109,7 @@ Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 	}
 
 	for(int c=0 ; c<C->nc ; c++){
-		const int offset = c * C->nrq;
+		const size_t offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
 			C->data.v[offset + r] = tanhfv(C->data.v[offset +r]);
 		}

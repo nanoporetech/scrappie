@@ -236,7 +236,7 @@ struct _bs calculate_post(char * filename){
 	const __m128 mpv = _mm_set1_ps(args.min_prob / nstate);
 	const __m128 mpvm1 = _mm_set1_ps(1.0f - args.min_prob);
         for(int i=0 ; i < nev ; i++){
-		const int offset = i * post->nrq;
+		const size_t offset = i * post->nrq;
 		for(int r=0 ; r < post->nrq ; r++){
 			post->data.v[offset + r] = LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
 		}
