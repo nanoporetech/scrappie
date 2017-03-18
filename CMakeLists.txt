@@ -36,7 +36,7 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
-add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/events.c src/util.c)
+add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/events.c src/util.c src/networks.c)
 
 include_directories ("${PROJECT_BINARY_DIR}/include")
 
