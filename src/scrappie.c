@@ -1,5 +1,7 @@
 #include <assert.h>
+#include <dirent.h>
 #include <err.h>
+#include <glob.h>
 #include <libgen.h>
 #include <math.h>
 
@@ -10,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/types.h>
 #include "decode.h"
 #include "networks.h"
 #include <version.h>
@@ -277,6 +280,7 @@ int fprintf_sam(FILE * fp, const char * readname, const struct _bs res){
 
 
 int main(int argc, char * argv[]){
+	omp_set_nested(1);
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
 	scrappie_network_setup();
 
@@ -296,31 +300,53 @@ int main(int argc, char * argv[]){
 
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
-		struct _bs res = calculate_post(args.files[fn]);
-		if(NULL == res.bases){
-			warnx("No basecall returned for %s", args.files[fn]);
-			continue;
-		}
-
-		#pragma omp critical
+		glob_t globbuf;
 		{
-			switch(args.outformat){
-			case FORMAT_FASTA:
-				fprintf_fasta(stdout, basename(args.files[fn]), res);
-				break;
-			case FORMAT_SAM:
-				fprintf_sam(stdout, basename(args.files[fn]), res);
-				break;
-			default:
-				errx(EXIT_FAILURE, "Unrecognised output format");
+			// Find all files matching commandline argument using system glob
+			const size_t rootlen = strlen(args.files[fn]);
+			char * globpath = calloc(rootlen + 9, sizeof(char));
+			memcpy(globpath, args.files[fn], rootlen * sizeof(char));
+			if(NULL != opendir(args.files[fn])){
+				// If filename is a directory, add wildcard to find all fast5 files within it
+				memcpy(globpath + rootlen, "/*.fast5", 8 * sizeof(char));
 			}
-
-			if(hdf5out >= 0){
-				write_annotated_events(hdf5out, basename(args.files[fn]), res.et);
+			int globret = glob(globpath, GLOB_NOSORT, NULL, &globbuf);
+			free(globpath);
+			if(0 != globret){
+				globfree(&globbuf);
+				continue;
 			}
 		}
-		free(res.et.event);
-		free(res.bases);
+		#pragma omp parallel for schedule(dynamic)
+		for(int fn2=0 ; fn2 < globbuf.gl_pathc ; fn2++){
+			char * filename = globbuf.gl_pathv[fn2];
+			struct _bs res = calculate_post(filename);
+			if(NULL == res.bases){
+				warnx("No basecall returned for %s", filename);
+				continue;
+			}
+
+			#pragma omp critical
+			{
+				switch(args.outformat){
+				case FORMAT_FASTA:
+					fprintf_fasta(stdout, basename(filename), res);
+					break;
+				case FORMAT_SAM:
+					fprintf_sam(stdout, basename(filename), res);
+					break;
+				default:
+					errx(EXIT_FAILURE, "Unrecognised output format");
+				}
+
+				if(hdf5out >= 0){
+					write_annotated_events(hdf5out, basename(filename), res.et);
+				}
+			}
+			free(res.et.event);
+			free(res.bases);
+		}
+		globfree(&globbuf);
 	}
 
 	if(hdf5out >= 0){
