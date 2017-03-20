@@ -40,7 +40,7 @@ int get_latest_group(hid_t file, const char * root, const char * prefix){
 
 	herr_t status = H5Literate(grp, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, group_op_func, &gop_data);
 	if(status < 0 || gop_data.latest < 0){
-		warnx("Error trying to find segmenation group of form '%s/%s_XXX'.", root, prefix);
+		warnx("Error trying to find group of form '%s/%s_XXX'.", root, prefix);
 	}
 	H5Gclose(grp);
 
