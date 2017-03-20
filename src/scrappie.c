@@ -300,6 +300,9 @@ int main(int argc, char * argv[]){
 
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
+		//  Iterate through all files and directories on command line.
+		//  Nested parallelism for OpenMP is enabled so worker threads are used for all open
+		// directories but this less than optimal since many directories may be open at once.
 		glob_t globbuf;
 		{
 			// Find all files matching commandline argument using system glob
