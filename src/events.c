@@ -228,7 +228,8 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 }
 
 
-void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev){
+void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev, hsize_t chunk_size, int compression_level){
+	assert(compression_level >= 0 && compresion_level <= 9);
 	// Memory representation
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	if(memtype < 0){
@@ -257,13 +258,27 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	H5Tinsert(filetype, "state", 8 * 5, H5T_STD_I64LE);
 
 	// Create dataset
-	hsize_t dims[1] = {ev.n};
-	hid_t space = H5Screate_simple(1, dims, NULL);
+	const hsize_t dims = ev.n;
+	hid_t space = H5Screate_simple(1, &dims, NULL);
 	if(space < 0){
 		warnx("Failed to allocate dataspace for event table %s:%d.", __FILE__, __LINE__);
 		goto clean3;
 	}
-	hid_t dset = H5Dcreate(hdf5file, readname, filetype, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	// Enable compression if available
+	hid_t properties = H5P_DEFAULT;
+	if(compression_level > 0){
+		properties = H5Pcreate(H5P_DATASET_CREATE);
+		if(properties < 0){
+			warnx("Failed to create properties structure to write out compressed data structure.\n");
+			properties = H5P_DEFAULT;
+		} else {
+			H5Pset_shuffle(properties);
+			H5Pset_deflate(properties, compression_level);
+			H5Pset_chunk(properties, 1, &chunk_size);
+		}
+	}
+
+	hid_t dset = H5Dcreate(hdf5file, readname, filetype, space, H5P_DEFAULT, properties, H5P_DEFAULT);
 	if(dset < 0){
 		warnx("Failed to create dataset for event table %s:%d.", __FILE__, __LINE__);
 		goto clean4;
@@ -277,6 +292,9 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	}
 
 clean4:
+	if(H5P_DEFAULT != properties){
+		H5Pclose(properties);
+	}
 	H5Dclose(dset);
 clean3:
 	H5Sclose(space);

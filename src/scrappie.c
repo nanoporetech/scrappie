@@ -59,6 +59,8 @@ static struct argp_option options[] = {
 	{"no-albacore", 9, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
 	{"licence", 10, 0, 0, "Print licensing information"},
 	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
+	{"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
+	{"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
@@ -79,10 +81,12 @@ struct arguments {
 	int trim;
 	char * segmentation;
 	char * dump;
-	char ** files;
 	bool albacore;
+	int compression_level;
+	int compression_chunk_size;
+	char ** files;
 };
-static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false};
+static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false, 1, 200, NULL};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -149,6 +153,14 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	case 11:
 		ret = fputs(scrappie_licence_text, stdout);
 		exit((EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE);
+		break;
+	case 12:
+		args.compression_level = atoi(arg);
+		assert(args.compresion_level >= 0 && args.compression_level <= 9);
+		break;
+	case 13:
+		args.compression_chunk_size = atoi(arg);
+		assert(args.compression_chunk_size > 0);
 		break;
 	#if defined(_OPENMP)
 	case '#':
@@ -361,7 +373,8 @@ int main(int argc, char * argv[]){
 				}
 
 				if(hdf5out >= 0){
-					write_annotated_events(hdf5out, basename(filename), res.et);
+					write_annotated_events(hdf5out, basename(filename), res.et,
+						args.compression_chunk_size, args.compression_level);
 				}
 			}
 			free(res.et.event);
