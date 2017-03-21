@@ -14,6 +14,7 @@
 #include <strings.h>
 #include <sys/types.h>
 #include "decode.h"
+#include "licence.h"
 #include "networks.h"
 #include <version.h>
 
@@ -56,6 +57,8 @@ static struct argp_option options[] = {
 	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 	{"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
 	{"no-albacore", 9, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
+	{"licence", 10, 0, 0, "Print licensing information"},
+	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
@@ -84,6 +87,7 @@ static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false,
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
+		int ret = 0;
 	case 'a':
 		args.analysis = atoi(arg);
 		assert(args.analysis >= -1 && args.analysis < 1000);
@@ -141,7 +145,11 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	case 9:
 		args.albacore = false;
 		break;
-
+	case 10:
+	case 11:
+		ret = fputs(scrappie_licence_text, stdout);
+		exit((EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE);
+		break;
 	#if defined(_OPENMP)
 	case '#':
 		{
@@ -167,6 +175,8 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	}
 	return 0;
 }
+
+
 static struct argp argp = {options, parse_arg, args_doc, doc};
 
 
