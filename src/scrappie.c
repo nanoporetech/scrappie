@@ -284,12 +284,6 @@ int main(int argc, char * argv[]){
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
 	scrappie_network_setup();
 
-	int nfile = 0;
-	for( ; args.files[nfile] ; nfile++);
-	if(args.limit != 0 && nfile > args.limit){
-		nfile = args.limit;
-	}
-
 	hid_t hdf5out = -1;
 	if(NULL != args.dump){
 		hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
@@ -298,8 +292,16 @@ int main(int argc, char * argv[]){
 		}
 	}
 
+	int nfile = 0;
+	for( ; args.files[nfile] ; nfile++);
+
+	int reads_started = 0;
+	const int reads_limit = args.limit;
 	#pragma omp parallel for schedule(dynamic)
 	for(int fn=0 ; fn < nfile ; fn++){
+		if(reads_limit > 0 && reads_started >= reads_limit){
+			continue;
+		}
 		//  Iterate through all files and directories on command line.
 		//  Nested parallelism for OpenMP is enabled so worker threads are used for all open
 		// directories but this less than optimal since many directories may be open at once.
@@ -322,6 +324,12 @@ int main(int argc, char * argv[]){
 		}
 		#pragma omp parallel for schedule(dynamic)
 		for(int fn2=0 ; fn2 < globbuf.gl_pathc ; fn2++){
+			if(reads_limit > 0 && reads_started >= reads_limit){
+				continue;
+			}
+			#pragma omp atomic
+			reads_started += 1;
+
 			char * filename = globbuf.gl_pathv[fn2];
 			struct _bs res = calculate_post(filename);
 			if(NULL == res.bases){
@@ -329,7 +337,7 @@ int main(int argc, char * argv[]){
 				continue;
 			}
 
-			#pragma omp critical
+			#pragma omp critical(sequence_output)
 			{
 				switch(args.outformat){
 				case FORMAT_FASTA:
