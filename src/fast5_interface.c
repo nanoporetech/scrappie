@@ -3,7 +3,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include "events.h"
+#include "fast5_interface.h"
+
 
 event_table read_events(hid_t hdf5file, const char * tablepath, const float sample_rate);
 
@@ -259,6 +260,76 @@ fast5_raw_scaling get_raw_scaling(hid_t hdf5file){
 	H5Gclose(scaling_group);
 
 	return scaling;
+}
+
+
+raw_table read_raw(const char * filename, bool scale_to_pA){
+	assert(NULL != filename);
+	raw_table rawtbl = {0, 0, 0, NULL};
+
+	hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if(hdf5file < 0){
+		warnx("Failed to open %s for reading.", filename);
+		return rawtbl;
+	}
+
+	const char * root = "/Raw/Reads/";
+	const int rootstr_len = strlen(root);
+	ssize_t size = H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL, 0, H5P_DEFAULT);
+	if(size < 0){
+		warnx("Failed find read name under %s.", root);
+		goto cleanup1;
+	}
+	char * name = calloc(1 + size, sizeof(char));
+	H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name, 1 + size, H5P_DEFAULT);
+
+	// Create group name
+	char * signal_path = calloc(rootstr_len + size + 8, sizeof(char));
+	(void)snprintf(signal_path, rootstr_len + size + 8, "%s%s/Signal", root, name);
+	free(name);
+
+
+	hid_t dset = H5Dopen(hdf5file, signal_path, H5P_DEFAULT);
+	if(dset < 0){
+		warnx("Failed to open dataset '%s' to read raw signal from.", signal_path);
+		goto cleanup2;
+	}
+
+	hid_t space = H5Dget_space(dset);
+	if(space < 0){
+		warnx("Failed to create copy of dataspace for raw signal %s.", signal_path);
+		goto cleanup3;
+	}
+	hsize_t nsample;
+	H5Sget_simple_extent_dims (space, &nsample, NULL);
+	float * rawptr = calloc(nsample, sizeof(float));
+	herr_t status = H5Dread(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, rawptr);
+	if(status < 0){
+		free(rawptr);
+		warnx("Failed to read raw data from dataset %s.", signal_path);
+		goto cleanup4;
+	}
+	rawtbl = (raw_table){nsample, 0, nsample, rawptr};
+
+	if(scale_to_pA){
+		const fast5_raw_scaling scaling = get_raw_scaling(hdf5file);
+		const float raw_unit = scaling.range / scaling.digitisation;
+		for(size_t i=0 ; i < nsample ; i++){
+			rawptr[i] = (rawptr[i] + scaling.offset) * raw_unit;
+		}
+	}
+
+
+cleanup4:
+	H5Sclose(space);
+cleanup3:
+	H5Dclose(dset);
+cleanup2:
+	free(signal_path);
+cleanup1:
+	H5Fclose(hdf5file);
+
+	return rawtbl;
 }
 
 

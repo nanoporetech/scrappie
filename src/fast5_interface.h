@@ -2,6 +2,7 @@
 #define EVENTS_H
 
 #include <hdf5.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct {
@@ -16,7 +17,13 @@ typedef struct {
 	event_t * event;
 } event_table;
 
+typedef struct {
+	size_t n, start, end;
+	float * raw;
+} raw_table;
 
+
+raw_table read_raw(const char * filename, bool scale_to_pA);
 event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation, int seganalysis_no);
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section);
 
