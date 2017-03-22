@@ -8,11 +8,22 @@
 event_table read_events(hid_t hdf5file, const char * tablepath, const float sample_rate);
 
 
-struct _range { int start, end;};
+struct _range {
+	int start, end;
+};
+
 struct _gop_data {
 	const char * prefix;
 	int latest;
 };
+
+typedef struct {
+	//  Information for scaling raw data from ADC values to pA
+	float digitisation;
+	float offset;
+	float range;
+	float sample_rate;
+} fast5_raw_scaling;
 
 herr_t group_op_func (hid_t loc_id, const char *name, const H5L_info_t *info,
 			void *operator_data){
@@ -209,33 +220,46 @@ cleanup1:
 }
 
 
-float albacore_sample_rate(hid_t hdf5file){
-	// Add 1e-5 to sensible sample rate as a sentinel value
-	float sample_rate = 4000.0 + 1e-5;
-	const char * sample_rate_group = "/UniqueGlobalKey/channel_id";
-
-	hid_t sample_group = H5Gopen(hdf5file, sample_rate_group, H5P_DEFAULT);
-	if(sample_group < 0){
-		warnx("Failed to group %s.", sample_rate_group);
-		return sample_rate;
+float read_float_attribute(hid_t group, const char * attribute){
+	float val = NAN;
+	if(group < 0){
+		warnx("Invalid group passed to %s:%d.", __FILE__, __LINE__);
+		return val;
 	}
 
-	hid_t sample_attr = H5Aopen(sample_group, "sampling_rate", H5P_DEFAULT);
-	if(sample_attr < 0){
-		warnx("Failed to read sampling_rate attribute.");
-		goto cleanup1;
+	hid_t attr = H5Aopen(group, attribute, H5P_DEFAULT);
+	if(attr < 0){
+		warnx("Failed to open attribute '%s' for reading.", attribute);
+		return val;
 	}
 
-	H5Aread(sample_attr, H5T_NATIVE_FLOAT, &sample_rate);
+	H5Aread(attr, H5T_NATIVE_FLOAT, &val);
+	H5Aclose(attr);
 
-
-	H5Aclose(sample_attr);
-cleanup1:
-	H5Gclose(sample_group);
-
-	return sample_rate;
+	return val;
 }
 
+
+fast5_raw_scaling get_raw_scaling(hid_t hdf5file){
+	// Add 1e-5 to sensible sample rate as a sentinel value
+	fast5_raw_scaling scaling = {NAN, NAN, NAN, NAN};
+	const char * scaling_path = "/UniqueGlobalKey/channel_id";
+
+	hid_t scaling_group = H5Gopen(hdf5file, scaling_path, H5P_DEFAULT);
+	if(scaling_group < 0){
+		warnx("Failed to group %s.", scaling_path);
+		return scaling;
+	}
+
+	scaling.digitisation = read_float_attribute(scaling_group, "digitisation");
+	scaling.offset = read_float_attribute(scaling_group, "offset");
+	scaling.range = read_float_attribute(scaling_group, "range");
+	scaling.sample_rate = read_float_attribute(scaling_group, "sampling_rate");
+
+	H5Gclose(scaling_group);
+
+	return scaling;
+}
 
 
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section){
@@ -259,11 +283,9 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
 
 	// Read sample rate from attribute in file
-	const float sample_rate = albacore_sample_rate(hdf5file);
-	printf("Sample rate is %f\n", sample_rate);
+	const fast5_raw_scaling scaling = get_raw_scaling(hdf5file);
 
-
-	ev = read_events(hdf5file, event_group, sample_rate);
+	ev = read_events(hdf5file, event_group, scaling.sample_rate);
 	free(event_group);
 	H5Fclose(hdf5file);
 
