@@ -5,8 +5,9 @@
 #include <stdint.h>
 
 typedef struct {
-	double start, length;
-	double mean, stdv;
+	double start;
+	float length;
+	float mean, stdv;
 	int pos, state;
 } event_t;
 
