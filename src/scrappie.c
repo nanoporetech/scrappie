@@ -236,7 +236,8 @@ struct _bs calculate_post(char * filename){
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
 	post = free_mat(post);
 	int * pos = calloc(nev, sizeof(int));
-	char * bases = overlapper(seq, nev, nstate - 1, pos);
+	char * basecall = overlapper(seq, nev, nstate - 1, pos);
+	const size_t basecall_len = strlen(basecall);
 
 	const int evoffset = et.start;
 	for(int ev=0 ; ev < nev ; ev++){
@@ -245,52 +246,17 @@ struct _bs calculate_post(char * filename){
 	}
 
 	if(args.dwell_correction){
-		const float prior_scale = (et.event[nev + evoffset - 1].length + et.event[nev + evoffset - 1].start - et.event[evoffset].start)
-					/ (float)strlen(bases);
-		int * dwell = calloc(nev, sizeof(int));
-		for(int ev=0 ; ev < nev ; ev ++){
-			dwell[ev] = et.event[ev + evoffset].length;
+		char * newbasecall = homopolymer_dwell_correction(et, seq, nstate, basecall_len);
+		if(NULL != newbasecall){
+			free(basecall);
+			basecall = newbasecall;
 		}
-
-		/*   Calibrate scaling factor for homopolymer estimation.
-		 *   Simple mean of the dwells of all 'step' movements in
-		 * the basecall.  Steps within homopolymers are ignored.
-		 *   A more complex calibration could be used.
-		 */
-		int tot_step_dwell = 0;
-		int nstep = 0;
-		for(int ev=0, ppos=-2, evdwell=0, pstate=-1 ; ev < nev ; ev++){
-			// Sum over dwell of all steps excluding those within homopolymers
-			if(et.event[ev + evoffset].pos == ppos){
-				// Stay. Accumulate dwell
-				evdwell += dwell[ev];
-				continue;
-			}
-
-			if(et.event[ev + evoffset].pos == ppos + 1 && et.event[ev + evoffset].state != pstate){
-				// Have a step that is not within a homopolymer
-				tot_step_dwell += evdwell;
-				nstep += 1;
-			}
-
-			evdwell = dwell[ev];
-			ppos = et.event[ev + evoffset].pos;
-			pstate = et.event[ev + evoffset].state;
-		}
-                // Estimate of scale with a prior with weight equal to a single observation.
-		const float homo_scale = (prior_scale + tot_step_dwell) / (1.0 + nstep);
-		const dwell_model dm = {homo_scale, {0.0f, 0.0f, 0.0f, 0.0f}};
-
-		free(bases);
-		bases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
-
-		free(dwell);
 	}
 
 	free(pos);
 	free(seq);
 
-	return (struct _bs){score, nev, bases, et};
+	return (struct _bs){score, nev, basecall, et};
 }
 
 int fprintf_fasta(FILE * fp, const char * readname, const struct _bs res){

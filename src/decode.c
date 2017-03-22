@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "decode.h"
 
 #define NBASE 4
@@ -119,7 +120,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 				const size_t oi = pref * NBASE + i;
 				// This cycling through prefixes
 				const __m128 skip_score = logpost->data.v[offsetPq + oi]
-                                                        + _mm_set1_ps(tmp->data.f[pref])
+	                                                + _mm_set1_ps(tmp->data.f[pref])
 							- skip_penv;
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[oi], skip_score));
 				score->data.v[oi] = _mm_max_ps(score->data.v[oi], skip_score);
@@ -218,7 +219,7 @@ int position_highest_bit(int x){
 
 int first_nonnegative(const int * seq, int n){
 	int st;
-        for(st=0 ; st < n && seq[st] < 0; st++);
+	for(st=0 ; st < n && seq[st] < 0; st++);
 	return st;
 }
 
@@ -244,7 +245,7 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 	//  Determine length of final sequence
 	int length = kmer_len;
  	// Find first non-stay
-        const int st = first_nonnegative(seq, n);
+	const int st = first_nonnegative(seq, n);
 	assert(st != n);
 	int kprev = seq[st];
 	for(int k=st + 1 ; k < n ; k++){
@@ -283,7 +284,7 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 		}
 		kprev = seq[k];
 
-                for(int kmer=seq[k], i=0 ; i<ol ; i++){
+	        for(int kmer=seq[k], i=0 ; i<ol ; i++){
 			int b = kmer & 3;
 			kmer >>= 2;
 			bases[last_idx + ol - i] = base_lookup[b];
@@ -308,7 +309,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 	//  Determine length of final sequence
 	int length = kmer_len;
  	//  Find first non-stay
-        const int st = first_nonnegative(seq, n);
+	const int st = first_nonnegative(seq, n);
 	assert(st != n);
 	int kprev = seq[st];
 	int inhomo = -1;
@@ -317,7 +318,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 		/* Simple state machine tagged by inhomo
 		 * inhomo < 0  --  not in a homopolymer
 		 * inhomo >= 0  -- in homopolymer and value is homopolymer state
-                 */
+	         */
 		if(seq[k] < 0){
 			// State is stay.  Short circuit rest of logic
 			if(inhomo >= 0){
@@ -401,7 +402,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 		int ol = overlap(kprev , seq[k], nkmer);
 		kprev = seq[k];
 
-                for(int kmer=seq[k], i=0 ; i<ol ; i++){
+	        for(int kmer=seq[k], i=0 ; i<ol ; i++){
 			int b = kmer & 3;
 			kmer >>= 2;
 			bases[last_idx + ol - i] = base_lookup[b];
@@ -429,4 +430,56 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 	}
 
 	return bases;
+}
+
+
+
+char * homopolymer_dwell_correction(const event_table et, const int * seq, size_t nstate, size_t basecall_len){
+	if(NULL == et.event || NULL == seq){
+		return NULL;
+	}
+	const int nev = et.end - et.start;
+	const int evoffset = et.start;
+
+	const float prior_scale = (et.event[nev + evoffset - 1].length + et.event[nev + evoffset - 1].start - et.event[evoffset].start)
+	                                / (float)basecall_len;
+	int * dwell = calloc(nev, sizeof(int));
+	for(int ev=0 ; ev < nev ; ev ++){
+		dwell[ev] = et.event[ev + evoffset].length;
+	}
+
+	/*   Calibrate scaling factor for homopolymer estimation.
+	 *   Simple mean of the dwells of all 'step' movements in
+	 * the basecall.  Steps within homopolymers are ignored.
+	 *   A more complex calibration could be used.
+	 */
+	int tot_step_dwell = 0;
+	int nstep = 0;
+	for(int ev=0, ppos=-2, evdwell=0, pstate=-1 ; ev < nev ; ev++){
+		// Sum over dwell of all steps excluding those within homopolymers
+		if(et.event[ev + evoffset].pos == ppos){
+			// Stay. Accumulate dwell
+			evdwell += dwell[ev];
+			continue;
+		}
+
+		if(et.event[ev + evoffset].pos == ppos + 1 && et.event[ev + evoffset].state != pstate){
+			// Have a step that is not within a homopolymer
+			tot_step_dwell += evdwell;
+			nstep += 1;
+		}
+
+		evdwell = dwell[ev];
+		ppos = et.event[ev + evoffset].pos;
+		pstate = et.event[ev + evoffset].state;
+	}
+	// Estimate of scale with a prior with weight equal to a single observation.
+	const float homo_scale = (prior_scale + tot_step_dwell) / (1.0 + nstep);
+	const dwell_model dm = {homo_scale, {0.0f, 0.0f, 0.0f, 0.0f}};
+
+	char * newbases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
+
+	free(dwell);
+
+	return newbases;
 }

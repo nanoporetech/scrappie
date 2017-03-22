@@ -1,10 +1,11 @@
 #include <assert.h>
 #include <err.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "events.h"
 
-event_table read_events(hid_t hdf5file, const char * tablepath);
+event_table read_events(hid_t hdf5file, const char * tablepath, const float sample_rate);
 
 
 struct _range { int start, end;};
@@ -93,7 +94,7 @@ clean1:
 }
 
 
-event_table read_events(hid_t hdf5file, const char * tablepath){
+event_table read_events(hid_t hdf5file, const char * tablepath, const float sample_rate){
 	assert(NULL != tablepath);
 	event_table ev = {0, 0, 0, NULL};
 
@@ -117,10 +118,12 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 		warnx("Failed to create memory representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
 	}
+	//  Using doubles to store time and length is a poor choice but forced by the
+	//  need to be compatible with both Albacore and Minknow files.
 	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
-	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_DOUBLE);
-	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
-	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
+	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_FLOAT);
+	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_FLOAT);
+	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_FLOAT);
 	event_t * events = calloc(nevent, sizeof(event_t));
 	if(NULL == events){
 		warnx("Failed to allocate memory for events");
@@ -131,6 +134,12 @@ event_table read_events(hid_t hdf5file, const char * tablepath){
 		free(events);
 		warnx("Failed to read events out of dataset %s.", tablepath);
 		goto clean3;
+	}
+
+	for(int ev=0 ; ev < nevent ; ev++){
+		// Convert to samples if necessary
+		events[ev].start = round(events[ev].start * sample_rate);
+		events[ev].length = roundf(events[ev].length * sample_rate);
 	}
 
 	for(int ev=0 ; ev < nevent ; ev++){
@@ -184,7 +193,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	char * event_group = calloc(rootstr_len + size + 7, sizeof(char));
 	(void)snprintf(event_group, rootstr_len + size + 7, "%s%s/Events", root, name);
         free(name);
-	ev = read_events(hdf5file, event_group);
+	ev = read_events(hdf5file, event_group, 1.0);
 	free(event_group);
 
 	//  Add segmentation information
@@ -198,6 +207,35 @@ cleanup1:
 
 	return ev;
 }
+
+
+float albacore_sample_rate(hid_t hdf5file){
+	// Add 1e-5 to sensible sample rate as a sentinel value
+	float sample_rate = 4000.0 + 1e-5;
+	const char * sample_rate_group = "/UniqueGlobalKey/channel_id";
+
+	hid_t sample_group = H5Gopen(hdf5file, sample_rate_group, H5P_DEFAULT);
+	if(sample_group < 0){
+		warnx("Failed to group %s.", sample_rate_group);
+		return sample_rate;
+	}
+
+	hid_t sample_attr = H5Aopen(sample_group, "sampling_rate", H5P_DEFAULT);
+	if(sample_attr < 0){
+		warnx("Failed to read sampling_rate attribute.");
+		goto cleanup1;
+	}
+
+	H5Aread(sample_attr, H5T_NATIVE_FLOAT, &sample_rate);
+
+
+	H5Aclose(sample_attr);
+cleanup1:
+	H5Gclose(sample_group);
+
+	return sample_rate;
+}
+
 
 
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section){
@@ -220,7 +258,12 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 	char * event_group = calloc(loclen, sizeof(char));
 	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
 
-	ev = read_events(hdf5file, event_group);
+	// Read sample rate from attribute in file
+	const float sample_rate = albacore_sample_rate(hdf5file);
+	printf("Sample rate is %f\n", sample_rate);
+
+
+	ev = read_events(hdf5file, event_group, sample_rate);
 	free(event_group);
 	H5Fclose(hdf5file);
 
@@ -236,26 +279,24 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 		warnx("Failed to create memroy representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean1;
 	}
-	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_INT);
-	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_INT);
-	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
-	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
+	H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
+	H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_FLOAT);
+	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_FLOAT);
+	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_FLOAT);
 	H5Tinsert(memtype, "pos", HOFFSET(event_t, pos), H5T_NATIVE_INT);
-	H5Tinsert(memtype, "state", HOFFSET(event_t, state), H5T_NATIVE_INT);
 
 	// File representation
-	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 * 6);
+	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 + 4 * 4);
 	if(filetype < 0){
 		warnx("Failed to create file representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
 	}
 
-	H5Tinsert(filetype, "start", 8 * 0, H5T_STD_I64LE);
-	H5Tinsert(filetype, "length", 8 * 1, H5T_STD_I64LE);
-	H5Tinsert(filetype, "mean", 8 * 2, H5T_IEEE_F64LE);
-	H5Tinsert(filetype, "stdv", 8 * 3, H5T_IEEE_F64LE);
-	H5Tinsert(filetype, "pos", 8 * 4, H5T_STD_I64LE);
-	H5Tinsert(filetype, "state", 8 * 5, H5T_STD_I64LE);
+	H5Tinsert(filetype, "start", 0, H5T_STD_U32LE);
+	H5Tinsert(filetype, "length", 4, H5T_STD_U32LE);
+	H5Tinsert(filetype, "mean", 4 * 2, H5T_IEEE_F32LE);
+	H5Tinsert(filetype, "stdv", 4 * 3, H5T_NATIVE_FLOAT);
+	H5Tinsert(filetype, "pos", 4 * 4, H5T_NATIVE_INT);
 
 	// Create dataset
 	const hsize_t dims = ev.n;
