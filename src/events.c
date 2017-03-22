@@ -209,6 +209,35 @@ cleanup1:
 }
 
 
+float albacore_sample_rate(hid_t hdf5file){
+	// Add 1e-5 to sensible sample rate as a sentinel value
+	float sample_rate = 4000.0 + 1e-5;
+	const char * sample_rate_group = "/UniqueGlobalKey/channel_id";
+
+	hid_t sample_group = H5Gopen(hdf5file, sample_rate_group, H5P_DEFAULT);
+	if(sample_group < 0){
+		warnx("Failed to group %s.", sample_rate_group);
+		return sample_rate;
+	}
+
+	hid_t sample_attr = H5Aopen(sample_group, "sampling_rate", H5P_DEFAULT);
+	if(sample_attr < 0){
+		warnx("Failed to read sampling_rate attribute.");
+		goto cleanup1;
+	}
+
+	H5Aread(sample_attr, H5T_NATIVE_FLOAT, &sample_rate);
+
+
+	H5Aclose(sample_attr);
+cleanup1:
+	H5Gclose(sample_group);
+
+	return sample_rate;
+}
+
+
+
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section){
 	assert(NULL != filename);
 	assert(NULL != section);
@@ -230,14 +259,7 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 	(void)snprintf(event_group, loclen, "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events", analysis_no, section);
 
 	// Read sample rate from attribute in file
-	float sample_rate = 1.0;
-	hid_t sample_attr = H5Aopen(hdf5file, "/UniqueGlobalKey/channel_id/sampling_rate", H5P_DEFAULT);
-	if(sample_attr < 0){
-		warnx("Failed to read sampling_rate attribute from %s.", filename);
-	} else {
-		H5Aread(sample_attr, H5T_NATIVE_FLOAT, &sample_rate);
-		H5Aclose(sample_attr);
-	}
+	const float sample_rate = albacore_sample_rate(hdf5file);
 	printf("Sample rate is %f\n", sample_rate);
 
 
