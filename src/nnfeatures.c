@@ -14,6 +14,7 @@
  *  @return void
  **/
 void studentise_features(Mat_rptr features){
+	assert(4 == features->nr);
 	const int nevent = features->nc;
 
 	__m128 sum, sumsq;
