@@ -241,10 +241,9 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_DOUBLE);
 	H5Tinsert(memtype, "pos", HOFFSET(event_t, pos), H5T_NATIVE_INT);
-	H5Tinsert(memtype, "state", HOFFSET(event_t, state), H5T_NATIVE_INT);
 
 	// File representation
-	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 * 6);
+	hid_t filetype = H5Tcreate(H5T_COMPOUND, 8 * 5);
 	if(filetype < 0){
 		warnx("Failed to create file representation for event table %s:%d.", __FILE__, __LINE__);
 		goto clean2;
@@ -255,7 +254,6 @@ void write_annotated_events(hid_t hdf5file, const char * readname, const event_t
 	H5Tinsert(filetype, "mean", 8 * 2, H5T_IEEE_F64LE);
 	H5Tinsert(filetype, "stdv", 8 * 3, H5T_IEEE_F64LE);
 	H5Tinsert(filetype, "pos", 8 * 4, H5T_STD_I64LE);
-	H5Tinsert(filetype, "state", 8 * 5, H5T_STD_I64LE);
 
 	// Create dataset
 	const hsize_t dims = ev.n;
