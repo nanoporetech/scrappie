@@ -93,7 +93,7 @@ Mat_rptr make_mat(int nr, int nc){
 		free(mat);
 		return NULL;
 	}
-        memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
+	memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
 }
 
@@ -131,14 +131,14 @@ void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int 
 		fputs(header, fh);
 		fputc('\n', fh);
 	}
-        for(int c=0 ; c < nc ; c++){
-                const size_t offset = c * mat->nrq * 4;
-                fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
-                for(int r=1 ; r<nr ; r++){
-                        fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
-                }
-                fputc('\n', fh);
-        }
+	for(int c=0 ; c < nc ; c++){
+	        const size_t offset = c * mat->nrq * 4;
+	        fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
+	        for(int r=1 ; r<nr ; r++){
+	                fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
+	        }
+	        fputc('\n', fh);
+	}
 }
 
 
@@ -163,7 +163,7 @@ iMat_rptr make_imat(int nr, int nc){
 		free(mat);
 		return NULL;
 	}
-        memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
+	memset(mat->data.v, 0, nrq * nc * sizeof(__m128));
 	return mat;
 }
 
@@ -191,13 +191,13 @@ void zero_imat(iMat_rptr M) {
 
 
 Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
-                 const Mat_rptr b, Mat_rptr C){
-        /*  Affine transform C = W^t X + b
-         *  X is [nr, nc]
-         *  W is [nr, nk]
-         *  b is [nk]
-         *  C is [nk, nc] or NULL.  If NULL then C is allocated.
-         */
+	         const Mat_rptr b, Mat_rptr C){
+	/*  Affine transform C = W^t X + b
+	 *  X is [nr, nc]
+	 *  W is [nr, nk]
+	 *  b is [nk]
+	 *  C is [nk, nc] or NULL.  If NULL then C is allocated.
+	 */
 	if(NULL == X){
 		// Input NULL due to earlier failure.  Propagate
 		return NULL;
@@ -205,21 +205,21 @@ Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
 	assert(NULL != W);
 	assert(NULL != b);
 	assert(W->nr == X->nr);
-        C = remake_mat(C, W->nc, X->nc);
+	C = remake_mat(C, W->nc, X->nc);
 	if(NULL == C){
 		return NULL;
 	}
 
-        /* Copy bias */
-        for( int c = 0 ; c < C->nc; c++){
-                memcpy(C->data.v + c * C->nrq, b->data.v, C->nrq * sizeof(__m128));
-        }
+	/* Copy bias */
+	for( int c = 0 ; c < C->nc; c++){
+	        memcpy(C->data.v + c * C->nrq, b->data.v, C->nrq * sizeof(__m128));
+	}
 
-        /* Affine transform */
-        cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, W->nc, X->nc, W->nr, 1.0, W->data.f, W->nrq * 4, X->data.f, X->nrq * 4, 1.0, C->data.f, C->nrq * 4);
+	/* Affine transform */
+	cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, W->nc, X->nc, W->nr, 1.0, W->data.f, W->nrq * 4, X->data.f, X->nrq * 4, 1.0, C->data.f, C->nrq * 4);
 
 
-        return C;
+	return C;
 }
 
 Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
@@ -241,15 +241,15 @@ Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
 		return NULL;
 	}
 
-        /* Copy bias */
-        for( int c = 0 ; c < C->nc; c++){
-                memcpy(C->data.v + c * C->nrq, b->data.v, C->nrq * sizeof(__m128));
-        }
+	/* Copy bias */
+	for( int c = 0 ; c < C->nc; c++){
+	        memcpy(C->data.v + c * C->nrq, b->data.v, C->nrq * sizeof(__m128));
+	}
 
-        /* Affine transform -- forwards*/
-        cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, Wf->nc, Xf->nc, Wf->nr, 1.0, Wf->data.f, Wf->nrq * 4, Xf->data.f, Xf->nrq * 4, 1.0, C->data.f, C->nrq * 4);
-        /* Affine transform -- backwards*/
-        cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, Wb->nc, Xb->nc, Wb->nr, 1.0, Wb->data.f, Wb->nrq * 4, Xb->data.f, Xb->nrq * 4, 1.0, C->data.f, C->nrq * 4);
+	/* Affine transform -- forwards*/
+	cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, Wf->nc, Xf->nc, Wf->nr, 1.0, Wf->data.f, Wf->nrq * 4, Xf->data.f, Xf->nrq * 4, 1.0, C->data.f, C->nrq * 4);
+	/* Affine transform -- backwards*/
+	cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, Wb->nc, Xb->nc, Wb->nr, 1.0, Wb->data.f, Wb->nrq * 4, Xb->data.f, Xb->nrq * 4, 1.0, C->data.f, C->nrq * 4);
 	return C;
 }
 
@@ -352,4 +352,151 @@ int argmin_mat(const Mat_rptr x){
 		}
 	}
 	return imin;
+}
+
+
+int floatcmp(const void * x, const void * y){
+	float d = *(float *)x - *(float *)y;
+	if(d > 0){
+		return 1;
+	}
+	return -1;
+}
+
+
+/** Median of an array
+ *
+ *  @param x An array to calculate median of
+ *  @param n Length of array
+ *
+ *  @return Median of array on success, NAN otherwise.
+ **/
+float medianf(float * x, size_t n){
+	if(NULL == x){
+		return NAN;
+	}
+	if(1 == n){
+		return x[0];
+	}
+
+	float * space = malloc(n * sizeof(float));
+	if(NULL == space){
+		return NAN;
+	}
+	memcpy(space, x, n * sizeof(float));
+	qsort(space, n, sizeof(float), floatcmp);
+
+
+	const size_t idx = n / 2;
+	float med = space[idx];
+	if( (n % 2) == 0){
+		med = 0.5 * (med + space[idx - 1]);
+	}
+
+	free(space);
+	return med;
+}
+
+
+/** Median Absolute Deviation of an array
+ *
+ *  @param x An array to calculate the MAD of
+ *  @param n Length of array
+ *  @param med Median of the array.  If NAN then median is calculated.
+ *
+ *  @return MAD of array on success, NAN otherwise.
+ **/
+float madf(float * x, size_t n, float med){
+	const float mad_scaling_factor = 1.4826;
+	if(NULL == x){
+		return NAN;
+	}
+	if(1 == n){
+		return 0.0f;
+	}
+
+	float * absdiff = malloc(n * sizeof(float));
+	if(NULL == absdiff){
+		return NAN;
+	}
+
+	if(isnan(med)){
+		med = medianf(x, n);
+	}
+
+	for(size_t i=0 ; i < n ; i++){
+		absdiff[i] = fabsf(x[i] - med);
+	}
+
+	const float mad = medianf(absdiff, n);
+	free(absdiff);
+	return mad * mad_scaling_factor;
+}
+
+
+/** Med-MAD normalisation of an array
+ *
+ *  Normalise an array using the median and MAD as measures of
+ *  location and scale respectively.  The array is updated inplace.
+ *
+ *  @param x An array containing values to normalise
+ *  @param n Length of array
+ *  @return void
+ **/
+void medmad_normalise_array(float * x, size_t n){
+	if(NULL == x){
+		return;
+	}
+	if(1 == n){
+		x[0] = 0.0;
+		return;
+	}
+
+	const float xmed = medianf(x, n);
+	const float xmad = madf(x, n, xmed);
+	for(int i=0 ; i < n ; i++){
+		x[i] = (x[i] - xmed)  / xmad;
+	}
+}
+
+
+/** Studentise array using Kahan summation algorithm
+ *
+ *  Studentise an array using the Kahan summation
+ *  algorithm for numerical stability. The array is updated inplace.
+ *  https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+ *
+ *  @param x An array to normalise
+ *  @param n Length of array
+ *  @return void
+ **/
+void studentise_array_kahan(float * x, size_t n){
+	if(NULL == x){
+		return;
+	}
+
+	double sum, sumsq, comp, compsq;
+	sumsq = sum = comp = compsq = 0.0;
+	for(int i=0 ; i < n ; i++){
+		double d1 = x[i] - comp;
+		double sum_tmp = sum + d1;
+		comp = (sum_tmp - sum) - d1;
+		sum = sum_tmp;
+
+		double d2 = x[i] * x[i] - compsq;
+		double sumsq_tmp = sumsq + d2;
+		compsq = (sumsq_tmp - sumsq) - d2;
+		sumsq = sumsq_tmp;
+	}
+	sum /= n;
+	sumsq /= n;
+	sumsq -= sum * sum;
+
+	sumsq = sqrt(sumsq);
+
+	const float sumf = sum;
+	const float sumsqf = sumsq;
+	for(int i=0 ; i < n ; i++){
+		x[i] = (x[i] - sumf) / sumsqf;
+	}
 }

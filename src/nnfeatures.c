@@ -97,4 +97,3 @@ Mat_rptr make_features(const event_table evtbl, bool normalise){
 
 	return features;
 }
-
