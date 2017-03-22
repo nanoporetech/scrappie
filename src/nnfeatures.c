@@ -73,16 +73,16 @@ void studentise_features_kahan(Mat_rptr features){
 }
 
 
-Mat_rptr make_features(const event_table evtbl, int trim, bool normalise){
-	trim += evtbl.start;
-	const int nevent = evtbl.end - trim;
+Mat_rptr make_features(const event_table evtbl, bool normalise){
+	const size_t nevent = evtbl.end - evtbl.start;
+	const size_t offset = evtbl.start;
 	Mat_rptr features = make_mat(4, nevent);
-	for(int ev=0 ; ev<nevent - 1 ; ev++){
+	for(size_t ev=0 ; ev<nevent - 1 ; ev++){
 		features->data.v[ev] = _mm_setr_ps(
-			evtbl.event[ev + trim].mean,
-			evtbl.event[ev + trim].stdv,
-			evtbl.event[ev + trim].length,
-			fabs(evtbl.event[ev + trim].mean - evtbl.event[ev + 1 + trim].mean));
+			evtbl.event[ev + offset].mean,
+			evtbl.event[ev + offset].stdv,
+			evtbl.event[ev + offset].length,
+			fabs(evtbl.event[ev + offset].mean - evtbl.event[ev + 1 + offset].mean));
 	}
 	features->data.v[nevent - 1] = _mm_setr_ps(
 			evtbl.event[evtbl.end - 1].mean,

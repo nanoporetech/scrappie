@@ -3,8 +3,7 @@
 #include "nanonet_lstm_events.h"
 #include "nnfeatures.h"
 
-Mat_rptr nanonet_posterior(const event_table events, int trim, float min_prob, bool return_log){
-	assert(trim >= 0);
+Mat_rptr nanonet_posterior(const event_table events, float min_prob, bool return_log){
 	assert(min_prob >= 0.0 && min_prob <= 1.0);
 	if(events.n <= 0 || NULL == events.event){
 		return NULL;
@@ -13,7 +12,7 @@ Mat_rptr nanonet_posterior(const event_table events, int trim, float min_prob, b
 	const int WINLEN = 3;
 
         //  Make features
-        Mat_rptr features = make_features(events, trim, true);
+        Mat_rptr features = make_features(events, true);
         Mat_rptr feature3 = window(features, WINLEN, 1);
         features = free_mat(features);
 

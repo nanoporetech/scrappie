@@ -220,8 +220,10 @@ struct _bs calculate_post(char * filename){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
+	et.start += args.trim;
+	et.end -= args.trim;
 
-	Mat_rptr post = nanonet_posterior(et, args.trim, args.min_prob, true);
+	Mat_rptr post = nanonet_posterior(et, args.min_prob, true);
 	if(NULL == post){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
@@ -236,7 +238,7 @@ struct _bs calculate_post(char * filename){
 	int * pos = calloc(nev, sizeof(int));
 	char * bases = overlapper(seq, nev, nstate - 1, pos);
 
-	const int evoffset = et.start + args.trim;
+	const int evoffset = et.start;
 	for(int ev=0 ; ev < nev ; ev++){
 		et.event[ev + evoffset].state = 1 + seq[ev];
 		et.event[ev + evoffset].pos = pos[ev];
