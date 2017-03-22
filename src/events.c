@@ -229,7 +229,7 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 
 
 void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev, hsize_t chunk_size, int compression_level){
-	assert(compression_level >= 0 && compresion_level <= 9);
+	assert(compression_level >= 0 && compression_level <= 9);
 	// Memory representation
 	hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
 	if(memtype < 0){
