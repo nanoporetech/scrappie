@@ -1,6 +1,6 @@
 #  Yaml CI config for Gitlab See. http://docs.gitlab.com/ce/ci/yaml/README.html
 #  Machine image on which to build, test etc
-image: docker-registry.oxfordnanolabs.local:5000/ont-base-ofan-dev:14.04
+image: git.oxfordnanolabs.local:4567/algorithm/scrappie_docker:14.04-latest
 
 variables:
   REPO_DEVELOPMENT: "trusty-unstable"
@@ -13,10 +13,6 @@ stages:
   - build
   - test
   - publish
-
-before_script:
-  - apt-get update
-  - apt-get install -y libopenblas-base libopenblas-dev libhdf5-7 libhdf5-dev cmake
 
 building:
   stage: build
