@@ -191,20 +191,6 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 
 static struct argp argp = {options, parse_arg, args_doc, doc};
 
-
-
-char bases[4] = {'A','C','G','T'};
-char * kmer_from_state(int state, int klen, char * kmer){
-	assert(NULL!=kmer);
-	for(int i=0 ; i<klen ; i++){
-		int b = state &3;
-		kmer[klen - i - 1] = bases[b];
-		state >>= 2;
-	}
-	return kmer;
-}
-
-
 struct _bs calculate_post(char * filename){
 
 	event_table et = args.albacore ?
