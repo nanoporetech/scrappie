@@ -1,5 +1,6 @@
 #include "layers.h"
 #include "nanonet_lstm_events.h"
+#include "nanonet_lstm_raw.h"
 #include "nnfeatures.h"
 #include "scrappie_assert.h"
 
@@ -54,4 +55,9 @@ Mat_rptr nanonet_posterior(const event_table events, float min_prob, bool return
 	}
 
 	return post;
+}
+
+
+Mat_rptr nanonet_raw_posterior(const event_table events, float min_prob, bool return_log){
+	return NULL;
 }

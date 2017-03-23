@@ -28,5 +28,6 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 event_table read_albacore_events(const char * filename, int analysis_no, const char * section);
 
 void write_annotated_events(hid_t hdf5file, const char * readname, const event_table ev, hsize_t chunk_size, int compression_level);
+void write_annotated_raw(hid_t hdf5file, const char * readname, const raw_table rt, hsize_t chunk_size, int compression_level);
 
 #endif /* EVENTS_H */

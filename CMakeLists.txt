@@ -36,7 +36,9 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
-add_executable (scrappie src/scrappie.c src/decode.c src/nnfeatures.c src/layers.c src/fast5_interface.c src/util.c src/networks.c)
+add_library (scrappie_lib src/scrappie_raw.c src/decode.c src/nnfeatures.c src/layers.c src/fast5_interface.c src/util.c src/networks.c)
+add_executable (scrappie src/scrappie.c)
+add_executable (scrappie_raw src/scrappie_raw.c)
 
 include_directories ("${PROJECT_BINARY_DIR}/include")
 
@@ -57,15 +59,19 @@ else (HDF5_STANDARD)
 	check_include_file ("hdf5/serial/hdf5.h" HDF5_SERIAL)
 	if (HDF5_SERIAL)
 		set (HDF5 "hdf5_serial")
-		target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
+		target_include_directories (scrappie_lib PUBLIC "/usr/include/hdf5/serial")
+		#target_include_directories (scrappie_raw PUBLIC "/usr/include/hdf5/serial")
 	endif (HDF5_SERIAL)
 endif (HDF5_STANDARD)
 
 
 
-target_link_libraries (scrappie blas ${HDF5} m)
+target_link_libraries (scrappie scrappie_lib blas ${HDF5} m)
+target_link_libraries (scrappie_raw scrappie_lib blas ${HDF5} m)
 if (APPLE)
 	target_link_libraries (scrappie argp)
+	target_link_libraries (scrappie_raw argp)
 endif (APPLE)
 
 install (TARGETS scrappie DESTINATION bin)
+install (TARGETS scrappie_raw DESTINATION bin)

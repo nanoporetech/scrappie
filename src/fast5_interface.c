@@ -437,3 +437,8 @@ clean2:
 clean1:
 	H5Tclose(memtype);
 }
+
+
+void write_annotated_raw(hid_t hdf5file, const char * readname, const raw_table rt, hsize_t chunk_size, int compression_level){
+	return;
+}
