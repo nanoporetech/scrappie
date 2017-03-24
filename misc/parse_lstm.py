@@ -45,12 +45,12 @@ def reshape_lstmV(mat):
 with open(model_file, 'r') as fh:
     network = cPickle.load(fh)
 
-sys.stdout.write("""#ifndef NANONET_MODEL_H
-#define NANONET_MODEL_H
+sys.stdout.write("""#ifndef NANONET_EVENTS_MODEL_H
+#define NANONET_EVENTS_MODEL_H
 #include "util.h"
 """)
 
-""" First GRU layer
+""" First LSTM layer
 """
 setup = []
 
@@ -87,7 +87,7 @@ setup.append(
 	cformatV(sys.stdout, 'FF1_b', network.layers[2].b.get_value()))
 
 
-""" Second GRU layer
+""" Second LSTM layer
 """
 bilstm2 = network.layers[3]
 lstm = bilstm2.layers[0]
@@ -133,4 +133,4 @@ setup.append(
 
 write_setup(sys.stdout, setup)
 
-sys.stdout.write('#endif /* NANONET_MODEL_H */')
+sys.stdout.write('#endif /* NANONET_EVENTS_MODEL_H */')
