@@ -156,7 +156,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 12:
 		args.compression_level = atoi(arg);
-		assert(args.compresion_level >= 0 && args.compression_level <= 9);
+		assert(args.compression_level >= 0 && args.compression_level <= 9);
 		break;
 	case 13:
 		args.compression_chunk_size = atoi(arg);
