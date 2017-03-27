@@ -1,4 +1,3 @@
-#include <assert.h>
 #ifdef __APPLE__
 	#include <Accelerate/Accelerate.h>
 #else
@@ -7,15 +6,13 @@
 #include <math.h>
 #include <string.h>
 #include "layers.h"
+#include "scrappie_assert.h"
 #include "util.h"
 
 
 
 Mat_rptr window(const Mat_rptr input, int w, int stride){
-	if(NULL == input){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != input, NULL);
 	assert(w > 0);
 	const int wh = (w + 1) / 2;
 
@@ -53,6 +50,7 @@ Mat_rptr window(const Mat_rptr input, int w, int stride){
  *  expanded accordingly.
  **/
 Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, int stride, Mat_rptr C) {
+	ASSERT_OR_RETURN_NULL(NULL != X, NULL);
 	assert((W->nrq % X->nrq) == 0);     // Length of filter is compatible with number of features
 	const int winlen = W->nr / X->nr;
 	// Multiple of stride greater or equal to winlen
@@ -106,22 +104,14 @@ Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, int stride, Mat_rptr C)
 
 Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
 		         const Mat_rptr b, Mat_rptr C){
-	assert(NULL != W);
-	assert(NULL != b);
-	C = affine_map(X, W, b, C);
-	return C;
+	return affine_map(X, W, b, C);
 }
 
 
 Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
 	               const Mat_rptr b, Mat_rptr C){
-	assert(NULL != W);
-	assert(NULL != b);
 	C = affine_map(X, W, b, C);
-	if(NULL == C){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
 	for(int c=0 ; c<C->nc ; c++){
 		const size_t offset = c * C->nrq;
@@ -135,13 +125,9 @@ Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
 
 Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 	              const Mat_rptr b, Mat_rptr C){
-	assert(NULL != W);
-	assert(NULL != b);
 	C = affine_map(X, W, b, C);
-	if(NULL == C){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+
 	for(int c=0 ; c<C->nc ; c++){
 		const size_t offset = c * C->nrq;
 		for(int r=0 ; r<C->nrq ; r++){
@@ -154,9 +140,9 @@ Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 
 Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
               const Mat_rptr b, Mat_rptr C){
-	assert(NULL != W);
-	assert(NULL != b);
 	C = feedforward_exp(X, W, b, C);
+	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+
 	row_normalise_inplace(C);
 	return C;
 }
@@ -165,14 +151,8 @@ Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
 Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 	  	       const Mat_rptr Wf, const Mat_rptr Wb,
 	               const Mat_rptr b, Mat_rptr C){
-	assert(NULL != Wf);
-	assert(NULL != Wb);
-	assert(NULL != b);
 	C = affine_map2(Xf, Xb, Wf, Wb, b, C);
-	if(NULL == C){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
 	for(int c=0 ; c<C->nc ; c++){
 		const size_t offset = c * C->nrq;
@@ -185,14 +165,12 @@ Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 
 
 Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
+	ASSERT_OR_RETURN_NULL(NULL != X, NULL);
+
 	assert(NULL != iW);
 	assert(NULL != sW);
 	assert(NULL != sW2);
 	assert(NULL != b);
-	if(NULL == X){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
 	assert(X->nr == iW->nr);
 	const int bsize = X->nc;
 	const int size = sW2->nc;
@@ -203,9 +181,7 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
 	ostate = remake_mat(ostate, size, bsize);
-	if(NULL == ostate){
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
 
 	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(3 * size, 1);
@@ -230,14 +206,11 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 
 
 Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
+	ASSERT_OR_RETURN_NULL(NULL != X, NULL);
 	assert(NULL != iW);
 	assert(NULL != sW);
 	assert(NULL != sW2);
 	assert(NULL != b);
-	if(NULL == X){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
 	assert(X->nr == iW->nr);
 	const int size = sW2->nc;
 	const int bsize = X->nc;
@@ -248,9 +221,7 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
 	ostate = remake_mat(ostate, size, bsize);
-	if(NULL == ostate){
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
 
 	_Mat xCol, sCol1, sCol2;
 	Mat_rptr tmp = make_mat(3 * size, 1);
@@ -340,21 +311,16 @@ void gru_step(const Mat_rptr x, const Mat_rptr istate,
 
 
 Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
+	ASSERT_OR_RETURN_NULL(NULL != Xaffine, NULL);
 	assert(NULL != sW);
 	assert(NULL != p);
-	if(NULL == Xaffine){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
 	const int size = sW->nr;
 	const int bsize = Xaffine->nc;
 	assert(Xaffine->nr == 4 * size);
 	assert(p->nr == 3 * size);
 	assert(sW->nc == 4 * size);
 	output = remake_mat(output, size, bsize);
-	if(NULL == output){
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != output, NULL);
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);
@@ -381,21 +347,16 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 
 
 Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
+	ASSERT_OR_RETURN_NULL(NULL != Xaffine, NULL);
 	assert(NULL != sW);
 	assert(NULL != p);
-	if(NULL == Xaffine){
-		// Input is NULL due to previous errors. Propagate
-		return NULL;
-	}
 	const int size = sW->nr;
 	const int bsize = Xaffine->nc;
 	assert(Xaffine->nr == 4 * size);
 	assert(sW->nc == 4 * size);
 	assert(p->nr == 3 * size);
 	output = remake_mat(output, size, bsize);
-	if(NULL == output){
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != output, NULL);
 
 	Mat_rptr tmp = make_mat(4 * size, 1);
 	Mat_rptr state = make_mat(size, 1);

@@ -1,13 +1,11 @@
-#include <assert.h>
 #include "layers.h"
 #include "nanonet_lstm_events.h"
 #include "nnfeatures.h"
+#include "scrappie_assert.h"
 
 Mat_rptr nanonet_posterior(const event_table events, float min_prob, bool return_log){
 	assert(min_prob >= 0.0 && min_prob <= 1.0);
-	if(events.n <= 0 || NULL == events.event){
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(events.n > 0 && NULL != events.event, NULL);
 
 	const int WINLEN = 3;
 
@@ -40,9 +38,7 @@ Mat_rptr nanonet_posterior(const event_table events, float min_prob, bool return
 
         Mat_rptr post = softmax(lstmFF, FF3_W, FF3_b, NULL);
         lstmFF = free_mat(lstmFF);
-	if(NULL == post){
-		return NULL;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != post, NULL);
 
 	if(return_log){
 		const int nev = post->nc;
