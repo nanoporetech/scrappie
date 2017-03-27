@@ -18,7 +18,7 @@
 #include "networks.h"
 #include <version.h>
 
-void scrappie_raw_network_setup(void);
+void scrappie_gru_raw_setup(void);
 
 
 // Doesn't play nice with other headers, include last
@@ -135,7 +135,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 12:
 		args.compression_level = atoi(arg);
-		assert(args.compresion_level >= 0 && args.compression_level <= 9);
+		assert(args.compression_level >= 0 && args.compression_level <= 9);
 		break;
 	case 13:
 		args.compression_chunk_size = atoi(arg);
@@ -175,7 +175,6 @@ static struct argp argp = {options, parse_arg, args_doc, doc};
 struct _raw_basecall_info calculate_post(char * filename){
 
 	raw_table rt = read_raw(filename, true);
-
 	if(NULL == rt.raw){
 		return _raw_basecall_info_null;
 	}
@@ -188,6 +187,7 @@ struct _raw_basecall_info calculate_post(char * filename){
 	rt.start += args.trim;
 	rt.end -= args.trim;
 
+	medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 	Mat_rptr post = nanonet_raw_posterior(rt, args.min_prob, true);
 	if(NULL == post){
 		free(rt.raw);
@@ -210,7 +210,7 @@ struct _raw_basecall_info calculate_post(char * filename){
 }
 
 int fprintf_fasta(FILE * fp, const char * readname, const struct _raw_basecall_info res){
-	return fprintf(fp, ">%s  { \"normalised_score\" : %f,  \"nblock\" : %lu,  \"sequence_length\" : %lu,  \"events_per_block\" : %f }\n%s\n", readname, -res.score / res.nblock, res.nblock, res.basecall_length, (float)res.nblock / (float) res.basecall_length, res.basecall);
+	return fprintf(fp, ">%s  { \"normalised_score\" : %f,  \"nblock\" : %lu,  \"sequence_length\" : %lu,  \"blocks_per_base\" : %f }\n%s\n", readname, -res.score / res.nblock, res.nblock, res.basecall_length, (float)res.nblock / (float) res.basecall_length, res.basecall);
 }
 
 int fprintf_sam(FILE * fp, const char * readname, const struct _raw_basecall_info res){
@@ -221,7 +221,7 @@ int fprintf_sam(FILE * fp, const char * readname, const struct _raw_basecall_inf
 int main(int argc, char * argv[]){
 	omp_set_nested(1);
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	scrappie_raw_network_setup();
+	scrappie_gru_raw_setup();
 
 	hid_t hdf5out = -1;
 	if(NULL != args.dump){

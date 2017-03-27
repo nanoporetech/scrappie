@@ -124,8 +124,8 @@ Mat_rptr mat_from_array(const float * x, int nr, int nc){
 void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int nc){
 	assert(NULL != fh);
 	assert(NULL != mat);
-	if(nr <= 0){nr = mat->nr;}
-	if(nc <= 0){nc = mat->nc;}
+	if(nr <= 0 || nr > mat->nr){nr = mat->nr;}
+	if(nc <= 0 || nc > mat->nc){nc = mat->nc;}
 
 	if(NULL != header){
 		fputs(header, fh);
@@ -133,9 +133,9 @@ void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int 
 	}
 	for(int c=0 ; c < nc ; c++){
 	        const size_t offset = c * mat->nrq * 4;
-	        fprintf(fh, "%4d : %6.4e", c, mat->data.f[offset]);
+	        fprintf(fh, "%4d : % 6.4f", c, mat->data.f[offset]);
 	        for(int r=1 ; r<nr ; r++){
-	                fprintf(fh, "  %6.4e", mat->data.f[offset + r]);
+	                fprintf(fh, "  % 6.4f", mat->data.f[offset + r]);
 	        }
 	        fputc('\n', fh);
 	}
@@ -365,6 +365,9 @@ int floatcmp(const void * x, const void * y){
 
 
 /** Median of an array
+ *
+ *  Using a relatively inefficent qsort resulting in O(n log n)
+ *  performance but O(n) is possible.
  *
  *  @param x An array to calculate median of
  *  @param n Length of array

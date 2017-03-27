@@ -4,8 +4,8 @@
 #include "util.h"
 
 Mat_rptr window(const Mat_rptr input, int w, int stride);
-Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, int stride,
-		     Mat_rptr C);
+Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, const Mat_rptr b,
+		     int stride, Mat_rptr C);
 Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
 		            const Mat_rptr b, Mat_rptr C);
 Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
