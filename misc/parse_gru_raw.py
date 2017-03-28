@@ -47,6 +47,7 @@ with open(model_file, 'r') as fh:
 
 sys.stdout.write("""#ifndef NANONET_RAW_MODEL_H
 #define NANONET_RAW_MODEL_H
+#include <assert.h>
 #include "util.h"
 """)
 
@@ -59,7 +60,15 @@ setup.append(
 setup.append(
     cformatV(sys.stdout, 'conv_raw_b', network.layers[0].b.get_value().reshape(-1)))
 sys.stdout.write("const int conv_raw_stride = {};\n".format(network.layers[0].stride))
+setup.append("""
+        const size_t nfilter = conv_raw_b->nr;
+        const size_t winlen = conv_raw_W->nc / nfilter;
+        assert(conv_raw_W->nc % nfilter == 0);
+        conv_raw_W->nrq = winlen;
+        conv_raw_W->nr = (winlen * 4 - 3);
+        conv_raw_W->nc = nfilter;
 
+""")
 
 bigru1 = network.layers[1]
 gru = bigru1.layers[0]
