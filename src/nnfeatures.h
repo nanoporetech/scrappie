@@ -6,5 +6,6 @@
 #include "util.h"
 
 Mat_rptr make_features(const event_table evtbl, bool normalise);
+Mat_rptr mat_raw(const raw_table signal);
 
 #endif /* FEATURES_H */

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "nnfeatures.h"
+#include "scrappie_assert.h"
 
 
 /** Studentise features
@@ -97,3 +98,19 @@ Mat_rptr make_features(const event_table evtbl, bool normalise){
 
 	return features;
 }
+
+
+Mat_rptr mat_raw(const raw_table signal){
+	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
+	const size_t nsample = signal.end - signal.start;
+	Mat_rptr sigmat = make_mat(1, nsample);
+	ASSERT_OR_RETURN_NULL(NULL != sigmat, NULL);
+
+	const size_t offset = signal.start;
+	for( size_t i=0 ; i < nsample ; i++){
+		// Copy with stride 4 because of required padding for matrix
+		sigmat->data.f[i * 4] = signal.raw[i + offset];
+	}
+	return sigmat;
+}
+

@@ -60,22 +60,6 @@ Mat_rptr nanonet_posterior(const event_table events, float min_prob, bool return
 }
 
 
-Mat_rptr mat_raw(const raw_table signal){
-	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
-	const size_t nsample = signal.end - signal.start;
-	Mat_rptr sigmat = make_mat(1, nsample);
-	ASSERT_OR_RETURN_NULL(NULL != sigmat, NULL);
-
-	const size_t offset = signal.start;
-	for( size_t i=0 ; i < nsample ; i++){
-		// Copy with stride 4 because of required padding for matrix
-		sigmat->data.f[i * 4] = signal.raw[i + offset];
-	}
-	return sigmat;
-}
-
-
-
 Mat_rptr nanonet_raw_posterior(const raw_table signal, float min_prob, bool return_log){
 	assert(min_prob >= 0.0 && min_prob <= 1.0);
 	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
