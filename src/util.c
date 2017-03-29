@@ -367,11 +367,14 @@ int floatcmp(const void * x, const void * y){
 /**  Quantiles from n array
  *
  *  Using a relatively inefficent qsort resulting in O(n log n)
- *  performance but better performance is possible for small np
+ *  performance but better performance is possible for small np.
+ *  The array p is modified inplace, containing which quantiles to
+ *  calculation on input and the quantiles on output; on error, p
+ *  is filled with the value NAN.
  *
  *  @param x An array to calculate quantiles from
  *  @param nx Length of array x
- *  @param p An array containing quantiles to calculate
+ *  @param p An array containing quantiles to calculate [in/out]
  *  @param np Length of array p
  *
  *  @return void
