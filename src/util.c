@@ -446,7 +446,7 @@ float medianf(const float * x, size_t n){
  *
  *  @return MAD of array on success, NAN otherwise.
  **/
-float madf(const float * x, size_t n, float med){
+float madf(const float * x, size_t n, const float * med){
 	const float mad_scaling_factor = 1.4826;
 	if(NULL == x){
 		return NAN;
@@ -460,12 +460,10 @@ float madf(const float * x, size_t n, float med){
 		return NAN;
 	}
 
-	if(isnan(med)){
-		med = medianf(x, n);
-	}
+	const float _med = (NULL == med) ? medianf(x, n) : *med;
 
 	for(size_t i=0 ; i < n ; i++){
-		absdiff[i] = fabsf(x[i] - med);
+		absdiff[i] = fabsf(x[i] - _med);
 	}
 
 	const float mad = medianf(absdiff, n);
@@ -493,7 +491,7 @@ void medmad_normalise_array(float * x, size_t n){
 	}
 
 	const float xmed = medianf(x, n);
-	const float xmad = madf(x, n, xmed);
+	const float xmad = madf(x, n, &xmed);
 	for(int i=0 ; i < n ; i++){
 		x[i] = (x[i] - xmed)  / xmad;
 	}

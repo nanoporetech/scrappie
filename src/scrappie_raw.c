@@ -16,6 +16,7 @@
 #include "decode.h"
 #include "licence.h"
 #include "networks.h"
+#include "scrappie_assert.h"
 #include <version.h>
 
 void scrappie_gru_raw_setup(void);
@@ -173,11 +174,11 @@ static struct argp argp = {options, parse_arg, args_doc, doc};
 
 
 struct _raw_basecall_info calculate_post(char * filename){
+	ASSERT_OR_RETURN_NULL(NULL != filename, _raw_basecall_info_null);
 
 	raw_table rt = read_raw(filename, true);
-	if(NULL == rt.raw){
-		return _raw_basecall_info_null;
-	}
+	ASSERT_OR_RETURN_NULL(NULL != rt.raw, _raw_basecall_info_null);
+
 	const int nevent = rt.end - rt.start;
 	if(nevent <= 2 * args.trim){
 		warnx("Too few samples in %s to call (%d, originally %lu).", filename, nevent, rt.n);
@@ -186,6 +187,10 @@ struct _raw_basecall_info calculate_post(char * filename){
 	}
 	rt.start += args.trim;
 	rt.end -= args.trim;
+
+	range_t segmentation = trim_raw_by_mad(rt, 100, 0.7);
+	rt.start = segmentation.start;
+	rt.end = segmentation.end;
 
 	medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 	Mat_rptr post = nanonet_raw_posterior(rt, args.min_prob, true);

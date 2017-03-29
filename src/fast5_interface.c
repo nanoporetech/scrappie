@@ -4,14 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fast5_interface.h"
+#include "util.h"
 
 
 event_table read_events(hid_t hdf5file, const char * tablepath, const float sample_rate);
 
-
-struct _range {
-	int start, end;
-};
 
 struct _gop_data {
 	const char * prefix;
@@ -61,9 +58,9 @@ int get_latest_group(hid_t file, const char * root, const char * prefix){
 }
 
 
-struct _range get_segmentation(hid_t file, int analysis_no, const char * segmentation){
+range_t get_segmentation(hid_t file, int analysis_no, const char * segmentation){
 	assert(NULL != segmentation);
-	struct _range segcoord = {-1, -1};
+	range_t segcoord = {-1, -1};
 
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(file, "/Analyses", segmentation);
@@ -209,7 +206,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	free(event_group);
 
 	//  Add segmentation information
-	struct _range  segcoord = get_segmentation(hdf5file, seganalysis_no, segmentation);
+	range_t  segcoord = get_segmentation(hdf5file, seganalysis_no, segmentation);
         ev.start = (segcoord.start >= 0) ? segcoord.start : 0;
 	ev.end = (segcoord.end >= 0 && segcoord.end <= ev.end) ? segcoord.end : ev.end;
 
@@ -441,4 +438,57 @@ clean1:
 
 void write_annotated_raw(hid_t hdf5file, const char * readname, const raw_table rt, hsize_t chunk_size, int compression_level){
 	return;
+}
+
+
+/**  Simple segmentation of a raw read by thresholding the MAD
+ *
+ *  The MAD of the raw signal is calculated for non-overlapping chunks and then
+ *  thresholded to find regions at the beginning and end of the signal that have
+ *  unusually low variation (generally a stall or open pore).  The threshhold is
+ *  derived from the distribution of the calaculated MADs.
+ *
+ *  The threshold is chosen to be high since a single chunk above it will trigger
+ *  the end of the trimming: the threshhold is chosen so it is unlikely to be
+ *  exceeded in the leader but commonly exceeded in the main read.
+ *
+ *  @param rt Structure containing raw signal
+ *  @param chunk_size Size of non-overlapping chunks
+ *  @param perc  The quantile to be calculated to use for threshholding
+ *
+ *  @return A range structure containing new start and end for read
+ **/
+range_t trim_raw_by_mad(const raw_table rt, int chunk_size, float perc){
+	assert(chunk_size > 1);
+	assert(proportion >= 0.0 && proportion <= 1.0);
+	const size_t nsample = rt.end - rt.start;
+	const size_t nchunk = nsample / chunk_size;
+	range_t range = {rt.start, rt.end};
+
+	float * madarr = malloc(nchunk * sizeof(float));
+	for(size_t i=0 ; i < nchunk ; i++){
+		madarr[i] = madf(rt.raw + rt.start + i * chunk_size, chunk_size, NULL);
+	}
+	quantilef(madarr, nchunk, &perc, 1);
+
+	const float thresh = perc;
+	for(size_t i=0 ; i < nchunk ; i ++){
+		if(madarr[i] > thresh){
+			break;
+		}
+		range.start += chunk_size;
+	}
+	for(size_t i=nchunk ; i > 0 ; i--){
+		if(madarr[i - 1] > thresh){
+			break;
+		}
+		range.end -= chunk_size;
+	}
+	assert(range.start < range.n);
+	assert(range.end > 0);
+	assert(range.end > range.start);
+
+	free(madarr);
+
+	return range;
 }
