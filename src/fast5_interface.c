@@ -460,7 +460,7 @@ void write_annotated_raw(hid_t hdf5file, const char * readname, const raw_table 
  **/
 range_t trim_raw_by_mad(const raw_table rt, int chunk_size, float perc){
 	assert(chunk_size > 1);
-	assert(proportion >= 0.0 && proportion <= 1.0);
+	assert(perc >= 0.0 && perc <= 1.0);
 	const size_t nsample = rt.end - rt.start;
 	const size_t nchunk = nsample / chunk_size;
 	range_t range = {rt.start, rt.end};
@@ -484,8 +484,8 @@ range_t trim_raw_by_mad(const raw_table rt, int chunk_size, float perc){
 		}
 		range.end -= chunk_size;
 	}
-	assert(range.start < range.n);
-	assert(range.end > 0);
+	assert(range.start < rt.end);
+	assert(range.end > rt.start);
 	assert(range.end > range.start);
 
 	free(madarr);
