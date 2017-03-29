@@ -364,6 +364,60 @@ int floatcmp(const void * x, const void * y){
 }
 
 
+/**  Quantiles from n array
+ *
+ *  Using a relatively inefficent qsort resulting in O(n log n)
+ *  performance but better performance is possible for small np
+ *
+ *  @param x An array to calculate quantiles from
+ *  @param nx Length of array x
+ *  @param p An array containing quantiles to calculate
+ *  @param np Length of array p
+ *
+ *  @return void
+ **/
+void quantilef(const float * x, size_t nx, float * p, size_t np){
+	if(NULL == p){
+		return;
+	}
+	for(int i=0 ; i < np ; i++){
+		assert(p[i] >= 0.0f && p[i] <= 1.0f);
+	}
+	if(NULL == x){
+		for(int i=0 ; i < np ; i++){
+			p[i] = NAN;
+		}
+		return;
+	}
+
+	// Sort array
+	float * space = malloc(nx * sizeof(float));
+	if(NULL == space){
+		for(int i=0 ; i < np ; i++){
+			p[i] = NAN;
+		}
+		return;
+	}
+	memcpy(space, x, nx * sizeof(float));
+	qsort(space, nx, sizeof(float), floatcmp);
+
+	// Extract quantiles
+	for(int i=0 ; i < np ; i++){
+		const size_t idx = p[i] * (nx - 1);
+		const float remf = p[i] * (nx - 1) - idx;
+		if(idx < nx - 1){
+			p[i] = (1.0 - remf) * space[idx] + remf * space[idx + 1];
+		} else {
+			// Should only occur when p is exactly 1.0
+			p[i] = space[idx];
+		}
+	}
+
+	free(space);
+	return;
+}
+
+
 /** Median of an array
  *
  *  Using a relatively inefficent qsort resulting in O(n log n)
@@ -374,30 +428,10 @@ int floatcmp(const void * x, const void * y){
  *
  *  @return Median of array on success, NAN otherwise.
  **/
-float medianf(float * x, size_t n){
-	if(NULL == x){
-		return NAN;
-	}
-	if(1 == n){
-		return x[0];
-	}
-
-	float * space = malloc(n * sizeof(float));
-	if(NULL == space){
-		return NAN;
-	}
-	memcpy(space, x, n * sizeof(float));
-	qsort(space, n, sizeof(float), floatcmp);
-
-
-	const size_t idx = n / 2;
-	float med = space[idx];
-	if( (n % 2) == 0){
-		med = 0.5 * (med + space[idx - 1]);
-	}
-
-	free(space);
-	return med;
+float medianf(const float * x, size_t n){
+	float p = 0.5;
+	quantilef(x, n, &p, 1);
+	return p;
 }
 
 
@@ -409,7 +443,7 @@ float medianf(float * x, size_t n){
  *
  *  @return MAD of array on success, NAN otherwise.
  **/
-float madf(float * x, size_t n, float med){
+float madf(const float * x, size_t n, float med){
 	const float mad_scaling_factor = 1.4826;
 	if(NULL == x){
 		return NAN;

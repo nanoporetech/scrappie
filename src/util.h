@@ -145,8 +145,9 @@ float min_mat(const Mat_rptr mat);
 float max_mat(const Mat_rptr mat);
 
 
-float medianf(float * x, size_t n);
-float madf(float * x, size_t n, float med);
+void quantilef(const float * x, size_t nx, float * p, size_t np);
+float medianf(const float * x, size_t n);
+float madf(const float * x, size_t n, float med);
 void medmad_normalise_array(float * x, size_t n);
 void studentise_array_kahan(float * x, size_t n);
 
