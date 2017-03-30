@@ -41,7 +41,7 @@ add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c
 
 include_directories ("${PROJECT_BINARY_DIR}/include")
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
