@@ -34,7 +34,7 @@ struct _bs {
 
 extern const char * argp_program_version;
 extern const char * argp_program_bug_address;
-static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
+static char doc[] = "Scrappie basecaller -- basecall from events";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
 	{"analysis", 'a', "number", 0, "Analysis to read events from"},
