@@ -16,9 +16,8 @@
 #include "decode.h"
 #include "licence.h"
 #include "networks.h"
-#include "scrappie_assert.h"
 
-void scrappie_gru_raw_setup(void);
+void scrappie_network_setup(void);
 
 
 // Doesn't play nice with other headers, include last
@@ -26,33 +25,33 @@ void scrappie_gru_raw_setup(void);
 
 static const float MIN_PROB1M = 1.0 - 1e-5;
 
-struct _raw_basecall_info {
+struct _bs {
 	float score;
-	raw_table rt;
-
-	char * basecall;
-	size_t basecall_length;
-
-	int * pos;
-	size_t nblock;
+	int nev;
+	char * bases;
+	event_table et;
 };
-static const struct _raw_basecall_info _raw_basecall_info_null = {0.0f, {0, 0, 0, NULL}, NULL, 0 , NULL, 0};
 
 extern const char * argp_program_version;
 extern const char * argp_program_bug_address;
-static char doc[] = "Scrappie basecaller -- basecall from raw signal";
+static char doc[] = "Scrappie basecaller -- scrappie attempts to call homopolymers";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
+	{"analysis", 'a', "number", 0, "Analysis to read events from"},
 	{"dwell", 5, 0, 0, "Perform dwell correction of homopolymer lengths"},
 	{"no-dwell", 6, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
-	{"trim", 't', "nsamples", 0, "Number of samples to trim from either end"},
+	{"trim", 't', "nevents", 0, "Number of events to trim"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-	{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
+        {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
+	{"segmentation-analysis", 7, "number", 0, "Analysis number to read seqmentation from"},
+	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
+	{"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
+	{"no-albacore", 9, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
 	{"licence", 10, 0, 0, "Print licensing information"},
 	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
 	{"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
@@ -66,6 +65,8 @@ static struct argp_option options[] = {
 enum format { FORMAT_FASTA, FORMAT_SAM};
 
 struct arguments {
+	int analysis;
+	int seganalysis;
 	bool dwell_correction;
 	int limit;
 	float min_prob;
@@ -73,17 +74,23 @@ struct arguments {
 	float skip_pen;
 	bool use_slip;
 	int trim;
+	char * segmentation;
 	char * dump;
+	bool albacore;
 	int compression_level;
 	int compression_chunk_size;
 	char ** files;
 };
-static struct arguments args = {true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, NULL, 1, 200, NULL};
+static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false, 1, 200, NULL};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 		int ret = 0;
+	case 'a':
+		args.analysis = atoi(arg);
+		assert(args.analysis >= -1 && args.analysis < 1000);
+		break;
 	case 'l':
 		args.limit = atoi(arg);
 		assert(args.limit > 0);
@@ -115,6 +122,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	case 2:
 		args.use_slip = false;
 		break;
+	case 3:
+		args.segmentation = arg;
+		break;
 	case 4:
 		args.dump = arg;
 		break;
@@ -123,6 +133,16 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 6:
 		args.dwell_correction = false;
+		break;
+	case 7:
+		args.seganalysis = atoi(arg);
+		assert(args.seganalysis >= -1 && args.seganalysis < 1000);
+		break;
+	case 8:
+		args.albacore = true;
+		break;
+	case 9:
+		args.albacore = false;
 		break;
 	case 10:
 	case 11:
@@ -166,64 +186,76 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 
 static struct argp argp = {options, parse_arg, args_doc, doc};
 
+static struct _bs calculate_post(char * filename){
 
+	event_table et = args.albacore ?
+		read_albacore_events(filename, args.analysis, "template") :
+		read_detected_events(filename, args.analysis, args.segmentation, args.seganalysis);
 
-static struct _raw_basecall_info calculate_post(char * filename){
-	ASSERT_OR_RETURN_NULL(NULL != filename, _raw_basecall_info_null);
-
-	raw_table rt = read_raw(filename, true);
-	ASSERT_OR_RETURN_NULL(NULL != rt.raw, _raw_basecall_info_null);
-
-	const int nsample = rt.end - rt.start;
-	if(nsample <= 2 * args.trim){
-		warnx("Too few samples in %s to call (%d, originally %lu).", filename, nsample, rt.n);
-		free(rt.raw);
-		return _raw_basecall_info_null;
+	if(NULL == et.event){
+		return (struct _bs){0, 0, NULL};
 	}
-	rt.start += args.trim;
-	rt.end -= args.trim;
+	const int nevent = et.end - et.start;
+	if(nevent <= 2 * args.trim){
+		warnx("Too few events in %s to call (%d after segmenation, originally %lu).", filename, nevent, et.n);
+		free(et.event);
+		return (struct _bs){0, 0, NULL};
+	}
+	et.start += args.trim;
+	et.end -= args.trim;
 
-	range_t segmentation = trim_raw_by_mad(rt, 100, 0.7);
-	rt.start = segmentation.start;
-	rt.end = segmentation.end;
-
-	medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-	Mat_rptr post = nanonet_raw_posterior(rt, args.min_prob, true);
+	Mat_rptr post = nanonet_posterior(et, args.min_prob, true);
 	if(NULL == post){
-		free(rt.raw);
-		return _raw_basecall_info_null;
+		free(et.event);
+		return (struct _bs){0, 0, NULL};
 	}
-	const int nblock = post->nc;
+	const int nev = post->nc;
 	const int nstate = post->nr;
 
 
-	int * seq = calloc(nblock, sizeof(int));
+	int * seq = calloc(nev, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
 	post = free_mat(post);
-	int * pos = calloc(nblock, sizeof(int));
-	char * basecall = overlapper(seq, nblock, nstate - 1, pos);
+	int * pos = calloc(nev, sizeof(int));
+	char * basecall = overlapper(seq, nev, nstate - 1, pos);
 	const size_t basecall_len = strlen(basecall);
 
+	const int evoffset = et.start;
+	for(int ev=0 ; ev < nev ; ev++){
+		et.event[ev + evoffset].state = 1 + seq[ev];
+		et.event[ev + evoffset].pos = pos[ev];
+	}
+
+	if(args.dwell_correction){
+		char * newbasecall = homopolymer_dwell_correction(et, seq, nstate, basecall_len);
+		if(NULL != newbasecall){
+			free(basecall);
+			basecall = newbasecall;
+		}
+	}
+
+	free(pos);
 	free(seq);
 
-	return (struct _raw_basecall_info){score, rt, basecall, basecall_len, pos, nblock};
+	return (struct _bs){score, nev, basecall, et};
 }
 
-static int fprintf_fasta(FILE * fp, const char * readname, const struct _raw_basecall_info res){
-	return fprintf(fp, ">%s  { \"normalised_score\" : %f,  \"nblock\" : %lu,  \"sequence_length\" : %lu,  \"blocks_per_base\" : %f }\n%s\n", readname, -res.score / res.nblock, res.nblock, res.basecall_length, (float)res.nblock / (float) res.basecall_length, res.basecall);
+static int fprintf_fasta(FILE * fp, const char * readname, const struct _bs res){
+	const int nbase = strlen(res.bases);
+	return fprintf(fp, ">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n", readname, -res.score / res.nev, res.nev, nbase, (float)res.nev / (float) nbase, res.bases);
 }
 
-static int fprintf_sam(FILE * fp, const char * readname, const struct _raw_basecall_info res){
-	return fprintf(fp, "%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", readname, res.basecall);
+static int fprintf_sam(FILE * fp, const char * readname, const struct _bs res){
+	return fprintf(fp, "%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", readname, res.bases);
 }
 
 
-int main_raw(int argc, char * argv[]){
+int main_events(int argc, char * argv[]){
 	#if defined(_OPENMP)
 		omp_set_nested(1);
 	#endif
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	scrappie_gru_raw_setup();
+	scrappie_network_setup();
 
 	hid_t hdf5out = -1;
 	if(NULL != args.dump){
@@ -272,8 +304,8 @@ int main_raw(int argc, char * argv[]){
 			reads_started += 1;
 
 			char * filename = globbuf.gl_pathv[fn2];
-			struct _raw_basecall_info res = calculate_post(filename);
-			if(NULL == res.basecall){
+			struct _bs res = calculate_post(filename);
+			if(NULL == res.bases){
 				warnx("No basecall returned for %s", filename);
 				continue;
 			}
@@ -292,13 +324,12 @@ int main_raw(int argc, char * argv[]){
 				}
 
 				if(hdf5out >= 0){
-					write_annotated_raw(hdf5out, basename(filename), res.rt,
+					write_annotated_events(hdf5out, basename(filename), res.et,
 						args.compression_chunk_size, args.compression_level);
 				}
 			}
-			free(res.rt.raw);
-			free(res.basecall);
-			free(res.pos);
+			free(res.et.event);
+			free(res.bases);
 		}
 		globfree(&globbuf);
 	}
