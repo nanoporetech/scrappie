@@ -43,8 +43,6 @@ extern const char * argp_program_bug_address;
 static char doc[] = "Scrappie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-	{"dwell", 5, 0, 0, "Perform dwell correction of homopolymer lengths"},
-	{"no-dwell", 6, 0, OPTION_ALIAS, "Don't perform dwell correction of homopolymer lengths"},
 	{"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
@@ -66,7 +64,6 @@ static struct argp_option options[] = {
 enum format { FORMAT_FASTA, FORMAT_SAM};
 
 struct arguments {
-	bool dwell_correction;
 	int limit;
 	float min_prob;
 	enum format outformat;
@@ -78,7 +75,7 @@ struct arguments {
 	int compression_chunk_size;
 	char ** files;
 };
-static struct arguments args = {true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, NULL, 1, 200, NULL};
+static struct arguments args = {0, 1e-5, FORMAT_FASTA, 0.0, false, 50, NULL, 1, 200, NULL};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -117,12 +114,6 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		break;
 	case 4:
 		args.dump = arg;
-		break;
-	case 5:
-		args.dwell_correction = true;
-		break;
-	case 6:
-		args.dwell_correction = false;
 		break;
 	case 10:
 	case 11:
