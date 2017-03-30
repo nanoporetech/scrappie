@@ -29,7 +29,18 @@ building:
 testing:
   stage: test
   script:
-      ${BUILD_DIR}/scrappie --threads 1 reads/*.fast5 > test.fa
+      ${BUILD_DIR}/scrappie events --threads 1 reads/*.fast5 > test.fa
+      ${BUILD_DIR}/scrappie raw --threads 1 reads/*.fast5 > test.fa
+      ${BUILD_DIR}/scrappie licence 
+      ${BUILD_DIR}/scrappie license 
+      ${BUILD_DIR}/scrappie help
+      ${BUILD_DIR}/scrappie version
+      ${BUILD_DIR}/scrappie --help
+      ${BUILD_DIR}/scrappie --licence 
+      ${BUILD_DIR}/scrappie --license 
+      ${BUILD_DIR}/scrappie --version
+      
+
 
 upload-development:
   stage: publish
