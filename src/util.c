@@ -10,6 +10,24 @@
 #include <string.h>
 #include "util.h"
 
+/**  Strips the extension from a filename
+ *
+ *   An extension is located and its initial period is replaced with a
+ *  null byte to terminate the string at that location.  A filename beginning
+ *  with a period but no other extension is not modified.
+ *
+ *  @param filename A string containing filename to be modified [updated]
+ *  @return pointer to beginning of filename.
+ **/
+char * strip_filename_extension(char * filename){
+	char * loc = strrchr(filename, '.');
+	if(NULL != loc && loc != filename){
+		// Filename contains '.' and it is not the first character
+		*loc = '\0';
+	}
+	return filename;
+}
+
 int argmaxf(const float * x, int n){
 	assert(n > 0);
 	if(NULL == x){ return -1; }

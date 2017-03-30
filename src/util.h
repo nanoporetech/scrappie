@@ -108,6 +108,8 @@ static inline __m128 logfv(__m128 x){
 	return (__m128)log_ps(y);
 }
 
+char * strip_filename_extension(char * filename);
+
 int argmaxf(const float * x, int n);
 int argminf(const float * x, int n);
 float valmaxf(const float * x, int n);
