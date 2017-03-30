@@ -35,10 +35,6 @@ testing:
       - ${BUILD_DIR}/scrappie license 
       - ${BUILD_DIR}/scrappie help
       - ${BUILD_DIR}/scrappie version
-      - ${BUILD_DIR}/scrappie --help
-      - ${BUILD_DIR}/scrappie --licence 
-      - ${BUILD_DIR}/scrappie --license 
-      - ${BUILD_DIR}/scrappie --version
       
 
 
