@@ -1,9 +1,11 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "scrappie_licence.h"
 #include "scrappie_subcommands.h"
 
 char * help_options[2] = {NULL, "--help"};
+extern char * argp_program_version;
 
 static const char * scrappie_help_header =
 "Scrappie is a technology demonstrator for the Oxford Nanopore Technologies\n"
@@ -20,17 +22,6 @@ static const char * scrappie_help_footer =
 "such, may change drastically between releases and breaks backwards\n"
 "compatibility.  Newer versions may drop support older features or change their\n"
 "behaviour.\n";
-
-static const char * scrappie_licence_text =
-"Proprietary and confidential information of Oxford Nanopore Technologies, Limited\n"
-"All rights reserved; (c) 2016, 2017: Oxford Nanopore Technologies, Limited\n"
-"\n"
-"Distributed under the Nanopore Community terms and conditions.\n"
-"\n"
-"The vectorised math functions 'sse_mathfun.h' are from\n"
-"http://gruntthepeon.free.fr/ssemath/ and the original version of this file is\n"
-"under the 'zlib' licence.\n";
-
 
 int main_help_short(void){
 	int ret = fputs(scrappie_help_header, stdout);
@@ -83,3 +74,7 @@ int main_licence(int argc, char * argv[]){
 	return (EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
+int main_version(int argc, char * argv[]){
+	int ret = fputs(argp_program_version, stdout);
+	return (EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE;
+}

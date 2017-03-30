@@ -17,6 +17,9 @@ enum scrappie_mode get_scrappie_mode(const char * modestr){
 	if(0 == strcmp(modestr, "licence") || 0 == strcmp(modestr, "license")){
 		return SCRAPPIE_MODE_LICENCE;
 	}
+	if(0 == strcmp(modestr, "version")){
+		return SCRAPPIE_MODE_VERSION;
+	}
 
 	return SCRAPPIE_MODE_INVALID;
 }
@@ -31,6 +34,8 @@ const char * scrappie_mode_string(const enum scrappie_mode mode){
 		return "raw";
 	case SCRAPPIE_MODE_LICENCE:
 		return "licence";
+	case SCRAPPIE_MODE_VERSION:
+		return "version";
 	case SCRAPPIE_MODE_INVALID:
 		errx(EXIT_FAILURE, "Invalid scrappie mode\n");
 	default:
@@ -50,6 +55,8 @@ const char * scrappie_mode_description(const enum scrappie_mode mode){
 		return "Base call directly from raw signal.";
 	case SCRAPPIE_MODE_LICENCE:
 		return "Print licensing information.";
+	case SCRAPPIE_MODE_VERSION:
+		return "Print version information.";
 	case SCRAPPIE_MODE_INVALID:
 		errx(EXIT_FAILURE, "Invalid scrappie mode\n");
 	default:

@@ -6,8 +6,8 @@
 
 
 // Helper functions for subcommmads
-static const int scrappie_ncommand = 4;
-enum scrappie_mode {SCRAPPIE_MODE_HELP=0, SCRAPPIE_MODE_EVENTS, SCRAPPIE_MODE_RAW, SCRAPPIE_MODE_LICENCE, SCRAPPIE_MODE_INVALID};
+static const int scrappie_ncommand = 5;
+enum scrappie_mode {SCRAPPIE_MODE_EVENTS=0, SCRAPPIE_MODE_HELP, SCRAPPIE_MODE_LICENCE, SCRAPPIE_MODE_RAW, SCRAPPIE_MODE_VERSION, SCRAPPIE_MODE_INVALID};
 enum scrappie_mode get_scrappie_mode(const char * modestr);
 const char * scrappie_mode_string(const enum scrappie_mode mode);
 const char * scrappie_mode_description(const enum scrappie_mode mode);
@@ -20,5 +20,6 @@ int main_help(int argc, char * argv[]);
 int main_help_short(void);
 int main_raw(int argc, char * argv[]);
 int main_licence(int argc, char * argv[]);
+int main_version(int argc, char * argv[]);
 
 #endif /* SCRAPPIE_SUBCOMMANDS_H */

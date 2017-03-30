@@ -14,9 +14,9 @@
 #include <strings.h>
 #include <sys/types.h>
 #include "decode.h"
-#include "licence.h"
 #include "networks.h"
 #include "scrappie_assert.h"
+#include "scrappie_licence.h"
 
 void scrappie_gru_raw_setup(void);
 

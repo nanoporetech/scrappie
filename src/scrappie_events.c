@@ -14,8 +14,8 @@
 #include <strings.h>
 #include <sys/types.h>
 #include "decode.h"
-#include "licence.h"
 #include "networks.h"
+#include "scrappie_licence.h"
 
 void scrappie_network_setup(void);
 
