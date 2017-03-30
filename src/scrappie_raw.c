@@ -54,10 +54,10 @@ static struct argp_option options[] = {
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
-	{"trim", 't', "nevents", 0, "Number of events to trim"},
+	{"trim", 't', "nsamples", 0, "Number of samples to trim from either end"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
+	{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
 	{"licence", 10, 0, 0, "Print licensing information"},
 	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
 	{"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
@@ -179,9 +179,9 @@ struct _raw_basecall_info calculate_post(char * filename){
 	raw_table rt = read_raw(filename, true);
 	ASSERT_OR_RETURN_NULL(NULL != rt.raw, _raw_basecall_info_null);
 
-	const int nevent = rt.end - rt.start;
-	if(nevent <= 2 * args.trim){
-		warnx("Too few samples in %s to call (%d, originally %lu).", filename, nevent, rt.n);
+	const int nsample = rt.end - rt.start;
+	if(nsample <= 2 * args.trim){
+		warnx("Too few samples in %s to call (%d, originally %lu).", filename, nsample, rt.n);
 		free(rt.raw);
 		return _raw_basecall_info_null;
 	}
