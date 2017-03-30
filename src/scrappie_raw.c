@@ -224,7 +224,9 @@ int fprintf_sam(FILE * fp, const char * readname, const struct _raw_basecall_inf
 
 
 int main(int argc, char * argv[]){
-	omp_set_nested(1);
+	#if defined(_OPENMP)
+		omp_set_nested(1);
+	#endif
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
 	scrappie_gru_raw_setup();
 
