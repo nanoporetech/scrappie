@@ -6,7 +6,7 @@ Ref   : GACACAGTGAGGCTGCGTCTC-AAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGTTTGCATTTA
 Query : GACACAG-GAGGCTGCGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CAGA-CT-TT
 ```
 
-For a complete release history, see [RELEASES.md]
+For a complete release history, see (RELEASES.md)[RELEASES.md]
 
 ## Dependencies
 * A good BLAS library + development headers including cblas.h.
