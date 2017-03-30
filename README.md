@@ -30,19 +30,23 @@ mkdir build && cd build && cmake .. && make
 export OMP_NUM_THREADS=`nproc`
 # Use openblas in single-threaded mode
 export OPENBLAS_NUM_THREADS=1
-# Reads can be specified as individual files
-scrappie reads/read1.fast5 reads/read2.fast5 ... > basecalls.fa
-# or entire folders
-scrappie reads > basecalls.fa
+# Call a folder of reads from events
+scrappie events reads ... > basecalls.fa
+# Call a folder of reads from raw signal
+scrappie raw reads ... > basecalls.fa
+# Call indivdual reads
+scrappie raw reads/read1.fast5 reads/read2.fast5 > basecalls.fa
 # Or using a strand list (skipping first line)
-tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie > basecalls.fa
+tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie raw > basecalls.fa
 ```
 
 ## Commandline options
+The commandline options accepted by Scrappie depend on whether it is being used to call
+from events or from raw signal.
 ```
-> scrappie --help
-Usage: scrappie [OPTION...] fast5 [fast5 ...]
-Scrappie basecaller -- scrappie attempts to call homopolymers
+> scrappie help events
+Usage: events [OPTION...] fast5 [fast5 ...]
+Scrappie basecaller -- basecall from events
 
   -#, --threads=nreads       Number of reads to call in parallel
   -a, --analysis=number      Analysis to read events from
@@ -69,8 +73,8 @@ Scrappie basecaller -- scrappie attempts to call homopolymers
 
 
 ```
-> scrappie_raw --help
-Usage: scrappie_raw [OPTION...] fast5 [fast5 ...]
+> scrappie help raw
+Usage: raw [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall from raw signal
 
   -#, --threads=nreads       Number of reads to call in parallel
