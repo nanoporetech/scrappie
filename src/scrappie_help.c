@@ -18,7 +18,8 @@ static const char * scrappie_help_footer =
 "\n"
 "Scrappie's purpose is to demonstrate the next generation of base calling and, as\n"
 "such, may change drastically between releases and breaks backwards\n"
-"compatibility.  Newer version may drop support older features.\n";
+"compatibility.  Newer versions may drop support older features or change their\n"
+"behaviour.\n";
 
 static const char * scrappie_licence_text =
 "Proprietary and confidential information of Oxford Nanopore Technologies, Limited\n"
@@ -39,6 +40,7 @@ int main_help_short(void){
 	}
 	return (EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
 
 int main_help(int argc, char * argv[]){
 	if(argc == 1){
