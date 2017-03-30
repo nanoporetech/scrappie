@@ -5,7 +5,6 @@
 #include "scrappie_subcommands.h"
 
 char * help_options[2] = {NULL, "--help"};
-extern char * argp_program_version;
 
 static const char * scrappie_help_header =
 "Scrappie is a technology demonstrator for the Oxford Nanopore Technologies\n"
@@ -23,6 +22,9 @@ static const char * scrappie_help_footer =
 "compatibility.  Newer versions may drop support older features or change their\n"
 "behaviour.\n";
 
+extern const char * argp_program_version;
+
+
 int main_help_short(void){
 	int ret = fputs(scrappie_help_header, stdout);
 	if(EOF != ret){
@@ -34,6 +36,7 @@ int main_help_short(void){
 
 
 int main_help(int argc, char * argv[]){
+
 	if(argc == 1){
 		int ret = fputs(scrappie_help_header, stdout);
 		if(EOF != ret){
