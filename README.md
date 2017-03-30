@@ -1,10 +1,12 @@
 # Scrappie basecaller
 
-Scrappie attempts to call homopolymers.  It makes some mistakes.
+Scrappie is a technology demonstrator for the Oxford Nanopore Research Algorithms group.
 ```
 Ref   : GACACAGTGAGGCTGCGTCTC-AAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGTTTGCATTTAGATCTCTT
 Query : GACACAG-GAGGCTGCGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CAGA-CT-TT
 ```
+
+For a complete release history, see (RELEASES.md)
 
 ## Dependencies
 * A good BLAS library + development headers including cblas.h.
