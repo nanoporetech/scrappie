@@ -76,7 +76,6 @@ Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, const Mat_rptr b, int s
 		memcpy(C->data.v + i * C->nrq, b->data.v, C->nrq * sizeof(__m128));
 	}
 
-
 	// Left-hand side edge case where only part of the filter covers the input
 	for (int w = 0; w < padL; w += stride) {
 		const int offsetW = ldFeature * (padL - w);
@@ -117,17 +116,19 @@ Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, const Mat_rptr b, int s
 	}
 
 	// Right-hand side edge case where only part of the filter covers the input
-	/*const int maxCol_reshape = ifloor(X->nc - shiftX_L, nstepX);
+	const int maxCol_reshape = ifloor(X->nc - shiftX_L, nstepX);
 	const int remainder_reshape = (X->nc - shiftX_L) % nstepX;
 	const int offsetC_R = offsetC_L + ldC * nstepC * (maxCol_reshape - 1) + ldC * (remainder_reshape / stride) + ldC;
-	const int offsetX_R = offsetX_L + ldX * nstepX * (maxCol_reshape - 1) + ldX * stride * (remainder_reshape / stride) + ldX;
-	for (int w = 0 ; w < padR; w += stride) {
-        	const int offsetW = ldFeature * (padR - w);
+	const int offsetX_R = (X->nc - winlen + 1) * ldX;
+	// How far into padding is first block
+	const int startR = stride - (padL + X->nc - winlen) % stride - 1;
+	for (int w = startR ; w < padR; w += stride) {
+		const int offsetW = ldFeature * (w + 1);
 		cblas_sgemv(CblasColMajor, CblasTrans, W->nr - offsetW, W->nc, 1.0,
 			W->data.f, ldW,
 			X->data.f + offsetX_R + ldX * w, 1, 1.0,
 			C->data.f + offsetC_R + ldC * (w / stride), 1);
-	}*/
+	}
 
 	// Apply an activation function
 	for(int c=0 ; c<C->nc ; c++){
