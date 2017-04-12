@@ -16,7 +16,7 @@ scrappie_matrix window(const scrappie_matrix input, int w, int stride){
 	assert(w > 0);
 	const int wh = (w + 1) / 2;
 
-	scrappie_matrix output = make_mat(input->nr * w, (int)ceilf(input->nc / (float)stride));
+	scrappie_matrix output = make_scrappie_matrix(input->nr * w, (int)ceilf(input->nc / (float)stride));
 
 	for(int col=0 ; col<output->nc ; col++){
 		// First and last columns are special cases
@@ -63,7 +63,7 @@ scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W, co
 	const int padL = (winlen - 1) / 2;
 	const int padR = winlen / 2;
 	const int ncolC = iceil(X->nc, stride);
-	C = remake_mat(C, nfilter, ncolC);
+	C = remake_scrappie_matrix(C, nfilter, ncolC);
 
 	// Matrix strides
 	const int ldC = C->nrq * 4;
@@ -220,11 +220,11 @@ scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW, c
 	assert(iW->nc == 3 * size);
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
-	ostate = remake_mat(ostate, size, bsize);
+	ostate = remake_scrappie_matrix(ostate, size, bsize);
 	ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
 
 	_Mat xCol, sCol1, sCol2;
-	scrappie_matrix tmp = make_mat(3 * size, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
 
 	/* First step state is zero.  Set second column of ostate to zero and use that */
 	memset(ostate->data.v + ostate->nrq, 0, ostate->nrq * sizeof(__m128));
@@ -261,11 +261,11 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW, 
 	assert(iW->nc == 3 * size);
 	assert(sW->nc == 2 * size);
 	assert(sW2->nc == size);
-	ostate = remake_mat(ostate, size, bsize);
+	ostate = remake_scrappie_matrix(ostate, size, bsize);
 	ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
 
 	_Mat xCol, sCol1, sCol2;
-	scrappie_matrix tmp = make_mat(3 * size, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(ostate->data.v, 0, ostate->nrq * sizeof(__m128));
@@ -361,11 +361,11 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine, const scrappie_matri
 	assert(Xaffine->nr == 4 * size);
 	assert(p->nr == 3 * size);
 	assert(sW->nc == 4 * size);
-	output = remake_mat(output, size, bsize);
+	output = remake_scrappie_matrix(output, size, bsize);
 	ASSERT_OR_RETURN_NULL(NULL != output, NULL);
 
-	scrappie_matrix tmp = make_mat(4 * size, 1);
-	scrappie_matrix state = make_mat(size, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(4 * size, 1);
+	scrappie_matrix state = make_scrappie_matrix(size, 1);
 
 	/* First step state & output are zero.  Set second column of output to zero and use that */
 	memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
@@ -398,11 +398,11 @@ scrappie_matrix lstm_backward(const scrappie_matrix Xaffine, const scrappie_matr
 	assert(Xaffine->nr == 4 * size);
 	assert(sW->nc == 4 * size);
 	assert(p->nr == 3 * size);
-	output = remake_mat(output, size, bsize);
+	output = remake_scrappie_matrix(output, size, bsize);
 	ASSERT_OR_RETURN_NULL(NULL != output, NULL);
 
-	scrappie_matrix tmp = make_mat(4 * size, 1);
-	scrappie_matrix state = make_mat(size, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(4 * size, 1);
+	scrappie_matrix state = make_scrappie_matrix(size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(output->data.v, 0, output->nrq * sizeof(__m128));

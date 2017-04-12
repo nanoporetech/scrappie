@@ -80,7 +80,7 @@ float valminf(const float * x, int n){
 	return vmin;
 }
 
-scrappie_matrix make_mat(int nr, int nc){
+scrappie_matrix make_scrappie_matrix(int nr, int nc){
 	// Matrix padded so row length is multiple of 4
 	int nrq = (int)ceil(nr / 4.0);
 	scrappie_matrix mat = malloc(sizeof(*mat));
@@ -97,23 +97,23 @@ scrappie_matrix make_mat(int nr, int nc){
 	return mat;
 }
 
-scrappie_matrix remake_mat(scrappie_matrix M, int nr, int nc){
+scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc){
 	// Could be made more efficient when there is sufficent memory already allocated
 	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
 		M = free_mat(M);
-		M = make_mat(nr, nc);
+		M = make_scrappie_matrix(nr, nc);
 	}
 	return M;
 }
 
-void zero_mat(scrappie_matrix M) {
+void zero_scrappie_matrix(scrappie_matrix M) {
 	if(NULL != M){ return; }
 	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(float));
 }
 
 
 scrappie_matrix mat_from_array(const float * x, int nr, int nc){
-	scrappie_matrix res = make_mat(nr, nc);
+	scrappie_matrix res = make_scrappie_matrix(nr, nc);
 	for(int col=0 ; col < nc ; col++){
 		memcpy(res->data.f + col * res->nrq * 4, x + col * nr, nr * sizeof(float));
 	}
@@ -121,7 +121,7 @@ scrappie_matrix mat_from_array(const float * x, int nr, int nc){
 }
 
 
-void fprint_mat(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc){
+void fprint_scrappie_matrix(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc){
 	assert(NULL != fh);
 	assert(NULL != mat);
 	if(nr <= 0 || nr > mat->nr){nr = mat->nr;}
@@ -150,7 +150,7 @@ scrappie_matrix free_mat(scrappie_matrix mat){
 	return NULL;
 }
 
-scrappie_imatrix make_imat(int nr, int nc){
+scrappie_imatrix make_scrappie_imatrix(int nr, int nc){
 	// Matrix padded so row length is multiple of 4
 	int nrq = (int)ceil(nr / 4.0);
 	scrappie_imatrix mat = malloc(sizeof(*mat));
@@ -167,11 +167,11 @@ scrappie_imatrix make_imat(int nr, int nc){
 	return mat;
 }
 
-scrappie_imatrix remake_imat(scrappie_imatrix M, int nr, int nc){
+scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc){
 	// Could be made more efficient when there is sufficent memory already allocated
 	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
 		M = free_imat(M);
-		M = make_imat(nr, nc);
+		M = make_scrappie_imatrix(nr, nc);
 	}
 	return M;
 }
@@ -184,7 +184,7 @@ scrappie_imatrix free_imat(scrappie_imatrix mat){
 	return NULL;
 }
 
-void zero_imat(scrappie_imatrix M) {
+void zero_scrappie_imatrix(scrappie_imatrix M) {
 	if(NULL != M){ return; }
 	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));
 }
@@ -205,7 +205,7 @@ scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
 	assert(NULL != W);
 	assert(NULL != b);
 	assert(W->nr == X->nr);
-	C = remake_mat(C, W->nc, X->nc);
+	C = remake_scrappie_matrix(C, W->nc, X->nc);
 	if(NULL == C){
 		return NULL;
 	}
@@ -236,7 +236,7 @@ scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
 	assert(Wb->nr == Xb->nr);
 	assert(Xf->nc == Xb->nc);
 	assert(Wf->nc == Wb->nc);
-	C = remake_mat(C, Wf->nc, Xf->nc);
+	C = remake_scrappie_matrix(C, Wf->nc, Xf->nc);
 	if(NULL == C){
 		return NULL;
 	}
@@ -280,7 +280,7 @@ void row_normalise_inplace(scrappie_matrix C){
 	}
 }
 
-float max_mat(const scrappie_matrix x){
+float max_scrappie_matrix(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return NAN;
@@ -297,7 +297,7 @@ float max_mat(const scrappie_matrix x){
 	return amax;
 }
 
-float min_mat(const scrappie_matrix x){
+float min_scrappie_matrix(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return NAN;
@@ -314,7 +314,7 @@ float min_mat(const scrappie_matrix x){
 	return amin;
 }
 
-int argmax_mat(const scrappie_matrix x){
+int argmax_scrappie_matrix(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return -1;
@@ -334,7 +334,7 @@ int argmax_mat(const scrappie_matrix x){
 	return imax;
 }
 
-int argmin_mat(const scrappie_matrix x){
+int argmin_scrappie_matrix(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return -1;

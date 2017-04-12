@@ -78,7 +78,7 @@ void studentise_features_kahan(scrappie_matrix features){
 scrappie_matrix make_features(const event_table evtbl, bool normalise){
 	const size_t nevent = evtbl.end - evtbl.start;
 	const size_t offset = evtbl.start;
-	scrappie_matrix features = make_mat(4, nevent);
+	scrappie_matrix features = make_scrappie_matrix(4, nevent);
 	for(size_t ev=0 ; ev<nevent - 1 ; ev++){
 		features->data.v[ev] = _mm_setr_ps(
 			evtbl.event[ev + offset].mean,
@@ -103,7 +103,7 @@ scrappie_matrix make_features(const event_table evtbl, bool normalise){
 scrappie_matrix mat_raw(const raw_table signal){
 	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
 	const size_t nsample = signal.end - signal.start;
-	scrappie_matrix sigmat = make_mat(1, nsample);
+	scrappie_matrix sigmat = make_scrappie_matrix(1, nsample);
 	ASSERT_OR_RETURN_NULL(NULL != sigmat, NULL);
 
 	const size_t offset = signal.start;

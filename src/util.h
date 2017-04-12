@@ -123,16 +123,16 @@ static inline int ifloor(int x, int y) {
 	return x / y;
 }
 
-scrappie_matrix make_mat(int nr, int nc);
-scrappie_matrix remake_mat(scrappie_matrix M, int nr, int nc);
-void zero_mat(scrappie_matrix M);
+scrappie_matrix make_scrappie_matrix(int nr, int nc);
+scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc);
+void zero_scrappie_matrix(scrappie_matrix M);
 scrappie_matrix mat_from_array(const float * x, int nr, int nc);
-void fprint_mat(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc);
+void fprint_scrappie_matrix(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc);
 scrappie_matrix free_mat(scrappie_matrix mat);
-scrappie_imatrix make_imat(int nr, int nc);
-scrappie_imatrix remake_imat(scrappie_imatrix M, int nr, int nc);
+scrappie_imatrix make_scrappie_imatrix(int nr, int nc);
+scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc);
 scrappie_imatrix free_imat(scrappie_imatrix mat);
-void zero_imat(scrappie_imatrix M);
+void zero_scrappie_imatrix(scrappie_imatrix M);
 
 scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
 		 const scrappie_matrix b, scrappie_matrix C);
@@ -141,8 +141,8 @@ scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
 		  const scrappie_matrix b, scrappie_matrix C);
 void row_normalise_inplace(scrappie_matrix C);
 
-float min_mat(const scrappie_matrix mat);
-float max_mat(const scrappie_matrix mat);
+float min_scrappie_matrix(const scrappie_matrix mat);
+float max_scrappie_matrix(const scrappie_matrix mat);
 
 
 void quantilef(const float * x, size_t nx, float * p, size_t np);

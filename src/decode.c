@@ -28,11 +28,11 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	const int nkmerqqqq = nkmerqqq / 4;
 
 	//  Forwards memory + traceback
-	scrappie_matrix score = make_mat(nkmer, 1);
-	scrappie_matrix prev_score = make_mat(nkmer, 1);
-	scrappie_matrix tmp = make_mat(nkmer, 1);
-	scrappie_imatrix itmp = make_imat(nkmer, nev);
-	scrappie_imatrix traceback = make_imat(nkmer, nev);
+	scrappie_matrix score = make_scrappie_matrix(nkmer, 1);
+	scrappie_matrix prev_score = make_scrappie_matrix(nkmer, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(nkmer, 1);
+	scrappie_imatrix itmp = make_scrappie_imatrix(nkmer, nev);
+	scrappie_imatrix traceback = make_scrappie_imatrix(nkmer, nev);
 
 	//  Initialise
 	for( int i=0 ; i < nkmerq ; i++){
