@@ -23,8 +23,6 @@ void scrappie_network_setup(void);
 // Doesn't play nice with other headers, include last
 #include <argp.h>
 
-static const float MIN_PROB1M = 1.0 - 1e-5;
-
 struct _bs {
 	float score;
 	int nev;
@@ -81,7 +79,24 @@ struct arguments {
 	int compression_chunk_size;
 	char ** files;
 };
-static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false, 1, 200, NULL};
+
+static struct arguments args = {
+	.analysis = -1,
+	.seganalysis = -1,
+	.dwell_correction = true,
+	.limit = 0,
+	.min_prob = 1e-5,
+	.outformat = FORMAT_FASTA,
+	.skip_pen = 0.0,
+	.use_slip = false,
+	.trim = 50,
+	.segmentation = "Segment_Linear",
+	.dump = NULL,
+	.albacore = false,
+	.compression_level = 1,
+	.compression_chunk_size = 200,
+	.files = NULL
+};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){

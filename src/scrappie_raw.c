@@ -24,7 +24,6 @@ void scrappie_gru_raw_setup(void);
 // Doesn't play nice with other headers, include last
 #include <argp.h>
 
-static const float MIN_PROB1M = 1.0 - 1e-5;
 
 struct _raw_basecall_info {
 	float score;
@@ -36,7 +35,15 @@ struct _raw_basecall_info {
 	int * pos;
 	size_t nblock;
 };
-static const struct _raw_basecall_info _raw_basecall_info_null = {0.0f, {0, 0, 0, NULL}, NULL, 0 , NULL, 0};
+
+static const struct _raw_basecall_info _raw_basecall_info_null = {
+	.score = 0.0f,
+	.rt = {0, 0, 0, NULL},
+	.basecall = NULL,
+	.basecall_length = 0,
+	.pos = NULL,
+	.nblock = 0
+};
 
 extern const char * argp_program_version;
 extern const char * argp_program_bug_address;
@@ -75,7 +82,19 @@ struct arguments {
 	int compression_chunk_size;
 	char ** files;
 };
-static struct arguments args = {0, 1e-5, FORMAT_FASTA, 0.0, false, 50, NULL, 1, 200, NULL};
+
+static struct arguments args = {
+	.limit = 0,
+	.min_prob = 1e-5,
+	.outformat = FORMAT_FASTA,
+	.skip_pen = 0.0,
+	.use_slip = false,
+	.trim = 50,
+	.dump = NULL,
+	.compression_level = 1,
+	.compression_chunk_size = 200,
+	.files = NULL
+};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
