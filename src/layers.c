@@ -240,7 +240,7 @@ scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW, c
 		gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
 	}
 
-	tmp = free_mat(tmp);
+	tmp = free_scrappie_matrix(tmp);
 	return ostate;
 }
 
@@ -283,7 +283,7 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW, 
 		gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
 	}
 
-	tmp = free_mat(tmp);
+	tmp = free_scrappie_matrix(tmp);
 	return ostate;
 }
 
@@ -382,8 +382,8 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine, const scrappie_matri
 		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
-	state = free_mat(state);
-	state = free_mat(tmp);
+	state = free_scrappie_matrix(state);
+	state = free_scrappie_matrix(tmp);
 	return output;
 }
 
@@ -421,8 +421,8 @@ scrappie_matrix lstm_backward(const scrappie_matrix Xaffine, const scrappie_matr
 		lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
 	}
 
-	state = free_mat(state);
-	tmp = free_mat(tmp);
+	state = free_scrappie_matrix(state);
+	tmp = free_scrappie_matrix(tmp);
 	return output;
 }
 

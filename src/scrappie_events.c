@@ -230,7 +230,7 @@ static struct _bs calculate_post(char * filename){
 
 	int * seq = calloc(nev, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	post = free_mat(post);
+	post = free_scrappie_matrix(post);
 	int * pos = calloc(nev, sizeof(int));
 	char * basecall = overlapper(seq, nev, nstate - 1, pos);
 	const size_t basecall_len = strlen(basecall);

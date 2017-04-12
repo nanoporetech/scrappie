@@ -128,10 +128,10 @@ scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc);
 void zero_scrappie_matrix(scrappie_matrix M);
 scrappie_matrix mat_from_array(const float * x, int nr, int nc);
 void fprint_scrappie_matrix(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc);
-scrappie_matrix free_mat(scrappie_matrix mat);
+scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 scrappie_imatrix make_scrappie_imatrix(int nr, int nc);
 scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc);
-scrappie_imatrix free_imat(scrappie_imatrix mat);
+scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat);
 void zero_scrappie_imatrix(scrappie_imatrix M);
 
 scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,

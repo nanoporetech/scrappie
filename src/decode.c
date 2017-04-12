@@ -185,11 +185,11 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	seq[0] = pstate;
 
 
-	traceback = free_imat(traceback);
-	itmp = free_imat(itmp);
-	tmp = free_mat(tmp);
-	prev_score = free_mat(prev_score);
-	score = free_mat(score);
+	traceback = free_scrappie_imatrix(traceback);
+	itmp = free_scrappie_imatrix(itmp);
+	tmp = free_scrappie_matrix(tmp);
+	prev_score = free_scrappie_matrix(prev_score);
+	score = free_scrappie_matrix(score);
 	return logscore;
 }
 
