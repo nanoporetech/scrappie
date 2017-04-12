@@ -1,7 +1,7 @@
 #ifndef DECODE_H
 #define DECODE_H
 #include <stdbool.h>
-#include "events.h"
+#include "fast5_interface.h"
 #include "util.h"
 
 typedef struct {

@@ -54,10 +54,10 @@ int main(void){
 	C = Convolution(X, W2, 3, C);
 	fprint_mat(stdout, "Output2 -- stride 3", C, 0, 0);
 
-	free_mat(&C);
-	free_mat(&W2);
-	free_mat(&W);
-	free_mat(&X);
+	free_mat(C);
+	free_mat(W2);
+	free_mat(W);
+	free_mat(X);
 	return EXIT_SUCCESS;
 }
 
