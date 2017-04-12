@@ -35,8 +35,8 @@ typedef struct {
 	} data;
 } _iMat;
 
-typedef _Mat * restrict Mat_rptr;
-typedef _iMat * restrict iMat_rptr;
+typedef _Mat * Mat_rptr;
+typedef _iMat * iMat_rptr;
 
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__))
