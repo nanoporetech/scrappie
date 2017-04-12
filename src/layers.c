@@ -11,12 +11,12 @@
 
 
 
-Mat_rptr window(const Mat_rptr input, int w, int stride){
+scrappie_matrix window(const scrappie_matrix input, int w, int stride){
 	ASSERT_OR_RETURN_NULL(NULL != input, NULL);
 	assert(w > 0);
 	const int wh = (w + 1) / 2;
 
-	Mat_rptr output = make_mat(input->nr * w, (int)ceilf(input->nc / (float)stride));
+	scrappie_matrix output = make_mat(input->nr * w, (int)ceilf(input->nc / (float)stride));
 
 	for(int col=0 ; col<output->nc ; col++){
 		// First and last columns are special cases
@@ -49,7 +49,7 @@ Mat_rptr window(const Mat_rptr input, int w, int stride){
  *  a multiple of the SSE vector size (4).  The filter matrix must have been
  *  expanded accordingly.
  **/
-Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, const Mat_rptr b, int stride, Mat_rptr C) {
+scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W, const scrappie_matrix b, int stride, scrappie_matrix C) {
 	ASSERT_OR_RETURN_NULL(NULL != X, NULL);
 	assert(NULL != W);
 	assert(NULL != b);
@@ -141,14 +141,14 @@ Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, const Mat_rptr b, int s
 }
 
 
-Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
-		         const Mat_rptr b, Mat_rptr C){
+scrappie_matrix feedforward_linear(const scrappie_matrix X, const scrappie_matrix W,
+		         const scrappie_matrix b, scrappie_matrix C){
 	return affine_map(X, W, b, C);
 }
 
 
-Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
-	               const Mat_rptr b, Mat_rptr C){
+scrappie_matrix feedforward_tanh(const scrappie_matrix X, const scrappie_matrix W,
+	               const scrappie_matrix b, scrappie_matrix C){
 	C = affine_map(X, W, b, C);
 	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
@@ -162,8 +162,8 @@ Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
 }
 
 
-Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
-	              const Mat_rptr b, Mat_rptr C){
+scrappie_matrix feedforward_exp(const scrappie_matrix X, const scrappie_matrix W,
+	              const scrappie_matrix b, scrappie_matrix C){
 	C = affine_map(X, W, b, C);
 	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
@@ -177,8 +177,8 @@ Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
 }
 
 
-Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
-              const Mat_rptr b, Mat_rptr C){
+scrappie_matrix softmax(const scrappie_matrix X, const scrappie_matrix W,
+              const scrappie_matrix b, scrappie_matrix C){
 	C = feedforward_exp(X, W, b, C);
 	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
@@ -187,9 +187,9 @@ Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
 }
 
 
-Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
-	  	       const Mat_rptr Wf, const Mat_rptr Wb,
-	               const Mat_rptr b, Mat_rptr C){
+scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf, const scrappie_matrix Xb,
+	  	       const scrappie_matrix Wf, const scrappie_matrix Wb,
+	               const scrappie_matrix b, scrappie_matrix C){
 	C = affine_map2(Xf, Xb, Wf, Wb, b, C);
 	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
@@ -203,7 +203,7 @@ Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
 }
 
 
-Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
+scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW, const scrappie_matrix sW, const scrappie_matrix sW2, const scrappie_matrix b, scrappie_matrix ostate){
 	ASSERT_OR_RETURN_NULL(NULL != X, NULL);
 
 	assert(NULL != iW);
@@ -224,7 +224,7 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 	ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
 
 	_Mat xCol, sCol1, sCol2;
-	Mat_rptr tmp = make_mat(3 * size, 1);
+	scrappie_matrix tmp = make_mat(3 * size, 1);
 
 	/* First step state is zero.  Set second column of ostate to zero and use that */
 	memset(ostate->data.v + ostate->nrq, 0, ostate->nrq * sizeof(__m128));
@@ -245,7 +245,7 @@ Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, con
 }
 
 
-Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr b, Mat_rptr ostate){
+scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW, const scrappie_matrix sW, const scrappie_matrix sW2, const scrappie_matrix b, scrappie_matrix ostate){
 	ASSERT_OR_RETURN_NULL(NULL != X, NULL);
 	assert(NULL != iW);
 	assert(NULL != sW);
@@ -265,7 +265,7 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 	ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
 
 	_Mat xCol, sCol1, sCol2;
-	Mat_rptr tmp = make_mat(3 * size, 1);
+	scrappie_matrix tmp = make_mat(3 * size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(ostate->data.v, 0, ostate->nrq * sizeof(__m128));
@@ -288,9 +288,9 @@ Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW, co
 }
 
 
-void gru_step(const Mat_rptr x, const Mat_rptr istate,
-	      const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr sW2, const Mat_rptr bias,
-	      Mat_rptr xF, Mat_rptr ostate){
+void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
+	      const scrappie_matrix xW, const scrappie_matrix sW, const scrappie_matrix sW2, const scrappie_matrix bias,
+	      scrappie_matrix xF, scrappie_matrix ostate){
 	/* Perform a single GRU step
 	 * x      is [isize]
 	 * istate is [size]
@@ -351,7 +351,7 @@ void gru_step(const Mat_rptr x, const Mat_rptr istate,
 }
 
 
-Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
+scrappie_matrix lstm_forward(const scrappie_matrix Xaffine, const scrappie_matrix sW, const scrappie_matrix p, scrappie_matrix output){
 	ASSERT_OR_RETURN_NULL(NULL != Xaffine, NULL);
 	assert(NULL != sW);
 	assert(NULL != p);
@@ -364,8 +364,8 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 	output = remake_mat(output, size, bsize);
 	ASSERT_OR_RETURN_NULL(NULL != output, NULL);
 
-	Mat_rptr tmp = make_mat(4 * size, 1);
-	Mat_rptr state = make_mat(size, 1);
+	scrappie_matrix tmp = make_mat(4 * size, 1);
+	scrappie_matrix state = make_mat(size, 1);
 
 	/* First step state & output are zero.  Set second column of output to zero and use that */
 	memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
@@ -388,7 +388,7 @@ Mat_rptr lstm_forward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr 
 }
 
 
-Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr p, Mat_rptr output){
+scrappie_matrix lstm_backward(const scrappie_matrix Xaffine, const scrappie_matrix sW, const scrappie_matrix p, scrappie_matrix output){
 	ASSERT_OR_RETURN_NULL(NULL != Xaffine, NULL);
 	assert(NULL != sW);
 	assert(NULL != p);
@@ -401,8 +401,8 @@ Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr
 	output = remake_mat(output, size, bsize);
 	ASSERT_OR_RETURN_NULL(NULL != output, NULL);
 
-	Mat_rptr tmp = make_mat(4 * size, 1);
-	Mat_rptr state = make_mat(size, 1);
+	scrappie_matrix tmp = make_mat(4 * size, 1);
+	scrappie_matrix state = make_mat(size, 1);
 
 	/* First step state is zero.  Set first column of ostate to zero and use that */
 	memset(output->data.v, 0, output->nrq * sizeof(__m128));
@@ -427,9 +427,9 @@ Mat_rptr lstm_backward(const Mat_rptr Xaffine, const Mat_rptr sW, const Mat_rptr
 }
 
 
-void lstm_step(const Mat_rptr xAffine, const Mat_rptr out_prev,
-	       const Mat_rptr sW, const Mat_rptr peep,
-	       Mat_rptr xF, Mat_rptr state, Mat_rptr output){
+void lstm_step(const scrappie_matrix xAffine, const scrappie_matrix out_prev,
+	       const scrappie_matrix sW, const scrappie_matrix peep,
+	       scrappie_matrix xF, scrappie_matrix state, scrappie_matrix output){
 	/* Perform a single LSTM step
 	 * xAffine  is [isize] (== iW x + b, where x is the input to the LSTM layer)
 	 * out_prev is [size]

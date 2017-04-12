@@ -219,7 +219,7 @@ static struct _bs calculate_post(char * filename){
 	et.start += args.trim;
 	et.end -= args.trim;
 
-	Mat_rptr post = nanonet_posterior(et, args.min_prob, true);
+	scrappie_matrix post = nanonet_posterior(et, args.min_prob, true);
 	if(NULL == post){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};

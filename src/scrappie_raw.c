@@ -198,7 +198,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
 	rt.end = segmentation.end;
 
 	medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-	Mat_rptr post = nanonet_raw_posterior(rt, args.min_prob, true);
+	scrappie_matrix post = nanonet_raw_posterior(rt, args.min_prob, true);
 	if(NULL == post){
 		free(rt.raw);
 		return _raw_basecall_info_null;

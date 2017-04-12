@@ -80,10 +80,10 @@ float valminf(const float * x, int n){
 	return vmin;
 }
 
-Mat_rptr make_mat(int nr, int nc){
+scrappie_matrix make_mat(int nr, int nc){
 	// Matrix padded so row length is multiple of 4
 	int nrq = (int)ceil(nr / 4.0);
-	Mat_rptr mat = malloc(sizeof(*mat));
+	scrappie_matrix mat = malloc(sizeof(*mat));
 	mat->nr = nr;
 	mat->nrq = nrq;
 	mat->nc = nc;
@@ -97,7 +97,7 @@ Mat_rptr make_mat(int nr, int nc){
 	return mat;
 }
 
-Mat_rptr remake_mat(Mat_rptr M, int nr, int nc){
+scrappie_matrix remake_mat(scrappie_matrix M, int nr, int nc){
 	// Could be made more efficient when there is sufficent memory already allocated
 	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
 		M = free_mat(M);
@@ -106,14 +106,14 @@ Mat_rptr remake_mat(Mat_rptr M, int nr, int nc){
 	return M;
 }
 
-void zero_mat(Mat_rptr M) {
+void zero_mat(scrappie_matrix M) {
 	if(NULL != M){ return; }
 	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(float));
 }
 
 
-Mat_rptr mat_from_array(const float * x, int nr, int nc){
-	Mat_rptr res = make_mat(nr, nc);
+scrappie_matrix mat_from_array(const float * x, int nr, int nc){
+	scrappie_matrix res = make_mat(nr, nc);
 	for(int col=0 ; col < nc ; col++){
 		memcpy(res->data.f + col * res->nrq * 4, x + col * nr, nr * sizeof(float));
 	}
@@ -121,7 +121,7 @@ Mat_rptr mat_from_array(const float * x, int nr, int nc){
 }
 
 
-void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int nc){
+void fprint_mat(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc){
 	assert(NULL != fh);
 	assert(NULL != mat);
 	if(nr <= 0 || nr > mat->nr){nr = mat->nr;}
@@ -142,7 +142,7 @@ void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int 
 }
 
 
-Mat_rptr free_mat(Mat_rptr mat){
+scrappie_matrix free_mat(scrappie_matrix mat){
 	if(NULL != mat){
 		free(mat->data.v);
 		free(mat);
@@ -150,10 +150,10 @@ Mat_rptr free_mat(Mat_rptr mat){
 	return NULL;
 }
 
-iMat_rptr make_imat(int nr, int nc){
+scrappie_imatrix make_imat(int nr, int nc){
 	// Matrix padded so row length is multiple of 4
 	int nrq = (int)ceil(nr / 4.0);
-	iMat_rptr mat = malloc(sizeof(*mat));
+	scrappie_imatrix mat = malloc(sizeof(*mat));
 	mat->nr = nr;
 	mat->nrq = nrq;
 	mat->nc = nc;
@@ -167,7 +167,7 @@ iMat_rptr make_imat(int nr, int nc){
 	return mat;
 }
 
-iMat_rptr remake_imat(iMat_rptr M, int nr, int nc){
+scrappie_imatrix remake_imat(scrappie_imatrix M, int nr, int nc){
 	// Could be made more efficient when there is sufficent memory already allocated
 	if((NULL == M) || (M->nr != nr) || (M->nc != nc)){
 		M = free_imat(M);
@@ -176,7 +176,7 @@ iMat_rptr remake_imat(iMat_rptr M, int nr, int nc){
 	return M;
 }
 
-iMat_rptr free_imat(iMat_rptr mat){
+scrappie_imatrix free_imat(scrappie_imatrix mat){
 	if(NULL != mat){
 		free(mat->data.v);
 		free(mat);
@@ -184,14 +184,14 @@ iMat_rptr free_imat(iMat_rptr mat){
 	return NULL;
 }
 
-void zero_imat(iMat_rptr M) {
+void zero_imat(scrappie_imatrix M) {
 	if(NULL != M){ return; }
 	memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));
 }
 
 
-Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
-	         const Mat_rptr b, Mat_rptr C){
+scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
+	         const scrappie_matrix b, scrappie_matrix C){
 	/*  Affine transform C = W^t X + b
 	 *  X is [nr, nc]
 	 *  W is [nr, nk]
@@ -222,9 +222,9 @@ Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
 	return C;
 }
 
-Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
-		  const Mat_rptr Wf, const Mat_rptr Wb,
-		  const Mat_rptr b, Mat_rptr C){
+scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
+		  const scrappie_matrix Wf, const scrappie_matrix Wb,
+		  const scrappie_matrix b, scrappie_matrix C){
 	if(NULL == Xf || NULL == Xb){
 		// Input NULL due to earlier failure.  Propagate
 		return NULL;
@@ -258,7 +258,7 @@ __m128 mask(int i){
 	return (__m128)(__v4sf){i>=1, i>=2, i>=3, 0.0f};
 }
 
-void row_normalise_inplace(Mat_rptr C){
+void row_normalise_inplace(scrappie_matrix C){
 	if(NULL == C){
 		// Input NULL due to earlier failure.  Propagate
 		return;
@@ -280,7 +280,7 @@ void row_normalise_inplace(Mat_rptr C){
 	}
 }
 
-float max_mat(const Mat_rptr x){
+float max_mat(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return NAN;
@@ -297,7 +297,7 @@ float max_mat(const Mat_rptr x){
 	return amax;
 }
 
-float min_mat(const Mat_rptr x){
+float min_mat(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return NAN;
@@ -314,7 +314,7 @@ float min_mat(const Mat_rptr x){
 	return amin;
 }
 
-int argmax_mat(const Mat_rptr x){
+int argmax_mat(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return -1;
@@ -334,7 +334,7 @@ int argmax_mat(const Mat_rptr x){
 	return imax;
 }
 
-int argmin_mat(const Mat_rptr x){
+int argmin_mat(const scrappie_matrix x){
 	if(NULL == x){
 		// Input NULL due to earlier failure.  Propagate
 		return -1;
