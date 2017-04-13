@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 typedef struct {
-        int nr, nrq, nc;
+        unsigned int nr, nrq, nc;
         union {
                 __m128 * v;
                 float * f;
@@ -14,7 +14,7 @@ typedef struct {
 } _Mat;
 
 typedef struct {
-        int nr, nrq, nc;
+        unsigned int nr, nrq, nc;
         union {
                 __m128i * v;
                 int32_t * f;

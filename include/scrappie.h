@@ -7,7 +7,6 @@ extern "C" {
 
 #include <immintrin.h>
 #include <stdbool.h>
-#include <stdlib.h>
 
 
 
@@ -20,19 +19,19 @@ typedef struct {
 } event_t;
 
 typedef struct {
-	size_t n, start, end;
+	unsigned int n, start, end;
 	event_t * event;
 } event_table;
 
 typedef struct {
-	size_t n, start, end;
+	unsigned int n, start, end;
 	float * raw;
 } raw_table;
 
 
 /*  Matrix definitions from util.h  */
 typedef struct {
-        int nr, nrq, nc;
+        unsigned int nr, nrq, nc;
         union {
                 __m128 * v;
                 float * f;

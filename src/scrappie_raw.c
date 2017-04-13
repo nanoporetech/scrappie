@@ -188,7 +188,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
 
 	const int nsample = rt.end - rt.start;
 	if(nsample <= 2 * args.trim){
-		warnx("Too few samples in %s to call (%d, originally %lu).", filename, nsample, rt.n);
+		warnx("Too few samples in %s to call (%d, originally %u).", filename, nsample, rt.n);
 		free(rt.raw);
 		return _raw_basecall_info_null;
 	}
