@@ -3,24 +3,8 @@
 
 #include <hdf5.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include "scrappie_structures.h"
 
-typedef struct {
-	double start;
-	float length;
-	float mean, stdv;
-	int pos, state;
-} event_t;
-
-typedef struct {
-	size_t n, start, end;
-	event_t * event;
-} event_table;
-
-typedef struct {
-	size_t n, start, end;
-	float * raw;
-} raw_table;
 
 typedef struct{
 	int start, end;
