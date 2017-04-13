@@ -122,7 +122,7 @@ When the output is set to FASTA (default) then some metadata is stored in the de
     * `--albacore` --> `/Analyses/Basecall_1D_XXX/BaseCalled_template/Events`
   * Segmentation is taken (by default) from /Analyses/Segment\_Linear\_XXX/Summary/split\_hairpin.  The group name for the segmentation data, here Segment\_Linear, can be set using the `--segmentation` flag.
 * Model is hard-coded.  Generate new header files using 
-  * Events: `parse_lstm_events.py model.pkl > src/nanonet_lstm_events.h`
-  * Raw: `parse_gru_raw.py model.pkl > src/nanonet_raw.h`
+  * Events: `parse_events.py model.pkl > src/nanonet_events.h`
+  * Raw: `parse_raw.py model.pkl > src/nanonet_raw.h`
 * The normalised score (- total score / number of events) correlates well with read accuracy.
 * Events with unusual rate metrics (number of events or blocks / bases called) may be unreliable.
