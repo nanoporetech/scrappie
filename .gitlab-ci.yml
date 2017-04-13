@@ -25,6 +25,8 @@ building:
     paths:
       - ${BUILD_DIR}/*.deb
       - ${BUILD_DIR}/scrappie
+      - ${BUILD_DIR}/libscrappie.so
+      - ${BUILD_DIR}/libscrappie.a
 
 testing:
   stage: test
