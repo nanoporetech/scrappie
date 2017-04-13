@@ -5,7 +5,7 @@
 #include "fast5_interface.h"
 #include "util.h"
 
-scrappie_matrix make_features(const event_table evtbl, bool normalise);
-scrappie_matrix mat_raw(const raw_table signal);
+scrappie_matrix nanonet_features_from_events(const event_table evtbl, bool normalise);
+scrappie_matrix nanonet_features_from_raw(const raw_table signal);
 
 #endif /* FEATURES_H */

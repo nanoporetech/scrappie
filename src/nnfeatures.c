@@ -75,7 +75,7 @@ void studentise_features_kahan(scrappie_matrix features){
 }
 
 
-scrappie_matrix make_features(const event_table evtbl, bool normalise){
+scrappie_matrix nanonet_features_from_events(const event_table evtbl, bool normalise){
 	const size_t nevent = evtbl.end - evtbl.start;
 	const size_t offset = evtbl.start;
 	scrappie_matrix features = make_scrappie_matrix(4, nevent);
@@ -100,7 +100,7 @@ scrappie_matrix make_features(const event_table evtbl, bool normalise){
 }
 
 
-scrappie_matrix mat_raw(const raw_table signal){
+scrappie_matrix nanonet_features_from_raw(const raw_table signal){
 	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
 	const size_t nsample = signal.end - signal.start;
 	scrappie_matrix sigmat = make_scrappie_matrix(1, nsample);

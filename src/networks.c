@@ -13,7 +13,7 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob, bool
 	const int WINLEN = 3;
 
         //  Make features
-        scrappie_matrix features = make_features(events, true);
+        scrappie_matrix features = nanonet_features_from_events(events, true);
         scrappie_matrix feature3 = window(features, WINLEN, 1);
         features = free_scrappie_matrix(features);
 
@@ -64,7 +64,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, bo
 	assert(min_prob >= 0.0 && min_prob <= 1.0);
 	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
 
-	scrappie_matrix raw_mat = mat_raw(signal);
+	scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
 	scrappie_matrix conv = Convolution(raw_mat, conv_raw_W, conv_raw_b, conv_raw_stride, NULL);
 	raw_mat = free_scrappie_matrix(raw_mat);
 	//  First GRU layer
