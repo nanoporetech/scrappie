@@ -1,7 +1,7 @@
 #ifndef LAYERS_H
 #define LAYERS_H
 
-#include "util.h"
+#include "scrappie_matrix.h"
 
 scrappie_matrix window(const scrappie_matrix input, int w, int stride);
 scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W, const scrappie_matrix b,

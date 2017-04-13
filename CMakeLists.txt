@@ -36,7 +36,7 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
-add_library (scrappie_objects OBJECT src/decode.c src/nnfeatures.c src/layers.c src/fast5_interface.c src/util.c src/networks.c)
+add_library (scrappie_objects OBJECT src/decode.c src/nnfeatures.c src/layers.c src/fast5_interface.c src/util.c src/networks.c src/scrappie_matrix.c)
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_shared SHARED $<TARGET_OBJECTS:scrappie_objects>)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)

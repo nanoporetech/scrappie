@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "fast5_interface.h"
-#include "util.h"
+#include "scrappie_matrix.h"
 
 scrappie_matrix nanonet_features_from_events(const event_table evtbl, bool normalise);
 scrappie_matrix nanonet_features_from_raw(const raw_table signal);

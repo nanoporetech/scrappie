@@ -2,7 +2,7 @@
 #define DECODE_H
 #include <stdbool.h>
 #include "fast5_interface.h"
-#include "util.h"
+#include "scrappie_matrix.h"
 
 typedef struct {
 	float scale;

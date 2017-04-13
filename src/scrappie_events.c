@@ -16,6 +16,7 @@
 #include "decode.h"
 #include "networks.h"
 #include "scrappie_licence.h"
+#include "util.h"
 
 void scrappie_network_setup(void);
 

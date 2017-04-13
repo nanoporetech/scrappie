@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "decode.h"
+#include "util.h"
 
 #define NBASE 4
 
