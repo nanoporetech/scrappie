@@ -57,7 +57,8 @@ static struct argp_option options[] = {
 	{"trim", 't', "nsamples", 0, "Number of samples to trim from either end"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-	{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
+	// Currently disabled
+	//{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
 	{"licence", 10, 0, 0, "Print licensing information"},
 	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
 	{"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},

@@ -79,7 +79,6 @@ Usage: raw [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall from raw signal
 
   -#, --threads=nreads       Number of reads to call in parallel
-      --dump=filename        Dump annotated blocks to HDF5 file
       --hdf5-chunk=size      Chunk size for HDF5 output
       --hdf5-compression=level   Gzip compression level for HDF5 output (0:off,
                              1: quickest, 9: best)
