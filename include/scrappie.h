@@ -10,7 +10,7 @@ extern "C" {
 
 
 
-/*  Structure definitions from fast5_interface.h  */
+/*  Structure definitions from scrappie_structures.h  */
 typedef struct {
 	double start;
 	float length;
@@ -29,7 +29,7 @@ typedef struct {
 } raw_table;
 
 
-/*  Matrix definitions from util.h  */
+/*  Matrix definitions from scrappie_matrix.h  */
 typedef struct {
         unsigned int nr, nrq, nc;
         union {
