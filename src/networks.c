@@ -1,6 +1,6 @@
 #include <string.h>
 #include "layers.h"
-#include "nanonet_lstm_events.h"
+#include "nanonet_events.h"
 #include "nanonet_raw.h"
 #include "networks.h"
 #include "nnfeatures.h"

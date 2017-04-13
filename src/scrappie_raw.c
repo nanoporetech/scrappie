@@ -233,7 +233,6 @@ int main_raw(int argc, char * argv[]){
 		omp_set_nested(1);
 	#endif
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	scrappie_gru_raw_setup();
 
 	hid_t hdf5out = -1;
 	if(NULL != args.dump){
