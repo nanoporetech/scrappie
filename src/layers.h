@@ -1,37 +1,37 @@
 #ifndef LAYERS_H
 #define LAYERS_H
 
-#include "util.h"
+#include "scrappie_matrix.h"
 
-Mat_rptr window(const Mat_rptr input, int w, int stride);
-Mat_rptr Convolution(const Mat_rptr X, const Mat_rptr W, const Mat_rptr b,
-		     int stride, Mat_rptr C);
-Mat_rptr feedforward_linear(const Mat_rptr X, const Mat_rptr W,
-		            const Mat_rptr b, Mat_rptr C);
-Mat_rptr feedforward_tanh(const Mat_rptr X, const Mat_rptr W,
-		          const Mat_rptr b, Mat_rptr C);
-Mat_rptr feedforward_exp(const Mat_rptr X, const Mat_rptr W,
-		         const Mat_rptr b, Mat_rptr C);
-Mat_rptr softmax(const Mat_rptr X, const Mat_rptr W,
-	         const Mat_rptr b, Mat_rptr C);
+scrappie_matrix window(const scrappie_matrix input, int w, int stride);
+scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W, const scrappie_matrix b,
+		     int stride, scrappie_matrix C);
+scrappie_matrix feedforward_linear(const scrappie_matrix X, const scrappie_matrix W,
+		            const scrappie_matrix b, scrappie_matrix C);
+scrappie_matrix feedforward_tanh(const scrappie_matrix X, const scrappie_matrix W,
+		          const scrappie_matrix b, scrappie_matrix C);
+scrappie_matrix feedforward_exp(const scrappie_matrix X, const scrappie_matrix W,
+		         const scrappie_matrix b, scrappie_matrix C);
+scrappie_matrix softmax(const scrappie_matrix X, const scrappie_matrix W,
+	         const scrappie_matrix b, scrappie_matrix C);
 
-Mat_rptr feedforward2_tanh(const Mat_rptr Xf, const Mat_rptr Xb,
-		           const Mat_rptr Wf, const Mat_rptr Wb,
-			   const Mat_rptr b, Mat_rptr C);
+scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf, const scrappie_matrix Xb,
+		           const scrappie_matrix Wf, const scrappie_matrix Wb,
+			   const scrappie_matrix b, scrappie_matrix C);
 
-Mat_rptr gru_forward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
-		     const Mat_rptr sW2, const Mat_rptr b, Mat_rptr res);
-Mat_rptr gru_backward(const Mat_rptr X, const Mat_rptr iW, const Mat_rptr sW,
-		      const Mat_rptr sW2, const Mat_rptr b, Mat_rptr res);
-void gru_step(const Mat_rptr x, const Mat_rptr istate,
-	      const Mat_rptr xW, const Mat_rptr sW, const Mat_rptr sW2,
-	      const Mat_rptr bias, Mat_rptr xF, Mat_rptr ostate);
+scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW, const scrappie_matrix sW,
+		     const scrappie_matrix sW2, const scrappie_matrix b, scrappie_matrix res);
+scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW, const scrappie_matrix sW,
+		      const scrappie_matrix sW2, const scrappie_matrix b, scrappie_matrix res);
+void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
+	      const scrappie_matrix xW, const scrappie_matrix sW, const scrappie_matrix sW2,
+	      const scrappie_matrix bias, scrappie_matrix xF, scrappie_matrix ostate);
 
-Mat_rptr lstm_forward(const Mat_rptr X, const Mat_rptr sW,
-		      const Mat_rptr p, Mat_rptr output);
-Mat_rptr lstm_backward(const Mat_rptr X, const Mat_rptr sW,
-		       const Mat_rptr p, Mat_rptr output);
-void lstm_step(const Mat_rptr x, const Mat_rptr out_prev,
-	       const Mat_rptr sW,
-	       const Mat_rptr peep, Mat_rptr xF, Mat_rptr state, Mat_rptr output);
+scrappie_matrix lstm_forward(const scrappie_matrix X, const scrappie_matrix sW,
+		      const scrappie_matrix p, scrappie_matrix output);
+scrappie_matrix lstm_backward(const scrappie_matrix X, const scrappie_matrix sW,
+		       const scrappie_matrix p, scrappie_matrix output);
+void lstm_step(const scrappie_matrix x, const scrappie_matrix out_prev,
+	       const scrappie_matrix sW,
+	       const scrappie_matrix peep, scrappie_matrix xF, scrappie_matrix state, scrappie_matrix output);
 #endif /* LAYERS_H */

@@ -16,14 +16,13 @@
 #include "decode.h"
 #include "networks.h"
 #include "scrappie_licence.h"
+#include "util.h"
 
 void scrappie_network_setup(void);
 
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
-
-static const float MIN_PROB1M = 1.0 - 1e-5;
 
 struct _bs {
 	float score;
@@ -47,8 +46,8 @@ static struct argp_option options[] = {
 	{"trim", 't', "nevents", 0, "Number of events to trim"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-        {"segmentation", 3, "group", 0, "Fast5 group from which to reads segmentation"},
-	{"segmentation-analysis", 7, "number", 0, "Analysis number to read seqmentation from"},
+        {"segmentation", 3, "group:summary", 0, "Fast5 group from which to read segmentation"},
+	{"segmentation-analysis", 7, "number", 0, "Analysis number to read segmentation from"},
 	{"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
 	{"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
 	{"no-albacore", 9, 0, OPTION_ALIAS, "Assume fast5 have been called using Albacore"},
@@ -74,14 +73,33 @@ struct arguments {
 	float skip_pen;
 	bool use_slip;
 	int trim;
-	char * segmentation;
+	char * segloc1;
+	char * segloc2;
 	char * dump;
 	bool albacore;
 	int compression_level;
 	int compression_chunk_size;
 	char ** files;
 };
-static struct arguments args = {-1, -1, true, 0, 1e-5, FORMAT_FASTA, 0.0, false, 50, "Segment_Linear", NULL, false, 1, 200, NULL};
+
+static struct arguments args = {
+	.analysis = -1,
+	.seganalysis = -1,
+	.dwell_correction = true,
+	.limit = 0,
+	.min_prob = 1e-5,
+	.outformat = FORMAT_FASTA,
+	.skip_pen = 0.0,
+	.use_slip = false,
+	.trim = 50,
+	.segloc1 = "Segmentation",
+	.segloc2 = "segmentation",
+	.dump = NULL,
+	.albacore = false,
+	.compression_level = 1,
+	.compression_chunk_size = 200,
+	.files = NULL
+};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -123,7 +141,13 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		args.use_slip = false;
 		break;
 	case 3:
-		args.segmentation = arg;
+		args.segloc1 = strtok(arg, ":");
+		char * next_token = strtok(NULL, ":");
+		if(NULL == next_token){
+			warnx("Segmentation should be of form 'loc1:loc2' but loc2 not found.  Going to use default of %s.", args.segloc2);
+		} else {
+			args.segloc2 = next_token;
+		}
 		break;
 	case 4:
 		args.dump = arg;
@@ -190,21 +214,21 @@ static struct _bs calculate_post(char * filename){
 
 	event_table et = args.albacore ?
 		read_albacore_events(filename, args.analysis, "template") :
-		read_detected_events(filename, args.analysis, args.segmentation, args.seganalysis);
+		read_detected_events(filename, args.analysis, args.segloc1, args.segloc2, args.seganalysis);
 
 	if(NULL == et.event){
 		return (struct _bs){0, 0, NULL};
 	}
 	const int nevent = et.end - et.start;
 	if(nevent <= 2 * args.trim){
-		warnx("Too few events in %s to call (%d after segmenation, originally %lu).", filename, nevent, et.n);
+		warnx("Too few events in %s to call (%d after segmentation, originally %u).", filename, nevent, et.n);
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
 	et.start += args.trim;
 	et.end -= args.trim;
 
-	Mat_rptr post = nanonet_posterior(et, args.min_prob, true);
+	scrappie_matrix post = nanonet_posterior(et, args.min_prob, true);
 	if(NULL == post){
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
@@ -215,7 +239,7 @@ static struct _bs calculate_post(char * filename){
 
 	int * seq = calloc(nev, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	post = free_mat(post);
+	post = free_scrappie_matrix(post);
 	int * pos = calloc(nev, sizeof(int));
 	char * basecall = overlapper(seq, nev, nstate - 1, pos);
 	const size_t basecall_len = strlen(basecall);
@@ -255,7 +279,6 @@ int main_events(int argc, char * argv[]){
 		omp_set_nested(1);
 	#endif
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	scrappie_network_setup();
 
 	hid_t hdf5out = -1;
 	if(NULL != args.dump){

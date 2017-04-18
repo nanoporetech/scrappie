@@ -61,9 +61,10 @@ Scrappie basecaller -- basecall from events
   -m, --min_prob=probability Minimum bound on probability of match
   -o, --outformat=format     Format to output reads (FASTA or SAM)
   -s, --skip=penalty         Penalty for skipping a base
-      --segmentation=group   Fast5 group from which to reads segmentation
+      --segmentation=group:summary
+                             Fast5 group from which to read segmentation
       --segmentation-analysis=number
-                             Analysis number to read seqmentation fro
+                             Analysis number to read segmentation from
       --slip, --no-slip      Use slipping
   -t, --trim=nevents         Number of events to trim
   -?, --help                 Give this help list
@@ -78,7 +79,6 @@ Usage: raw [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall from raw signal
 
   -#, --threads=nreads       Number of reads to call in parallel
-      --dump=filename        Dump annotated blocks to HDF5 file
       --hdf5-chunk=size      Chunk size for HDF5 output
       --hdf5-compression=level   Gzip compression level for HDF5 output (0:off,
                              1: quickest, 9: best)
@@ -120,9 +120,12 @@ When the output is set to FASTA (default) then some metadata is stored in the de
   * Event calls are taken from (where `XXX` is the number set by the `--analysis` flag)
     * `--no-albacore` (default) --> `/Analyses/EventDetection_XXX/Reads/Read_???/Events`
     * `--albacore` --> `/Analyses/Basecall_1D_XXX/BaseCalled_template/Events`
-  * Segmentation is taken (by default) from /Analyses/Segment\_Linear\_XXX/Summary/split\_hairpin.  The group name for the segmentation data, here Segment\_Linear, can be set using the `--segmentation` flag.
+  * Segmentation is taken (by default) from /Analyses/Segmentation\_XXX/Summary/segmentation.  The group and summary names for the segmentation can be set using the `--segmentation` flag, the default behaviour being equivalent to `--segmentation Segmentation:segmentation`.  Other values of historical significance are:
+    * Hairpin\_Split:split\_hairpin
+    * Segment\_Linear:split\_hairpin
+    * Segmentation:split\_hairpin
 * Model is hard-coded.  Generate new header files using 
-  * Events: `parse_lstm_events.py model.pkl > src/nanonet_lstm_events.h`
-  * Raw: `parse_gru_raw.py model.pkl > src/nanonet_raw.h`
+  * Events: `parse_events.py model.pkl > src/nanonet_events.h`
+  * Raw: `parse_raw.py model.pkl > src/nanonet_raw.h`
 * The normalised score (- total score / number of events) correlates well with read accuracy.
 * Events with unusual rate metrics (number of events or blocks / bases called) may be unreliable.

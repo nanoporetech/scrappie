@@ -58,44 +58,62 @@ int get_latest_group(hid_t file, const char * root, const char * prefix){
 }
 
 
-range_t get_segmentation(hid_t file, int analysis_no, const char * segmentation){
-	assert(NULL != segmentation);
+range_t get_segmentation(hid_t file, int analysis_no, const char * segloc1, const char * segloc2){
+	assert(NULL != segloc1);
+	assert(NULL != segloc2);
 	range_t segcoord = {-1, -1};
 
+
 	if(analysis_no < 0){
-		analysis_no = get_latest_group(file, "/Analyses", segmentation);
+		analysis_no = get_latest_group(file, "/Analyses", segloc1);
 		if(analysis_no < 0){ return segcoord; }
 	}
 
-        int segnamelen = strlen(segmentation) + 37;
+        int segnamelen = strlen(segloc1) + strlen(segloc2) + 24;
 	char * segname = calloc(segnamelen, sizeof(char));
-	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/split_hairpin", segmentation, analysis_no);
-	hid_t segloc = H5Gopen(file, segname, H5P_DEFAULT);
-	if(segloc < 0){
-		warnx("Failed to open group '%s' to read segmentation from.", segname);
+	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/%s", segloc1, analysis_no, segloc2);
+	hid_t seggroup = H5Gopen(file, segname, H5P_DEFAULT);
+	if(seggroup < 0){
+		warnx("Failed to open group '%s' to read segmentation from.  Will use all events.", segname);
 		goto clean1;
 	}
 
-	hid_t temp_start = H5Aopen_name(segloc, "start_index_temp");
-	if(temp_start > 0){
+	//  Get start location
+	hid_t temp_start = H5Aopen_name(seggroup, "first_sample_template");
+	if(temp_start < 0){
+		// Try old-style location
+		temp_start = H5Aopen_name(seggroup, "start_index_temp");
+	}
+	if(temp_start >= 0){
 		H5Aread(temp_start, H5T_NATIVE_INT, &segcoord.start);
 		H5Aclose(temp_start);
 	} else {
-		warnx("Segmentation group '%s'does not contain 'start_index_temp' attribute.", segmentation);
+		warnx("Segmentation group '%s_%03d/Summary/%s'does not contain valid attribute.",
+			segloc1, analysis_no, segloc2);
 	}
 
-	hid_t temp_end = H5Aopen_name(segloc, "end_index_temp");
-	if(temp_end > 0){
+	// Get end location
+	hid_t temp_end = H5Aopen_name(seggroup, "duration_template");
+	if(temp_end >= 0){
 		H5Aread(temp_end, H5T_NATIVE_INT, &segcoord.end);
 		H5Aclose(temp_end);
-		// Use Python-like convention where final index is exclusive upper bound
-		segcoord.end += 1;
+		segcoord.end += segcoord.start;
 	} else {
-		warnx("Segmentation group '%s' does not contain 'end_index_temp' attribute.", segmentation);
+		// Try old style coordinates
+		temp_end = H5Aopen_name(seggroup, "end_index_temp");
+		if(temp_end >= 0){
+			H5Aread(temp_end, H5T_NATIVE_INT, &segcoord.end);
+			H5Aclose(temp_end);
+			// Use Python-like convention where final index is exclusive upper bound
+			segcoord.end += 1;
+		} else {
+			warnx("Segmentation group '%s_%03d/Summary/%s' does not contain valid attribute.",
+				segloc1, analysis_no, segloc2);
+		}
 	}
 
 
-	H5Gclose(segloc);
+	H5Gclose(seggroup);
 clean1:
 	free(segname);
 
@@ -170,9 +188,10 @@ clean1:
 }
 
 
-event_table read_detected_events(const char * filename, int analysis_no, const char * segmentation, int seganalysis_no){
+event_table read_detected_events(const char * filename, int analysis_no, const char * segloc1, const char * segloc2, int seganalysis_no){
 	assert(NULL != filename);
-	assert(NULL != segmentation);
+	assert(NULL != segloc1);
+	assert(NULL != segloc2);
 	event_table ev = {0, 0, 0, NULL};
 	const size_t rootstr_len = 36;
 
@@ -181,6 +200,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 		warnx("Failed to open %s for reading.", filename);
 		return ev;
 	}
+	H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(hdf5file, "/Analyses", "EventDetection");
@@ -206,7 +226,7 @@ event_table read_detected_events(const char * filename, int analysis_no, const c
 	free(event_group);
 
 	//  Add segmentation information
-	range_t  segcoord = get_segmentation(hdf5file, seganalysis_no, segmentation);
+	range_t  segcoord = get_segmentation(hdf5file, seganalysis_no, segloc1, segloc2);
         ev.start = (segcoord.start >= 0) ? segcoord.start : 0;
 	ev.end = (segcoord.end >= 0 && segcoord.end <= ev.end) ? segcoord.end : ev.end;
 
@@ -269,6 +289,7 @@ raw_table read_raw(const char * filename, bool scale_to_pA){
 		warnx("Failed to open %s for reading.", filename);
 		return rawtbl;
 	}
+	H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
 	const char * root = "/Raw/Reads/";
 	const int rootstr_len = strlen(root);
@@ -340,6 +361,7 @@ event_table read_albacore_events(const char * filename, int analysis_no, const c
 		warnx("Failed to open %s for reading.", filename);
 		return ev;
 	}
+	H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(hdf5file, "/Analyses", "Basecall_1D_");

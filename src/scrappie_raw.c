@@ -17,6 +17,7 @@
 #include "networks.h"
 #include "scrappie_assert.h"
 #include "scrappie_licence.h"
+#include "util.h"
 
 void scrappie_gru_raw_setup(void);
 
@@ -24,7 +25,6 @@ void scrappie_gru_raw_setup(void);
 // Doesn't play nice with other headers, include last
 #include <argp.h>
 
-static const float MIN_PROB1M = 1.0 - 1e-5;
 
 struct _raw_basecall_info {
 	float score;
@@ -36,7 +36,15 @@ struct _raw_basecall_info {
 	int * pos;
 	size_t nblock;
 };
-static const struct _raw_basecall_info _raw_basecall_info_null = {0.0f, {0, 0, 0, NULL}, NULL, 0 , NULL, 0};
+
+static const struct _raw_basecall_info _raw_basecall_info_null = {
+	.score = 0.0f,
+	.rt = {0, 0, 0, NULL},
+	.basecall = NULL,
+	.basecall_length = 0,
+	.pos = NULL,
+	.nblock = 0
+};
 
 extern const char * argp_program_version;
 extern const char * argp_program_bug_address;
@@ -50,7 +58,8 @@ static struct argp_option options[] = {
 	{"trim", 't', "nsamples", 0, "Number of samples to trim from either end"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-	{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
+	// Currently disabled
+	//{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
 	{"licence", 10, 0, 0, "Print licensing information"},
 	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
 	{"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
@@ -75,7 +84,19 @@ struct arguments {
 	int compression_chunk_size;
 	char ** files;
 };
-static struct arguments args = {0, 1e-5, FORMAT_FASTA, 0.0, false, 50, NULL, 1, 200, NULL};
+
+static struct arguments args = {
+	.limit = 0,
+	.min_prob = 1e-5,
+	.outformat = FORMAT_FASTA,
+	.skip_pen = 0.0,
+	.use_slip = false,
+	.trim = 50,
+	.dump = NULL,
+	.compression_level = 1,
+	.compression_chunk_size = 200,
+	.files = NULL
+};
 
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -167,7 +188,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
 
 	const int nsample = rt.end - rt.start;
 	if(nsample <= 2 * args.trim){
-		warnx("Too few samples in %s to call (%d, originally %lu).", filename, nsample, rt.n);
+		warnx("Too few samples in %s to call (%d, originally %u).", filename, nsample, rt.n);
 		free(rt.raw);
 		return _raw_basecall_info_null;
 	}
@@ -179,7 +200,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
 	rt.end = segmentation.end;
 
 	medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-	Mat_rptr post = nanonet_raw_posterior(rt, args.min_prob, true);
+	scrappie_matrix post = nanonet_raw_posterior(rt, args.min_prob, true);
 	if(NULL == post){
 		free(rt.raw);
 		return _raw_basecall_info_null;
@@ -190,7 +211,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
 
 	int * seq = calloc(nblock, sizeof(int));
 	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
-	post = free_mat(post);
+	post = free_scrappie_matrix(post);
 	int * pos = calloc(nblock, sizeof(int));
 	char * basecall = overlapper(seq, nblock, nstate - 1, pos);
 	const size_t basecall_len = strlen(basecall);
@@ -214,7 +235,6 @@ int main_raw(int argc, char * argv[]){
 		omp_set_nested(1);
 	#endif
 	argp_parse(&argp, argc, argv, 0, 0, NULL);
-	scrappie_gru_raw_setup();
 
 	hid_t hdf5out = -1;
 	if(NULL != args.dump){

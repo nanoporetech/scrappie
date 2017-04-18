@@ -36,12 +36,17 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
-add_library (scrappie_lib src/decode.c src/nnfeatures.c src/layers.c src/fast5_interface.c src/util.c src/networks.c)
-add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_subcommands.c src/scrappie_help.c)
+add_library (scrappie_objects OBJECT src/decode.c src/nnfeatures.c src/layers.c src/util.c src/networks.c src/scrappie_matrix.c)
+set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
+add_library (scrappie_shared SHARED $<TARGET_OBJECTS:scrappie_objects>)
+add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
+set_target_properties(scrappie_shared PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
+set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
+add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
 
 include_directories ("${PROJECT_BINARY_DIR}/include")
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2 -DNDEBUG")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
@@ -58,15 +63,16 @@ else (HDF5_STANDARD)
 	check_include_file ("hdf5/serial/hdf5.h" HDF5_SERIAL)
 	if (HDF5_SERIAL)
 		set (HDF5 "hdf5_serial")
-		target_include_directories (scrappie_lib PUBLIC "/usr/include/hdf5/serial")
+		target_include_directories (scrappie_objects PUBLIC "/usr/include/hdf5/serial")
+		target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
 	endif (HDF5_SERIAL)
 endif (HDF5_STANDARD)
 
 
 
-target_link_libraries (scrappie scrappie_lib blas ${HDF5} m)
+target_link_libraries (scrappie scrappie_shared blas ${HDF5} m)
 if (APPLE)
 	target_link_libraries (scrappie argp)
 endif (APPLE)
 
-install (TARGETS scrappie DESTINATION bin)
+install (TARGETS scrappie scrappie_shared scrappie_static RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)

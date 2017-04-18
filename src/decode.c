@@ -3,11 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "decode.h"
+#include "util.h"
 
 #define NBASE 4
 
 
-float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool use_slip){
+float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq, bool use_slip){
 	assert(NULL != logpost);
 	assert(skip_pen >= 0.0);
 	assert(NULL != seq);
@@ -28,11 +29,11 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	const int nkmerqqqq = nkmerqqq / 4;
 
 	//  Forwards memory + traceback
-	Mat_rptr score = make_mat(nkmer, 1);
-	Mat_rptr prev_score = make_mat(nkmer, 1);
-	Mat_rptr tmp = make_mat(nkmer, 1);
-	iMat_rptr itmp = make_imat(nkmer, nev);
-	iMat_rptr traceback = make_imat(nkmer, nev);
+	scrappie_matrix score = make_scrappie_matrix(nkmer, 1);
+	scrappie_matrix prev_score = make_scrappie_matrix(nkmer, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(nkmer, 1);
+	scrappie_imatrix itmp = make_scrappie_imatrix(nkmer, nev);
+	scrappie_imatrix traceback = make_scrappie_imatrix(nkmer, nev);
 
 	//  Initialise
 	for( int i=0 ; i < nkmerq ; i++){
@@ -46,7 +47,7 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		const size_t offsetPq = ev * logpost->nrq;
 		// Swap score and previous score
 		{
-			Mat_rptr tmptr = score;
+			scrappie_matrix tmptr = score;
 			score = prev_score;
 			prev_score = tmptr;
 		}
@@ -185,11 +186,11 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	seq[0] = pstate;
 
 
-	traceback = free_imat(traceback);
-	itmp = free_imat(itmp);
-	tmp = free_mat(tmp);
-	prev_score = free_mat(prev_score);
-	score = free_mat(score);
+	traceback = free_scrappie_imatrix(traceback);
+	itmp = free_scrappie_imatrix(itmp);
+	tmp = free_scrappie_matrix(tmp);
+	prev_score = free_scrappie_matrix(prev_score);
+	score = free_scrappie_matrix(score);
 	return logscore;
 }
 
