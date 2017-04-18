@@ -1,59 +1,61 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "decode.h"
+#include "util.h"
 
 #define NBASE 4
 
 
-float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool use_slip){
+float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq, bool use_slip){
 	assert(NULL != logpost);
 	assert(skip_pen >= 0.0);
 	assert(NULL != seq);
 	const int nev = logpost->nc;
 	const int nstate = logpost->nr;
 	const int ldp = logpost->nrq * 4;
-	const int nkmer = nstate - 1;
-	assert((nkmer %4) == 0);
-	const int32_t nkmerq = nkmer / 4;
-	const __m128i nkmerqv = _mm_set1_epi32(nkmerq);
-	assert((nkmerq % 4) == 0);
-	const int32_t nkmerqq = nkmerq / 4;
-	const __m128i nkmerqqv = _mm_set1_epi32(nkmerqq);
-	assert((nkmerqq % 4) == 0);
-	const int32_t nkmerqqq = nkmerqq / 4;
-	const __m128i nkmerqqqv = _mm_set1_epi32(nkmerqqq);
-	assert((nkmerqqq % 4) == 0);
-	const int nkmerqqqq = nkmerqqq / 4;
+	const int nhistory = nstate - 1;
+	assert((nhistory %4) == 0);
+	const int32_t nhistoryq = nhistory / 4;
+	const __m128i nhistoryqv = _mm_set1_epi32(nhistoryq);
+	assert((nhistoryq % 4) == 0);
+	const int32_t nhistoryqq = nhistoryq / 4;
+	const __m128i nhistoryqqv = _mm_set1_epi32(nhistoryqq);
+	assert((nhistoryqq % 4) == 0);
+	const int32_t nhistoryqqq = nhistoryqq / 4;
+	const __m128i nhistoryqqqv = _mm_set1_epi32(nhistoryqqq);
+	assert((nhistoryqqq % 4) == 0);
+	const int nhistoryqqqq = nhistoryqqq / 4;
 
 	//  Forwards memory + traceback
-	Mat_rptr score = make_mat(nkmer, 1);
-	Mat_rptr prev_score = make_mat(nkmer, 1);
-	Mat_rptr tmp = make_mat(nkmer, 1);
-	iMat_rptr itmp = make_imat(nkmer, nev);
-	iMat_rptr traceback = make_imat(nkmer, nev);
+	scrappie_matrix score = make_scrappie_matrix(nhistory, 1);
+	scrappie_matrix prev_score = make_scrappie_matrix(nhistory, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(nhistory, 1);
+	scrappie_imatrix itmp = make_scrappie_imatrix(nhistory, nev);
+	scrappie_imatrix traceback = make_scrappie_imatrix(nhistory, nev);
 
 	//  Initialise
-	for( int i=0 ; i < nkmerq ; i++){
+	for( int i=0 ; i < nhistoryq ; i++){
 		score->data.v[i] = logpost->data.v[i];
 	}
 
 	//  Forwards Viterbi iteration
 	for(int ev=1 ; ev < nev ; ev++){
-		const int offsetTq = ev * nkmerq;
-		const int offsetP = ev * ldp;
-		const int offsetPq = ev * logpost->nrq;
+		const size_t offsetTq = ev * nhistoryq;
+		const size_t offsetP = ev * ldp;
+		const size_t offsetPq = ev * logpost->nrq;
 		// Swap score and previous score
 		{
-			Mat_rptr tmptr = score;
+			scrappie_matrix tmptr = score;
 			score = prev_score;
 			prev_score = tmptr;
 		}
 
 		// Stay
-		const __m128 stay_m128 = _mm_set1_ps(logpost->data.f[offsetP + nkmer]);
+		const __m128 stay_m128 = _mm_set1_ps(logpost->data.f[offsetP + nhistory]);
 		const __m128i negone_m128i = _mm_set1_epi32(-1);
-		for(int i=0 ; i < nkmerq ; i++){
+		for(int i=0 ; i < nhistoryq ; i++){
 			// Traceback for stay is negative
 			score->data.v[i] = prev_score->data.v[i] + stay_m128;
 			traceback->data.v[offsetTq + i] = negone_m128i;
@@ -61,14 +63,14 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 
 		// Step
 		// Following three loops find maximum over suffix and record index
-		for(int i=0 ; i<nkmerqq ; i++){
+		for(int i=0 ; i<nhistoryqq ; i++){
 			tmp->data.v[i] = prev_score->data.v[i];
 			itmp->data.v[i] = _mm_setzero_si128();
 		}
 		for(int r=1 ; r<NBASE ; r++){
-			const int offset = r * nkmerqq;
+			const size_t offset = r * nhistoryqq;
 			const __m128i itmp_fill = _mm_set1_epi32(r);
-			for(int i=0 ; i<nkmerqq ; i++){
+			for(int i=0 ; i<nhistoryqq ; i++){
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
 				tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
 				itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
@@ -76,14 +78,14 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 			}
 		}
 		const __m128i c0123_m128i = _mm_setr_epi32(0, 1, 2, 3);
-		for(int i=0 ; i<nkmerqq ; i++){
+		for(int i=0 ; i<nhistoryqq ; i++){
 			itmp->data.v[i] = _mm_add_epi32(
-							_mm_mullo_epi32(itmp->data.v[i], nkmerqv),
+							_mm_mullo_epi32(itmp->data.v[i], nhistoryqv),
 							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
 
-		for(int pref=0 ; pref < nkmerq ; pref++){
-			const int i = pref;
+		for(int pref=0 ; pref < nhistoryq ; pref++){
+			const size_t i = pref;
 			const __m128 step_score = logpost->data.v[offsetPq + i] + _mm_set1_ps(tmp->data.f[pref]);
 			__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[i], step_score));
 			score->data.v[i] = _mm_max_ps(score->data.v[i], step_score);
@@ -95,31 +97,31 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 
 		// Skip
 		const __m128 skip_penv = _mm_set1_ps(skip_pen);
-		for(int i=0 ; i<nkmerqqq ; i++){
+		for(int i=0 ; i<nhistoryqqq ; i++){
 			tmp->data.v[i] = prev_score->data.v[i];
 			itmp->data.v[i] = _mm_setzero_si128();
 		}
 		for(int r=1 ; r<NBASE * NBASE ; r++){
-			const int offset = r * nkmerqqq;
+			const size_t offset = r * nhistoryqqq;
 			const __m128i itmp_fill = _mm_set1_epi32(r);
-			for(int i=0 ; i<nkmerqqq ; i++){
+			for(int i=0 ; i<nhistoryqqq ; i++){
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
 				tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
 				itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
 					                       _mm_and_si128(mask, itmp_fill));
 			}
 		}
-		for(int i=0 ; i<nkmerqqq ; i++){
+		for(int i=0 ; i<nhistoryqqq ; i++){
 			itmp->data.v[i] = _mm_add_epi32(
-							_mm_mullo_epi32(itmp->data.v[i], nkmerqqv),
+							_mm_mullo_epi32(itmp->data.v[i], nhistoryqqv),
 							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
-		for(int pref=0 ; pref < nkmerqq ; pref++){
+		for(int pref=0 ; pref < nhistoryqq ; pref++){
 			for(int i=0 ; i < NBASE ; i++){
-				const int oi = pref * NBASE + i;
+				const size_t oi = pref * NBASE + i;
 				// This cycling through prefixes
 				const __m128 skip_score = logpost->data.v[offsetPq + oi]
-                                                        + _mm_set1_ps(tmp->data.f[pref])
+	                                                + _mm_set1_ps(tmp->data.f[pref])
 							- skip_penv;
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[oi], skip_score));
 				score->data.v[oi] = _mm_max_ps(score->data.v[oi], skip_score);
@@ -131,28 +133,28 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 		// Slip
 		if(use_slip){
 			const __m128 slip_penv = _mm_set1_ps(2.0 * skip_pen);
-			for(int i=0 ; i<nkmerqqqq ; i++){
+			for(int i=0 ; i<nhistoryqqqq ; i++){
 				tmp->data.v[i] = prev_score->data.v[i];
 				itmp->data.v[i] = _mm_setzero_si128();
 			}
 			for(int r=1 ; r<NBASE * NBASE * NBASE; r++){
-				const int offset = r * nkmerqqqq;
+				const size_t offset = r * nhistoryqqqq;
 				const __m128i itmp_fill = _mm_set1_epi32(r);
-				for(int i=0 ; i<nkmerqqqq ; i++){
+				for(int i=0 ; i<nhistoryqqqq ; i++){
 					__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
 					tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
 					itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
 								       _mm_and_si128(mask, itmp_fill));
 				}
 			}
-			for(int i=0 ; i<nkmerqqqq ; i++){
+			for(int i=0 ; i<nhistoryqqqq ; i++){
 				itmp->data.v[i] = _mm_add_epi32(
-								_mm_mullo_epi32(itmp->data.v[i],  nkmerqqqv),
+								_mm_mullo_epi32(itmp->data.v[i],  nhistoryqqqv),
 								_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 			}
-			for(int pref=0 ; pref < nkmerqqq ; pref++){
+			for(int pref=0 ; pref < nhistoryqqq ; pref++){
 				for(int i=0 ; i < NBASE * NBASE; i++){
-					const int oi = pref * NBASE * NBASE + i;
+					const size_t oi = pref * NBASE * NBASE + i;
 					// This cycling through prefixes
 					const __m128 skip_score = logpost->data.v[offsetPq + oi]
 								+ _mm_set1_ps(tmp->data.f[pref])
@@ -167,11 +169,11 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	}
 
 	//  Viterbi traceback
-	float logscore = valmaxf(score->data.f, nkmer);
-	int pstate = argmaxf(score->data.f, nkmer);
+	float logscore = valmaxf(score->data.f, nhistory);
+	int pstate = argmaxf(score->data.f, nhistory);
 	for(int ev=1 ; ev < nev ; ev++){
 		const int iev = nev - ev;
-		const int tstate = traceback->data.f[iev * nkmer + pstate];
+		const int tstate = traceback->data.f[iev * nhistory + pstate];
 		if(tstate >= 0){
 			// Non-stay
 			seq[iev] = pstate;
@@ -184,11 +186,11 @@ float decode_transducer(const Mat_rptr logpost, float skip_pen, int * seq, bool 
 	seq[0] = pstate;
 
 
-	free_imat(&traceback);
-	free_imat(&itmp);
-	free_mat(&tmp);
-	free_mat(&prev_score);
-	free_mat(&score);
+	traceback = free_scrappie_imatrix(traceback);
+	itmp = free_scrappie_imatrix(itmp);
+	tmp = free_scrappie_matrix(tmp);
+	prev_score = free_scrappie_matrix(prev_score);
+	score = free_scrappie_matrix(score);
 	return logscore;
 }
 
@@ -218,7 +220,7 @@ int position_highest_bit(int x){
 
 int first_nonnegative(const int * seq, int n){
 	int st;
-        for(st=0 ; st < n && seq[st] < 0; st++);
+	for(st=0 ; st < n && seq[st] < 0; st++);
 	return st;
 }
 
@@ -244,7 +246,7 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 	//  Determine length of final sequence
 	int length = kmer_len;
  	// Find first non-stay
-        const int st = first_nonnegative(seq, n);
+	const int st = first_nonnegative(seq, n);
 	assert(st != n);
 	int kprev = seq[st];
 	for(int k=st + 1 ; k < n ; k++){
@@ -283,7 +285,7 @@ char * overlapper(const int * seq, int n, int nkmer, int * pos){
 		}
 		kprev = seq[k];
 
-                for(int kmer=seq[k], i=0 ; i<ol ; i++){
+	        for(int kmer=seq[k], i=0 ; i<ol ; i++){
 			int b = kmer & 3;
 			kmer >>= 2;
 			bases[last_idx + ol - i] = base_lookup[b];
@@ -308,7 +310,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 	//  Determine length of final sequence
 	int length = kmer_len;
  	//  Find first non-stay
-        const int st = first_nonnegative(seq, n);
+	const int st = first_nonnegative(seq, n);
 	assert(st != n);
 	int kprev = seq[st];
 	int inhomo = -1;
@@ -317,7 +319,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 		/* Simple state machine tagged by inhomo
 		 * inhomo < 0  --  not in a homopolymer
 		 * inhomo >= 0  -- in homopolymer and value is homopolymer state
-                 */
+	         */
 		if(seq[k] < 0){
 			// State is stay.  Short circuit rest of logic
 			if(inhomo >= 0){
@@ -401,7 +403,7 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 		int ol = overlap(kprev , seq[k], nkmer);
 		kprev = seq[k];
 
-                for(int kmer=seq[k], i=0 ; i<ol ; i++){
+	        for(int kmer=seq[k], i=0 ; i<ol ; i++){
 			int b = kmer & 3;
 			kmer >>= 2;
 			bases[last_idx + ol - i] = base_lookup[b];
@@ -429,4 +431,56 @@ char * dwell_corrected_overlapper(const int * seq, const int * dwell, int n, int
 	}
 
 	return bases;
+}
+
+
+
+char * homopolymer_dwell_correction(const event_table et, const int * seq, size_t nstate, size_t basecall_len){
+	if(NULL == et.event || NULL == seq){
+		return NULL;
+	}
+	const int nev = et.end - et.start;
+	const int evoffset = et.start;
+
+	const float prior_scale = (et.event[nev + evoffset - 1].length + et.event[nev + evoffset - 1].start - et.event[evoffset].start)
+	                                / (float)basecall_len;
+	int * dwell = calloc(nev, sizeof(int));
+	for(int ev=0 ; ev < nev ; ev ++){
+		dwell[ev] = et.event[ev + evoffset].length;
+	}
+
+	/*   Calibrate scaling factor for homopolymer estimation.
+	 *   Simple mean of the dwells of all 'step' movements in
+	 * the basecall.  Steps within homopolymers are ignored.
+	 *   A more complex calibration could be used.
+	 */
+	int tot_step_dwell = 0;
+	int nstep = 0;
+	for(int ev=0, ppos=-2, evdwell=0, pstate=-1 ; ev < nev ; ev++){
+		// Sum over dwell of all steps excluding those within homopolymers
+		if(et.event[ev + evoffset].pos == ppos){
+			// Stay. Accumulate dwell
+			evdwell += dwell[ev];
+			continue;
+		}
+
+		if(et.event[ev + evoffset].pos == ppos + 1 && et.event[ev + evoffset].state != pstate){
+			// Have a step that is not within a homopolymer
+			tot_step_dwell += evdwell;
+			nstep += 1;
+		}
+
+		evdwell = dwell[ev];
+		ppos = et.event[ev + evoffset].pos;
+		pstate = et.event[ev + evoffset].state;
+	}
+	// Estimate of scale with a prior with weight equal to a single observation.
+	const float homo_scale = (prior_scale + tot_step_dwell) / (1.0 + nstep);
+	const dwell_model dm = {homo_scale, {0.0f, 0.0f, 0.0f, 0.0f}};
+
+	char * newbases = dwell_corrected_overlapper(seq, dwell, nev, nstate - 1, dm);
+
+	free(dwell);
+
+	return newbases;
 }

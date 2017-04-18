@@ -1,6 +1,6 @@
 #  Yaml CI config for Gitlab See. http://docs.gitlab.com/ce/ci/yaml/README.html
 #  Machine image on which to build, test etc
-image: docker-registry.oxfordnanolabs.local:5000/ont-base-ofan-dev:14.04
+image: git.oxfordnanolabs.local:4567/algorithm/scrappie_docker:14.04-latest
 
 variables:
   REPO_DEVELOPMENT: "trusty-unstable"
@@ -14,10 +14,6 @@ stages:
   - test
   - publish
 
-before_script:
-  - apt-get update
-  - apt-get install -y libopenblas-base libopenblas-dev libhdf5-7 libhdf5-dev cmake
-
 building:
   stage: build
   script:
@@ -29,11 +25,20 @@ building:
     paths:
       - ${BUILD_DIR}/*.deb
       - ${BUILD_DIR}/scrappie
+      - ${BUILD_DIR}/libscrappie.so
+      - ${BUILD_DIR}/libscrappie.a
 
 testing:
   stage: test
   script:
-      ${BUILD_DIR}/scrappie --threads 1 reads/*.fast5 > test.fa
+      - ${BUILD_DIR}/scrappie events --threads 1 reads > test_events.fa
+      - ${BUILD_DIR}/scrappie raw --threads 1 reads > test_raw.fa
+      - ${BUILD_DIR}/scrappie licence 
+      - ${BUILD_DIR}/scrappie license 
+      - ${BUILD_DIR}/scrappie help
+      - ${BUILD_DIR}/scrappie version
+      
+
 
 upload-development:
   stage: publish

@@ -19,25 +19,6 @@
 #define EXPFV expfv
 #endif
 
-typedef struct {
-	int nr, nrq, nc;
-	union {
-		__m128 * v;
-		float * f;
-	} data;
-} _Mat;
-
-typedef struct {
-	int nr, nrq, nc;
-	union {
-		__m128i * v;
-		int32_t * f;
-	} data;
-} _iMat;
-
-typedef _Mat * restrict Mat_rptr;
-typedef _iMat * restrict iMat_rptr;
-
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__))
         _mm_setone_ps (void){ return __extension__ (__m128){ 1.0f, 1.0f, 1.0f, 1.0f}; }
@@ -108,30 +89,27 @@ static inline __m128 logfv(__m128 x){
 	return (__m128)log_ps(y);
 }
 
+char * strip_filename_extension(char * filename);
+
 int argmaxf(const float * x, int n);
 int argminf(const float * x, int n);
 float valmaxf(const float * x, int n);
 float valminf(const float * x, int n);
 
+static inline int iceil(int x, int y) {
+	return (x + y - 1) / y;
+}
+
+static inline int ifloor(int x, int y) {
+	return x / y;
+}
 
 
-Mat_rptr make_mat(int nr, int nc);
-Mat_rptr remake_mat(Mat_rptr M, int nr, int nc);
-Mat_rptr mat_from_array(const float * x, int nr, int nc);
-void fprint_mat(FILE * fh, const char * header, const Mat_rptr mat, int nr, int nc);
-void free_mat(Mat_rptr * mat);
-iMat_rptr make_imat(int nr, int nc);
-iMat_rptr remake_imat(iMat_rptr M, int nr, int nc);
-void free_imat(iMat_rptr * mat);
+void quantilef(const float * x, size_t nx, float * p, size_t np);
+float medianf(const float * x, size_t n);
+float madf(const float * x, size_t n, const float * med);
+void medmad_normalise_array(float * x, size_t n);
+void studentise_array_kahan(float * x, size_t n);
 
-Mat_rptr affine_map(const Mat_rptr X, const Mat_rptr W,
-		 const Mat_rptr b, Mat_rptr C);
-Mat_rptr affine_map2(const Mat_rptr Xf, const Mat_rptr Xb,
-		  const Mat_rptr Wf, const Mat_rptr Wb,
-		  const Mat_rptr b, Mat_rptr C);
-void row_normalise_inplace(Mat_rptr C);
-
-float min_mat(const Mat_rptr mat);
-float max_mat(const Mat_rptr mat);
 
 #endif /* UTIL_H */

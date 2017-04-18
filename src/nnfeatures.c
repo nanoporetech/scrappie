@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "nnfeatures.h"
+#include "scrappie_assert.h"
 
 
 /** Studentise features
@@ -13,7 +14,8 @@
  *  @see studentise_features_kahan
  *  @return void
  **/
-void studentise_features(Mat_rptr features){
+void studentise_features(scrappie_matrix features){
+	assert(4 == features->nr);
 	const int nevent = features->nc;
 
 	__m128 sum, sumsq;
@@ -44,7 +46,7 @@ void studentise_features(Mat_rptr features){
  *  @see studentise_features
  *  @return void
  **/
-void studentise_features_kahan(Mat_rptr features){
+void studentise_features_kahan(scrappie_matrix features){
 	assert(4 == features->nr);
 	const int nevent = features->nc;
 
@@ -73,16 +75,16 @@ void studentise_features_kahan(Mat_rptr features){
 }
 
 
-Mat_rptr make_features(const event_table evtbl, int trim, bool normalise){
-	trim += evtbl.start;
-	const int nevent = evtbl.end - trim;
-	Mat_rptr features = make_mat(4, nevent);
-	for(int ev=0 ; ev<nevent - 1 ; ev++){
+scrappie_matrix nanonet_features_from_events(const event_table evtbl, bool normalise){
+	const size_t nevent = evtbl.end - evtbl.start;
+	const size_t offset = evtbl.start;
+	scrappie_matrix features = make_scrappie_matrix(4, nevent);
+	for(size_t ev=0 ; ev<nevent - 1 ; ev++){
 		features->data.v[ev] = _mm_setr_ps(
-			evtbl.event[ev + trim].mean,
-			evtbl.event[ev + trim].stdv,
-			evtbl.event[ev + trim].length,
-			fabs(evtbl.event[ev + trim].mean - evtbl.event[ev + 1 + trim].mean));
+			evtbl.event[ev + offset].mean,
+			evtbl.event[ev + offset].stdv,
+			evtbl.event[ev + offset].length,
+			fabs(evtbl.event[ev + offset].mean - evtbl.event[ev + 1 + offset].mean));
 	}
 	features->data.v[nevent - 1] = _mm_setr_ps(
 			evtbl.event[evtbl.end - 1].mean,
@@ -95,5 +97,20 @@ Mat_rptr make_features(const event_table evtbl, int trim, bool normalise){
 	}
 
 	return features;
+}
+
+
+scrappie_matrix nanonet_features_from_raw(const raw_table signal){
+	ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
+	const size_t nsample = signal.end - signal.start;
+	scrappie_matrix sigmat = make_scrappie_matrix(1, nsample);
+	ASSERT_OR_RETURN_NULL(NULL != sigmat, NULL);
+
+	const size_t offset = signal.start;
+	for( size_t i=0 ; i < nsample ; i++){
+		// Copy with stride 4 because of required padding for matrix
+		sigmat->data.f[i * 4] = signal.raw[i + offset];
+	}
+	return sigmat;
 }
 
