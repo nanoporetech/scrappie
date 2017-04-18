@@ -237,21 +237,21 @@ static struct _bs calculate_post(char * filename){
 	const int nstate = post->nr;
 
 
-	int * seq = calloc(nev, sizeof(int));
-	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
+	int * history_state = calloc(nev, sizeof(int));
+	float score = decode_transducer(post, args.skip_pen, history_state, args.use_slip);
 	post = free_scrappie_matrix(post);
 	int * pos = calloc(nev, sizeof(int));
-	char * basecall = overlapper(seq, nev, nstate - 1, pos);
+	char * basecall = overlapper(history_state, nev, nstate - 1, pos);
 	const size_t basecall_len = strlen(basecall);
 
 	const int evoffset = et.start;
 	for(int ev=0 ; ev < nev ; ev++){
-		et.event[ev + evoffset].state = 1 + seq[ev];
+		et.event[ev + evoffset].state = 1 + history_state[ev];
 		et.event[ev + evoffset].pos = pos[ev];
 	}
 
 	if(args.dwell_correction){
-		char * newbasecall = homopolymer_dwell_correction(et, seq, nstate, basecall_len);
+		char * newbasecall = homopolymer_dwell_correction(et, history_state, nstate, basecall_len);
 		if(NULL != newbasecall){
 			free(basecall);
 			basecall = newbasecall;
@@ -259,7 +259,7 @@ static struct _bs calculate_post(char * filename){
 	}
 
 	free(pos);
-	free(seq);
+	free(history_state);
 
 	return (struct _bs){score, nev, basecall, et};
 }

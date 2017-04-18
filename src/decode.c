@@ -15,34 +15,34 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	const int nev = logpost->nc;
 	const int nstate = logpost->nr;
 	const int ldp = logpost->nrq * 4;
-	const int nkmer = nstate - 1;
-	assert((nkmer %4) == 0);
-	const int32_t nkmerq = nkmer / 4;
-	const __m128i nkmerqv = _mm_set1_epi32(nkmerq);
-	assert((nkmerq % 4) == 0);
-	const int32_t nkmerqq = nkmerq / 4;
-	const __m128i nkmerqqv = _mm_set1_epi32(nkmerqq);
-	assert((nkmerqq % 4) == 0);
-	const int32_t nkmerqqq = nkmerqq / 4;
-	const __m128i nkmerqqqv = _mm_set1_epi32(nkmerqqq);
-	assert((nkmerqqq % 4) == 0);
-	const int nkmerqqqq = nkmerqqq / 4;
+	const int nhistory = nstate - 1;
+	assert((nhistory %4) == 0);
+	const int32_t nhistoryq = nhistory / 4;
+	const __m128i nhistoryqv = _mm_set1_epi32(nhistoryq);
+	assert((nhistoryq % 4) == 0);
+	const int32_t nhistoryqq = nhistoryq / 4;
+	const __m128i nhistoryqqv = _mm_set1_epi32(nhistoryqq);
+	assert((nhistoryqq % 4) == 0);
+	const int32_t nhistoryqqq = nhistoryqq / 4;
+	const __m128i nhistoryqqqv = _mm_set1_epi32(nhistoryqqq);
+	assert((nhistoryqqq % 4) == 0);
+	const int nhistoryqqqq = nhistoryqqq / 4;
 
 	//  Forwards memory + traceback
-	scrappie_matrix score = make_scrappie_matrix(nkmer, 1);
-	scrappie_matrix prev_score = make_scrappie_matrix(nkmer, 1);
-	scrappie_matrix tmp = make_scrappie_matrix(nkmer, 1);
-	scrappie_imatrix itmp = make_scrappie_imatrix(nkmer, nev);
-	scrappie_imatrix traceback = make_scrappie_imatrix(nkmer, nev);
+	scrappie_matrix score = make_scrappie_matrix(nhistory, 1);
+	scrappie_matrix prev_score = make_scrappie_matrix(nhistory, 1);
+	scrappie_matrix tmp = make_scrappie_matrix(nhistory, 1);
+	scrappie_imatrix itmp = make_scrappie_imatrix(nhistory, nev);
+	scrappie_imatrix traceback = make_scrappie_imatrix(nhistory, nev);
 
 	//  Initialise
-	for( int i=0 ; i < nkmerq ; i++){
+	for( int i=0 ; i < nhistoryq ; i++){
 		score->data.v[i] = logpost->data.v[i];
 	}
 
 	//  Forwards Viterbi iteration
 	for(int ev=1 ; ev < nev ; ev++){
-		const size_t offsetTq = ev * nkmerq;
+		const size_t offsetTq = ev * nhistoryq;
 		const size_t offsetP = ev * ldp;
 		const size_t offsetPq = ev * logpost->nrq;
 		// Swap score and previous score
@@ -53,9 +53,9 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 		}
 
 		// Stay
-		const __m128 stay_m128 = _mm_set1_ps(logpost->data.f[offsetP + nkmer]);
+		const __m128 stay_m128 = _mm_set1_ps(logpost->data.f[offsetP + nhistory]);
 		const __m128i negone_m128i = _mm_set1_epi32(-1);
-		for(int i=0 ; i < nkmerq ; i++){
+		for(int i=0 ; i < nhistoryq ; i++){
 			// Traceback for stay is negative
 			score->data.v[i] = prev_score->data.v[i] + stay_m128;
 			traceback->data.v[offsetTq + i] = negone_m128i;
@@ -63,14 +63,14 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 
 		// Step
 		// Following three loops find maximum over suffix and record index
-		for(int i=0 ; i<nkmerqq ; i++){
+		for(int i=0 ; i<nhistoryqq ; i++){
 			tmp->data.v[i] = prev_score->data.v[i];
 			itmp->data.v[i] = _mm_setzero_si128();
 		}
 		for(int r=1 ; r<NBASE ; r++){
-			const size_t offset = r * nkmerqq;
+			const size_t offset = r * nhistoryqq;
 			const __m128i itmp_fill = _mm_set1_epi32(r);
-			for(int i=0 ; i<nkmerqq ; i++){
+			for(int i=0 ; i<nhistoryqq ; i++){
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
 				tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
 				itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
@@ -78,13 +78,13 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 			}
 		}
 		const __m128i c0123_m128i = _mm_setr_epi32(0, 1, 2, 3);
-		for(int i=0 ; i<nkmerqq ; i++){
+		for(int i=0 ; i<nhistoryqq ; i++){
 			itmp->data.v[i] = _mm_add_epi32(
-							_mm_mullo_epi32(itmp->data.v[i], nkmerqv),
+							_mm_mullo_epi32(itmp->data.v[i], nhistoryqv),
 							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
 
-		for(int pref=0 ; pref < nkmerq ; pref++){
+		for(int pref=0 ; pref < nhistoryq ; pref++){
 			const size_t i = pref;
 			const __m128 step_score = logpost->data.v[offsetPq + i] + _mm_set1_ps(tmp->data.f[pref]);
 			__m128i mask = _mm_castps_si128(_mm_cmplt_ps(score->data.v[i], step_score));
@@ -97,26 +97,26 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 
 		// Skip
 		const __m128 skip_penv = _mm_set1_ps(skip_pen);
-		for(int i=0 ; i<nkmerqqq ; i++){
+		for(int i=0 ; i<nhistoryqqq ; i++){
 			tmp->data.v[i] = prev_score->data.v[i];
 			itmp->data.v[i] = _mm_setzero_si128();
 		}
 		for(int r=1 ; r<NBASE * NBASE ; r++){
-			const size_t offset = r * nkmerqqq;
+			const size_t offset = r * nhistoryqqq;
 			const __m128i itmp_fill = _mm_set1_epi32(r);
-			for(int i=0 ; i<nkmerqqq ; i++){
+			for(int i=0 ; i<nhistoryqqq ; i++){
 				__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
 				tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
 				itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
 					                       _mm_and_si128(mask, itmp_fill));
 			}
 		}
-		for(int i=0 ; i<nkmerqqq ; i++){
+		for(int i=0 ; i<nhistoryqqq ; i++){
 			itmp->data.v[i] = _mm_add_epi32(
-							_mm_mullo_epi32(itmp->data.v[i], nkmerqqv),
+							_mm_mullo_epi32(itmp->data.v[i], nhistoryqqv),
 							_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 		}
-		for(int pref=0 ; pref < nkmerqq ; pref++){
+		for(int pref=0 ; pref < nhistoryqq ; pref++){
 			for(int i=0 ; i < NBASE ; i++){
 				const size_t oi = pref * NBASE + i;
 				// This cycling through prefixes
@@ -133,26 +133,26 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 		// Slip
 		if(use_slip){
 			const __m128 slip_penv = _mm_set1_ps(2.0 * skip_pen);
-			for(int i=0 ; i<nkmerqqqq ; i++){
+			for(int i=0 ; i<nhistoryqqqq ; i++){
 				tmp->data.v[i] = prev_score->data.v[i];
 				itmp->data.v[i] = _mm_setzero_si128();
 			}
 			for(int r=1 ; r<NBASE * NBASE * NBASE; r++){
-				const size_t offset = r * nkmerqqqq;
+				const size_t offset = r * nhistoryqqqq;
 				const __m128i itmp_fill = _mm_set1_epi32(r);
-				for(int i=0 ; i<nkmerqqqq ; i++){
+				for(int i=0 ; i<nhistoryqqqq ; i++){
 					__m128i mask = _mm_castps_si128(_mm_cmplt_ps(tmp->data.v[i], prev_score->data.v[offset + i]));
 					tmp->data.v[i] = _mm_max_ps(tmp->data.v[i], prev_score->data.v[offset + i]);
 					itmp->data.v[i] = _mm_or_si128(_mm_andnot_si128(mask, itmp->data.v[i]),
 								       _mm_and_si128(mask, itmp_fill));
 				}
 			}
-			for(int i=0 ; i<nkmerqqqq ; i++){
+			for(int i=0 ; i<nhistoryqqqq ; i++){
 				itmp->data.v[i] = _mm_add_epi32(
-								_mm_mullo_epi32(itmp->data.v[i],  nkmerqqqv),
+								_mm_mullo_epi32(itmp->data.v[i],  nhistoryqqqv),
 								_mm_add_epi32(c0123_m128i, _mm_set1_epi32(i * 4)));
 			}
-			for(int pref=0 ; pref < nkmerqqq ; pref++){
+			for(int pref=0 ; pref < nhistoryqqq ; pref++){
 				for(int i=0 ; i < NBASE * NBASE; i++){
 					const size_t oi = pref * NBASE * NBASE + i;
 					// This cycling through prefixes
@@ -169,11 +169,11 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	}
 
 	//  Viterbi traceback
-	float logscore = valmaxf(score->data.f, nkmer);
-	int pstate = argmaxf(score->data.f, nkmer);
+	float logscore = valmaxf(score->data.f, nhistory);
+	int pstate = argmaxf(score->data.f, nhistory);
 	for(int ev=1 ; ev < nev ; ev++){
 		const int iev = nev - ev;
-		const int tstate = traceback->data.f[iev * nkmer + pstate];
+		const int tstate = traceback->data.f[iev * nhistory + pstate];
 		if(tstate >= 0){
 			// Non-stay
 			seq[iev] = pstate;

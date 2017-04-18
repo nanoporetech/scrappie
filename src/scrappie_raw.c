@@ -209,14 +209,14 @@ static struct _raw_basecall_info calculate_post(char * filename){
 	const int nstate = post->nr;
 
 
-	int * seq = calloc(nblock, sizeof(int));
-	float score = decode_transducer(post, args.skip_pen, seq, args.use_slip);
+	int * history_state = calloc(nblock, sizeof(int));
+	float score = decode_transducer(post, args.skip_pen, history_state, args.use_slip);
 	post = free_scrappie_matrix(post);
 	int * pos = calloc(nblock, sizeof(int));
-	char * basecall = overlapper(seq, nblock, nstate - 1, pos);
+	char * basecall = overlapper(history_state, nblock, nstate - 1, pos);
 	const size_t basecall_len = strlen(basecall);
 
-	free(seq);
+	free(history_state);
 
 	return (struct _raw_basecall_info){score, rt, basecall, basecall_len, pos, nblock};
 }
