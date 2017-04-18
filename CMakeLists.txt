@@ -36,6 +36,9 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
+##
+#   Set up what is to be built
+##
 add_library (scrappie_objects OBJECT src/decode.c src/nnfeatures.c src/layers.c src/util.c src/networks.c src/scrappie_matrix.c)
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_shared SHARED $<TARGET_OBJECTS:scrappie_objects>)
@@ -44,8 +47,10 @@ set_target_properties(scrappie_shared PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRE
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
 add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
 
-include_directories ("${PROJECT_BINARY_DIR}/include")
 
+##
+#  Check whether compiler supports openmp.
+##
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
@@ -53,6 +58,23 @@ check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
 if (HAS_OPENMP)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 endif (HAS_OPENMP)
+
+##
+#   Set up include directories
+##
+include_directories ("${PROJECT_BINARY_DIR}/include")
+if (OPENBLAS_ROOT)
+	include_directories ("${OPENBLAS_ROOT]/include")
+	link_directories ("${OPENBLAS_ROOT}/lib")
+	set (BLAS "openblas")
+else ()
+	set (BLAS "blas")
+endif ()
+if (HDF5_ROOT)
+	include_directories ("${HDF5_ROOT}/include")
+	link_libraries ("${HDF5_ROOT}/lib")
+endif()
+
 
 # Find right hdf5 file
 include (CheckIncludeFile)
