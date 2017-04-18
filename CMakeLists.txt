@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 project (scrappie C)
 
+option (BUILD_SHARED_LIB "Build a shared library" OFF)
+
 include (InstallRequiredSystemLibraries)
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Scrappie is the technology demonstration platform for the Research algorithms' group.")
 set (CPACK_PACKAGE_VENDOR "Oxford Nanopore Technologies")
@@ -41,12 +43,18 @@ configure_file (
 ##
 add_library (scrappie_objects OBJECT src/decode.c src/nnfeatures.c src/layers.c src/util.c src/networks.c src/scrappie_matrix.c)
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
-add_library (scrappie_shared SHARED $<TARGET_OBJECTS:scrappie_objects>)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
-set_target_properties(scrappie_shared PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
 add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
 
+if (BUILD_SHARED_LIB)
+	if (APPLE)
+		message (SEND_ERROR "Building shared library on OSX not yet supported")
+	endif (APPLE)
+	add_library (scrappie_shared SHARED $<TARGET_OBJECTS:scrappie_objects>)
+	set_target_properties(scrappie_shared PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
+	install (TARGETS scrappie_shared LIBRARY DESTINATION lib)
+endif (BUILD_SHARED_LIB)
 
 ##
 #  Check whether compiler supports openmp.
@@ -92,9 +100,9 @@ endif (HDF5_STANDARD)
 
 
 
-target_link_libraries (scrappie scrappie_shared blas ${HDF5} m)
+target_link_libraries (scrappie scrappie_static blas ${HDF5} m)
 if (APPLE)
 	target_link_libraries (scrappie argp)
 endif (APPLE)
 
-install (TARGETS scrappie scrappie_shared scrappie_static RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTINATION lib)
