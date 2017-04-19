@@ -43,7 +43,7 @@ static struct argp_option options[] = {
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
-	{"trim", 't', "nevents", 0, "Number of events to trim"},
+	{"trim", 't', "start:end", 0, "Number of events to trim, as start:end"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
         {"segmentation", 3, "group:summary", 0, "Fast5 group from which to read segmentation"},
@@ -72,7 +72,7 @@ struct arguments {
 	enum format outformat;
 	float skip_pen;
 	bool use_slip;
-	int trim;
+	int trim_start, trim_end;
 	char * segloc1;
 	char * segloc2;
 	char * dump;
@@ -91,7 +91,8 @@ static struct arguments args = {
 	.outformat = FORMAT_FASTA,
 	.skip_pen = 0.0,
 	.use_slip = false,
-	.trim = 50,
+	.trim_start = 50,
+	.trim_end = 50,
 	.segloc1 = "Segmentation",
 	.segloc2 = "segmentation",
 	.dump = NULL,
@@ -131,8 +132,15 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
 		break;
 	case 't':
-		args.trim = atoi(arg);
-		assert(args.trim >= 0);
+		args.trim_start = atoi(strtok(arg, ":"));
+		char * next_tok = strtok(NULL, ":");
+		if(NULL != next_tok){
+			args.trim_end = atoi(next_tok);
+		} else {
+			args.trim_end = args.trim_start;
+		}
+		assert(args.trim_start >= 0);
+		assert(args.trim_end >= 0);
 		break;
 	case 1:
 		args.use_slip = true;
@@ -220,13 +228,13 @@ static struct _bs calculate_post(char * filename){
 		return (struct _bs){0, 0, NULL};
 	}
 	const int nevent = et.end - et.start;
-	if(nevent <= 2 * args.trim){
+	if(nevent <= args.trim_start + args.trim_end){
 		warnx("Too few events in %s to call (%d after segmentation, originally %u).", filename, nevent, et.n);
 		free(et.event);
 		return (struct _bs){0, 0, NULL};
 	}
-	et.start += args.trim;
-	et.end -= args.trim;
+	et.start += args.trim_start;
+	et.end -= args.trim_end;
 
 	scrappie_matrix post = nanonet_posterior(et, args.min_prob, true);
 	if(NULL == post){
