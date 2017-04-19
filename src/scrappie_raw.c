@@ -55,7 +55,7 @@ static struct argp_option options[] = {
 	{"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
 	{"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
 	{"skip", 's', "penalty", 0, "Penalty for skipping a base"},
-	{"trim", 't', "nsamples", 0, "Number of samples to trim from either end"},
+	{"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
 	{"slip", 1, 0, 0, "Use slipping"},
 	{"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
 	// Currently disabled
@@ -64,6 +64,7 @@ static struct argp_option options[] = {
 	{"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
 	{"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
 	{"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
+	{"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
 #if defined(_OPENMP)
 	{"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
@@ -78,7 +79,9 @@ struct arguments {
 	enum format outformat;
 	float skip_pen;
 	bool use_slip;
-	int trim;
+	int trim_start, trim_end;
+	int varseg_chunk;
+	float varseg_thresh;
 	char * dump;
 	int compression_level;
 	int compression_chunk_size;
@@ -91,7 +94,10 @@ static struct arguments args = {
 	.outformat = FORMAT_FASTA,
 	.skip_pen = 0.0,
 	.use_slip = false,
-	.trim = 50,
+	.trim_start = 200,
+	.trim_end = 50,
+	.varseg_chunk = 100,
+	.varseg_thresh = 0.7,
 	.dump = NULL,
 	.compression_level = 1,
 	.compression_chunk_size = 200,
@@ -102,6 +108,7 @@ static struct arguments args = {
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 	switch(key){
 		int ret = 0;
+		char * next_tok = NULL;
 	case 'l':
 		args.limit = atoi(arg);
 		assert(args.limit > 0);
@@ -124,14 +131,33 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 		assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
 		break;
 	case 't':
-		args.trim = atoi(arg);
-		assert(args.trim >= 0);
+		args.trim_start = atoi(strtok(arg, ":"));
+		next_tok = strtok(NULL, ":");
+		if(NULL != next_tok){
+			args.trim_end = atoi(next_tok);
+		} else {
+			args.trim_end = args.trim_start;
+		}
+		assert(args.trim_start >= 0);
+		assert(args.trim_end >= 0);
+		printf("Trim -- %d %d\n", args.trim_start, args.trim_end);
 		break;
 	case 1:
 		args.use_slip = true;
 		break;
 	case 2:
 		args.use_slip = false;
+		break;
+	case 3:
+		args.varseg_chunk = atoi(strtok(arg, ":"));
+		next_tok = strtok(NULL, ":");
+		if(NULL == next_tok){
+			errx(EXIT_FAILURE, "--segmentation should be of form chunk:percentile");
+		}
+		args.varseg_thresh = atof(next_tok) / 100.0;
+		assert(args.varseg_chunk >= 0);
+		assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
+		printf("Segmentation -- %d %f\n", args.varseg_chunk, args.varseg_thresh);
 		break;
 	case 4:
 		args.dump = arg;
@@ -187,15 +213,15 @@ static struct _raw_basecall_info calculate_post(char * filename){
 	ASSERT_OR_RETURN_NULL(NULL != rt.raw, _raw_basecall_info_null);
 
 	const int nsample = rt.end - rt.start;
-	if(nsample <= 2 * args.trim){
+	if(nsample <= args.trim_end + args.trim_start){
 		warnx("Too few samples in %s to call (%d, originally %u).", filename, nsample, rt.n);
 		free(rt.raw);
 		return _raw_basecall_info_null;
 	}
-	rt.start += args.trim;
-	rt.end -= args.trim;
+	rt.start += args.trim_start;
+	rt.end -= args.trim_end;
 
-	range_t segmentation = trim_raw_by_mad(rt, 100, 0.7);
+	range_t segmentation = trim_raw_by_mad(rt, args.varseg_chunk, args.varseg_thresh);
 	rt.start = segmentation.start;
 	rt.end = segmentation.end;
 

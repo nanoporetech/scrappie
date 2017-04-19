@@ -66,7 +66,7 @@ Scrappie basecaller -- basecall from events
       --segmentation-analysis=number
                              Analysis number to read segmentation from
       --slip, --no-slip      Use slipping
-  -t, --trim=nevents         Number of events to trim
+  -t, --trim=start:end       Number of events to trim, as start:end
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
@@ -87,8 +87,12 @@ Scrappie basecaller -- basecall from raw signal
   -m, --min_prob=probability Minimum bound on probability of match
   -o, --outformat=format     Format to output reads (FASTA or SAM)
   -s, --skip=penalty         Penalty for skipping a base
+      --segmentation=chunk:percentile
+                             Chunk size and percentile for variance based
+                             segmentation
+
       --slip, --no-slip      Use slipping
-  -t, --trim=nsamples        Number of samples to trim from either end
+  -t, --trim=start:end       Number of samples to trim, as start:end
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
@@ -120,7 +124,7 @@ When the output is set to FASTA (default) then some metadata is stored in the de
   * Event calls are taken from (where `XXX` is the number set by the `--analysis` flag)
     * `--no-albacore` (default) --> `/Analyses/EventDetection_XXX/Reads/Read_???/Events`
     * `--albacore` --> `/Analyses/Basecall_1D_XXX/BaseCalled_template/Events`
-  * Segmentation is taken (by default) from /Analyses/Segmentation\_XXX/Summary/segmentation.  The group and summary names for the segmentation can be set using the `--segmentation` flag, the default behaviour being equivalent to `--segmentation Segmentation:segmentation`.  Other values of historical significance are:
+  * Segmentation for events is taken (by default) from /Analyses/Segmentation\_XXX/Summary/segmentation.  The group and summary names for the segmentation can be set using the `--segmentation` flag, the default behaviour being equivalent to `--segmentation Segmentation:segmentation`.  Other values of historical significance are:
     * Hairpin\_Split:split\_hairpin
     * Segment\_Linear:split\_hairpin
     * Segmentation:split\_hairpin
