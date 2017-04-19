@@ -72,7 +72,7 @@ endif (HAS_OPENMP)
 ##
 include_directories ("${PROJECT_BINARY_DIR}/include")
 if (OPENBLAS_ROOT)
-	include_directories ("${OPENBLAS_ROOT]/include")
+	include_directories ("${OPENBLAS_ROOT}/include")
 	link_directories ("${OPENBLAS_ROOT}/lib")
 	set (BLAS "openblas")
 else ()
