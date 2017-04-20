@@ -38,6 +38,25 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/version.h"
 )
 
+
+##
+#   Set up include directories
+##
+include_directories ("${PROJECT_BINARY_DIR}/include")
+if (OPENBLAS_ROOT)
+	include_directories ("${OPENBLAS_ROOT}/include")
+	link_directories ("${OPENBLAS_ROOT}/lib")
+	set (BLAS "openblas")
+else ()
+	set (BLAS "blas")
+endif ()
+if (HDF5_ROOT)
+	include_directories ("${HDF5_ROOT}/include")
+	link_directories ("${HDF5_ROOT}/lib")
+	set (CMAKE_REQUIRED_INCLUDES ${HDF5_ROOT}/include)
+endif()
+
+
 ##
 #   Set up what is to be built
 ##
@@ -56,6 +75,7 @@ if (BUILD_SHARED_LIB)
 	install (TARGETS scrappie_shared LIBRARY DESTINATION lib)
 endif (BUILD_SHARED_LIB)
 
+
 ##
 #  Check whether compiler supports openmp.
 ##
@@ -66,22 +86,6 @@ check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
 if (HAS_OPENMP)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 endif (HAS_OPENMP)
-
-##
-#   Set up include directories
-##
-include_directories ("${PROJECT_BINARY_DIR}/include")
-if (OPENBLAS_ROOT)
-	include_directories ("${OPENBLAS_ROOT]/include")
-	link_directories ("${OPENBLAS_ROOT}/lib")
-	set (BLAS "openblas")
-else ()
-	set (BLAS "blas")
-endif ()
-if (HDF5_ROOT)
-	include_directories ("${HDF5_ROOT}/include")
-	link_libraries ("${HDF5_ROOT}/lib")
-endif()
 
 
 # Find right hdf5 file
@@ -100,7 +104,7 @@ endif (HDF5_STANDARD)
 
 
 
-target_link_libraries (scrappie scrappie_static blas ${HDF5} m)
+target_link_libraries (scrappie scrappie_static ${BLAS} ${HDF5} m)
 if (APPLE)
 	target_link_libraries (scrappie argp)
 endif (APPLE)
