@@ -16,7 +16,7 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	const int nstate = logpost->nr;
 	const int ldp = logpost->nrq * 4;
 	const int nhistory = nstate - 1;
-	assert((nhistory %4) == 0);
+	assert((nhistory % 4) == 0);
 	const int32_t nhistoryq = nhistory / 4;
 	const __m128i nhistoryqv = _mm_set1_epi32(nhistoryq);
 	assert((nhistoryq % 4) == 0);
@@ -25,8 +25,10 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	assert((nhistoryqq % 4) == 0);
 	const int32_t nhistoryqqq = nhistoryqq / 4;
 	const __m128i nhistoryqqqv = _mm_set1_epi32(nhistoryqqq);
-	assert((nhistoryqqq % 4) == 0);
-	const int nhistoryqqqq = nhistoryqqq / 4;
+	if(use_slip){
+	   	assert((nhistoryqqq % 4) == 0);
+	}
+
 
 	//  Forwards memory + traceback
 	scrappie_matrix score = make_scrappie_matrix(nhistory, 1);
@@ -132,6 +134,7 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 
 		// Slip
 		if(use_slip){
+			const int32_t nhistoryqqqq = nhistoryqqq / 4;
 			const __m128 slip_penv = _mm_set1_ps(2.0 * skip_pen);
 			for(int i=0 ; i<nhistoryqqqq ; i++){
 				tmp->data.v[i] = prev_score->data.v[i];
