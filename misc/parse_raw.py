@@ -71,7 +71,7 @@ cformatV(sys.stdout, 'conv_raw_b', network.layers[0].b.get_value().reshape(-1))
 sys.stdout.write("const int conv_raw_stride = {};\n".format(network.layers[0].stride))
 sys.stdout.write("""const size_t _conv_nfilter = {};
 const size_t _conv_winlen = {};
-""".format(winlen, nfilter))
+""".format(nfilter, winlen))
 
 bigru1 = network.layers[1]
 gru = bigru1.layers[0]
