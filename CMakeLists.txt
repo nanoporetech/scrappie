@@ -80,6 +80,7 @@ endif (BUILD_SHARED_LIB)
 #  Check whether compiler supports openmp.
 ##
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2")
+#set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -DABORT_ON_NULL -Wno-unused-function -fgnu89-inline -g -march=native -ffast-math -std=c99 -DUSE_SSE2")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)

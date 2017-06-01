@@ -194,6 +194,8 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	tmp = free_scrappie_matrix(tmp);
 	prev_score = free_scrappie_matrix(prev_score);
 	score = free_scrappie_matrix(score);
+
+	validate_ivector(seq, nev, -1, nhistory - 1, __FILE__, __LINE__);
 	return logscore;
 }
 
