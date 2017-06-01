@@ -289,9 +289,13 @@ int main_raw(int argc, char * argv[]){
 			const size_t rootlen = strlen(args.files[fn]);
 			char * globpath = calloc(rootlen + 9, sizeof(char));
 			memcpy(globpath, args.files[fn], rootlen * sizeof(char));
-			if(NULL != opendir(args.files[fn])){
-				// If filename is a directory, add wildcard to find all fast5 files within it
-				memcpy(globpath + rootlen, "/*.fast5", 8 * sizeof(char));
+			{
+				DIR * dirp = opendir(args.files[fn]);
+				if(NULL != dirp){
+					// If filename is a directory, add wildcard to find all fast5 files within it
+					memcpy(globpath + rootlen, "/*.fast5", 8 * sizeof(char));
+					closedir(dirp);
+				}
 			}
 			int globret = glob(globpath, GLOB_NOSORT, NULL, &globbuf);
 			free(globpath);
