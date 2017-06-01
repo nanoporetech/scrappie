@@ -202,9 +202,8 @@ void row_normalise_inplace(scrappie_matrix C){
                 const __m128 psum = _mm_hadd_ps(sum, sum);
                 const __m128 tsum = _mm_hadd_ps(psum, psum);
 
-                const __m128 isumv = _mm_rcp_ps(tsum);
                 for(int row=0 ; row < C->nrq ; row++){
-                        C->data.v[offset + row] *= isumv;
+                        C->data.v[offset + row] /= tsum;
                 }
         }
 }
