@@ -1,8 +1,19 @@
 # Scrappie
 Scrappie is a technology demonstrator for the Oxford Nanopore Research Algorithms group
 
+This software is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-This project began life as a proof (bet) that a base caller could be written in a low level language in under 8 hours.  Some of the poor and just plain odd design decisions, along with the lack of documentation, are a result of its inception. In keeping with ONT's fish naming policy, the project was originally called Crappie.
+(c) 2017 Oxford Nanopore Technologies Ltd.
+
+The vectorised math functions `src/sse_mathfun.h` are from
+http://gruntthepeon.free.fr/ssemath/ and the original version of this file is
+under the 'zlib' licence.  See the top of `src/sse_mathfun.h` for details.
+
+
+
+This project began life as a proof (bet) that a base caller could be written from scratch in a low level language in under 8 hours.  Some of the poor and just plain odd design decisions, along with the lack of documentation, are a result of its inception. In keeping with ONT's fish naming policy, the project was originally called Crappie (genus *Pomoxis*).
 
 
 Scrappie's purpose is to demonstrate the next generation of base calling and, as such, may change drastically between releases and breaks backwards compatibility.  A new version may not support older features.
@@ -11,6 +22,11 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
+* 1.0 series: Public release
+    * *release-1.0.0*
+        * Change licence to MPL.
+	* Increased number for assertions.
+	* A few stability and bug fixes.
 * 0.3 series: Basecalling from raw signal
     * *release-0.3.2* Minor fixes to support use of OpenBLAS and HDF5 libraries in non-standard locations 
     * *release-0.3.1* Expose options for segmenting raw signal
