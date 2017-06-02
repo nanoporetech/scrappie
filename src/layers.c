@@ -137,7 +137,7 @@ scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W, co
 			C->data.v[offset + r] = tanhfv(C->data.v[offset +r]);
 		}
 	}
-	return C;
+	return validate_scrappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
@@ -158,7 +158,7 @@ scrappie_matrix feedforward_tanh(const scrappie_matrix X, const scrappie_matrix 
 			C->data.v[offset + r] = tanhfv(C->data.v[offset +r]);
 		}
 	}
-	return C;
+	return validate_scrappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
@@ -173,7 +173,7 @@ scrappie_matrix feedforward_exp(const scrappie_matrix X, const scrappie_matrix W
 			C->data.v[offset + r] = EXPFV(C->data.v[offset +r]);
 		}
 	}
-	return C;
+	return validate_scrappie_matrix(C, 0.0, NAN, 1.0, true, __FILE__, __LINE__);
 }
 
 
@@ -183,7 +183,7 @@ scrappie_matrix softmax(const scrappie_matrix X, const scrappie_matrix W,
 	ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
 	row_normalise_inplace(C);
-	return C;
+	return validate_scrappie_matrix(C, 0.0, 1.0, NAN, true, __FILE__, __LINE__);
 }
 
 
@@ -199,7 +199,7 @@ scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf, const scrappie_matri
 			C->data.v[offset + r] = tanhfv(C->data.v[offset +r]);
 		}
 	}
-	return C;
+	return validate_scrappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
@@ -241,7 +241,7 @@ scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW, c
 	}
 
 	tmp = free_scrappie_matrix(tmp);
-	return ostate;
+	return validate_scrappie_matrix(ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
@@ -284,7 +284,7 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW, 
 	}
 
 	tmp = free_scrappie_matrix(tmp);
-	return ostate;
+	return validate_scrappie_matrix(ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
@@ -384,7 +384,7 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine, const scrappie_matri
 
 	state = free_scrappie_matrix(state);
 	state = free_scrappie_matrix(tmp);
-	return output;
+	return validate_scrappie_matrix(output, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
@@ -423,7 +423,7 @@ scrappie_matrix lstm_backward(const scrappie_matrix Xaffine, const scrappie_matr
 
 	state = free_scrappie_matrix(state);
 	tmp = free_scrappie_matrix(tmp);
-	return output;
+	return validate_scrappie_matrix(output, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
 }
 
 
