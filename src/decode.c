@@ -26,7 +26,7 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int * seq
 	const int32_t nhistoryqqq = nhistoryqq / 4;
 	const __m128i nhistoryqqqv = _mm_set1_epi32(nhistoryqqq);
 	if(use_slip){
-	   	assert((nhistoryqqq % 4) == 0);
+		assert((nhistoryqqq % 4) == 0);
 	}
 
 
