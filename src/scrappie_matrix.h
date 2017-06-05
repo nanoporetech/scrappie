@@ -32,6 +32,7 @@ scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 void zero_scrappie_matrix(scrappie_matrix M);
 scrappie_matrix mat_from_array(const float * x, int nr, int nc);
 void fprint_scrappie_matrix(FILE * fh, const char * header, const scrappie_matrix mat, int nr, int nc);
+bool equality_scrappie_matrix(const scrappie_matrix mat1, const scrappie_matrix mat2, const float tol);
 scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower,
 		const float upper, const float maskval, const bool only_finite,
 		const char * file, const int line);

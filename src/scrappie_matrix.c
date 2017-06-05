@@ -83,6 +83,11 @@ scrappie_matrix free_scrappie_matrix(scrappie_matrix mat){
 
 scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower, const float upper, const float maskval, const bool only_finite, const char * file, const int line){
 	if(NULL == mat){return mat;}
+	assert(NULL != mat->data.f);
+	assert(mat->nc > 0);
+	assert(mat->nr > 0);
+	assert(mat->nrq > 0 && (4 * mat->nrq) > mat->nr);
+
 	const int nc = mat->nc;
 	const int nr = mat->nr;
 	const int ld = mat->nrq * 4;
@@ -137,6 +142,53 @@ scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower
 	}
 
 	return mat;
+}
+
+
+/**  Check whether two matrices are equal within a given tolerance
+ *
+ *  @param mat1 A `scrappie_matrix` to compare
+ *  @param mat2 A `scrappie_matrix` to compare
+ *  @param tol Absolute tolerance to which elements of the matrix should agree
+ *
+ *  Notes:
+ *    The tolerance is absolute; this may not be desirable in all circumstances.
+ *    The convention used here is that of equality '=='.  The standard C
+ *    sorting functions expect the convention of 0 being equal and non-equality
+ *    being defined by negative (less than) and positive (greater than).
+ *
+ *  @return A boolean of whether the two matrices are equal.
+ **/
+bool equality_scrappie_matrix(const scrappie_matrix mat1, const scrappie_matrix mat2, const float tol){
+	if(NULL == mat1 || NULL == mat2){
+		// One or both matrices are NULL
+		if(NULL == mat1 && NULL == mat2){
+			return true;
+		}
+		return false;
+	}
+	// Given non-NULL matrices, they should always contain data
+	assert(NULL != mat1->data.f);
+	assert(NULL != mat2->data.f);
+
+	if(mat1->nc != mat2->nc || mat1->nr != mat2->nr){
+		// Dimension mismatch
+		return false;
+	}
+
+	//  Given equal dimensions, the following should alway hold
+	assert(mat1->nrq == mat2->nrq);
+
+	for(int c = 0 ; c < mat1->nc ; ++c){
+		const int offset = c * 4 * mat1->nrq;
+		for(int r = 0 ; r < mat1->nr ; ++r){
+			if(fabsf(mat1->data.f[offset + r] - mat2->data.f[offset + r]) > tol){
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 
