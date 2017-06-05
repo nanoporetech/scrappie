@@ -81,8 +81,8 @@ scrappie_matrix free_scrappie_matrix(scrappie_matrix mat){
 }
 
 
-scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower, const float upper, const float maskval, const bool only_finite, const char * file, const int line){
-	if(NULL == mat){return mat;}
+bool validate_scrappie_matrix(scrappie_matrix mat, float lower, const float upper, const float maskval, const bool only_finite, const char * file, const int line){
+	if(NULL == mat){return false;}
 	assert(NULL != mat->data.f);
 	assert(mat->nc > 0);
 	assert(mat->nr > 0);
@@ -98,7 +98,8 @@ scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower
 			const size_t offset = c * ld;
 			for(int r=nr ; r < ld ; ++r){
 				if(maskval != mat->data.f[offset + r]){
-					errx(EXIT_FAILURE, "%s:%d  Matrix entry [%d,%d] = %f violates masking rules\n", file, line, r, c, mat->data.f[offset + r]);
+					warnx("%s:%d  Matrix entry [%d,%d] = %f violates masking rules\n", file, line, r, c, mat->data.f[offset + r]);
+					return false;
 				}
 			}
 		}
@@ -111,7 +112,8 @@ scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower
 			const size_t offset = c * ld;
 			for(int r=0 ; r < nr ; ++r){
 				if(!isfinite(mat->data.f[offset + r])){
-					errx(EXIT_FAILURE, "%s:%d  Matrix entry [%d,%d] = %f contains a non-finite value\n", file, line, r, c, mat->data.f[offset + r]);
+					warnx("%s:%d  Matrix entry [%d,%d] = %f contains a non-finite value\n", file, line, r, c, mat->data.f[offset + r]);
+					return false;
 				}
 			}
 		}
@@ -123,7 +125,8 @@ scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower
 			const size_t offset = c * ld;
 			for(int r=0 ; r < nr ; ++r){
 				if(mat->data.f[offset + r] + FLT_EPSILON < lower){
-					errx(EXIT_FAILURE, "%s:%d  Matrix entry [%d,%d] = %f (%e) violates lower bound\n", file, line, r, c, mat->data.f[offset + r], mat->data.f[offset + r] - lower);
+					warnx("%s:%d  Matrix entry [%d,%d] = %f (%e) violates lower bound\n", file, line, r, c, mat->data.f[offset + r], mat->data.f[offset + r] - lower);
+					return false;
 				}
 			}
 		}
@@ -135,13 +138,14 @@ scrappie_matrix _validate_scrappie_matrix(scrappie_matrix mat, const float lower
 			const size_t offset = c * ld;
 			for(int r=0 ; r < nr ; ++r){
 				if(mat->data.f[offset + r] > upper + FLT_EPSILON){
-					errx(EXIT_FAILURE, "%s:%d  Matrix entry [%d,%d] = %f (%e) violates upper bound\n", file, line, r, c, mat->data.f[offset + r], mat->data.f[offset + r] - upper);
+					warnx("%s:%d  Matrix entry [%d,%d] = %f (%e) violates upper bound\n", file, line, r, c, mat->data.f[offset + r], mat->data.f[offset + r] - upper);
+					return false;
 				}
 			}
 		}
 	}
 
-	return mat;
+	return true;
 }
 
 
@@ -398,15 +402,16 @@ int argmin_scrappie_matrix(const scrappie_matrix x){
 
 
 
-float * _validate_vector(float * vec, const float n, const float lower, const float upper,
-		const char * file, const int line){
-	if(NULL == vec){return vec;}
+bool validate_vector(float * vec, const float n, const float lower, const float upper,
+		     const char * file, const int line){
+	if(NULL == vec){return false;}
 
 	//  Lower bound
 	if(!isnan(lower)){
 		for(int i=0 ; i < n ; ++i){
 			if(lower > vec[i]){
-				errx(EXIT_FAILURE, "%s:%d  Vector entry %d = %f violates lower bound\n", file, line, i, vec[i]);
+				warnx("%s:%d  Vector entry %d = %f violates lower bound\n", file, line, i, vec[i]);
+				return false;
 			}
 		}
 	}
@@ -415,31 +420,34 @@ float * _validate_vector(float * vec, const float n, const float lower, const fl
 	if(!isnan(upper)){
 		for(int i=0 ; i < n ; ++i){
 			if(upper < vec[i]){
-				errx(EXIT_FAILURE, "%s:%d  Vector entry %d = %f violates upper bound\n", file, line, i, vec[i]);
+				warnx("%s:%d  Vector entry %d = %f violates upper bound\n", file, line, i, vec[i]);
+				return false;
 			}
 		}
 	}
 
-	return vec;
+	return true;
 }
 
-int * _validate_ivector(int * vec, const int n, const int lower, const int upper,
-		const char * file, const int line){
-	if(NULL == vec){return vec;}
+bool validate_ivector(int * vec, const int n, const int lower, const int upper,
+		      const char * file, const int line){
+	if(NULL == vec){return false;}
 
 	//  Lower bound
 	for(int i=0 ; i < n ; ++i){
 		if(lower > vec[i]){
-			errx(EXIT_FAILURE, "%s:%d  Vector entry %d = %d violates lower bound\n", file, line, i, vec[i]);
+			warnx("%s:%d  Vector entry %d = %d violates lower bound\n", file, line, i, vec[i]);
+			return false;
 		}
 	}
 
 	//  Upper bound
 	for(int i=0 ; i < n ; ++i){
 		if(upper < vec[i]){
-			errx(EXIT_FAILURE, "%s:%d  Vector entry %d = %d violates upper bound\n", file, line, i, vec[i]);
+			warnx("%s:%d  Vector entry %d = %d violates upper bound\n", file, line, i, vec[i]);
+			return false;
 		}
 	}
 
-	return vec;
+	return true;
 }
