@@ -18,6 +18,10 @@ On Debian based systems, the following packages are sufficient (tested Ubuntu 14
 * libhdf5
 * libhdf5-dev
 
+The Intel MKL may be used to provide the BLAS library.  The combination of the Intel `icc` 
+compiler and linking against the MKL can result in significant performance improvements, a 
+gain of 50% being observed on one machine.
+
 On Mac _OSX_ systems, the _argp-standalone_ package is also required.  The *argp-standalone* packae
 can be installed using the *brew* package manager (http://brew.sh).
 ```bash
