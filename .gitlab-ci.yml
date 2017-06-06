@@ -29,6 +29,8 @@ building:
       - ${BUILD_DIR}/libscrappie.so
       - ${BUILD_DIR}/libscrappie.a
       - ${BUILD_DIR}/Makefile
+      - ${BUILD_DIR}/CTestTestfile.cmake
+      - ${BUILD_DIR}/CMakeFiles/scrappie_test.dir/
 
 testing:
   stage: test
