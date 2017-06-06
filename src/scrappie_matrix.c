@@ -86,7 +86,7 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower, const float uppe
 	assert(NULL != mat->data.f);
 	assert(mat->nc > 0);
 	assert(mat->nr > 0);
-	assert(mat->nrq > 0 && (4 * mat->nrq) > mat->nr);
+	assert(mat->nrq > 0 && (4 * mat->nrq) >= mat->nr);
 
 	const int nc = mat->nc;
 	const int nr = mat->nr;
