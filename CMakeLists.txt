@@ -16,7 +16,8 @@ set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
 set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.md")
 set (CPACK_PACKAGE_VERSION_MAJOR 1)
 set (CPACK_PACKAGE_VERSION_MINOR 0)
-set (CPACK_PACKAGE_VERSION_PATCH 0)
+set (CPACK_PACKAGE_VERSION_PATCH 1)
+
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
 	COMMAND git log -1 --format=%h
