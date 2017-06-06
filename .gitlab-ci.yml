@@ -9,6 +9,9 @@ variables:
   CI_VERSION_PATCH: $CI_BUILD_ID
   BUILD_DIR:        "build"
 
+before_script:
+  - apt-get install -y libcunit1-dev
+
 stages:
   - build
   - test
