@@ -36,6 +36,9 @@ testing:
   stage: test
   script:
       - cd ${BUILD_DIR} && make test
+  artifacts:
+    paths:
+      - ${BUILD_DIR}/Testing
 
 
 upload-development:
