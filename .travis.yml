@@ -1,13 +1,17 @@
+language: c
+sudo: enabled
+dist: trusty
+
+
+before_install:
+    - set OMP_NUM_THREADS=2
 install: 
-        - apt-get -y make libhdf5-7 libhdf5-dev libopenblas-base libopenblas-dev libcunit1-dev
+    - sudo apt-get -y make libhdf5-7 libhdf5-dev libopenblas-base libopenblas-dev libcunit1-dev
 
 language: c
 
 compiler:
-        - gcc
+    - gcc
 
 script: 
-        - mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make && make test
-
-compiler:
-        - gcc
+    - mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make && make test
