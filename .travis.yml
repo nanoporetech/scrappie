@@ -5,8 +5,9 @@ dist: trusty
 
 before_install:
     - set OMP_NUM_THREADS=2
+
 install: 
-    - sudo apt-get -y make libhdf5-7 libhdf5-dev libopenblas-base libopenblas-dev libcunit1-dev
+    - sudo apt-get install -y make libhdf5-7 libhdf5-dev libopenblas-base libopenblas-dev libcunit1-dev
 
 language: c
 
