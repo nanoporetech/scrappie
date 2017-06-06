@@ -3,6 +3,12 @@ project (scrappie C)
 
 option (BUILD_SHARED_LIB "Build a shared library" OFF)
 
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release") 
+if(NOT CMAKE_BUILD_TYPE)
+	message("Defaulting to release build")
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+
 include (InstallRequiredSystemLibraries)
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Scrappie is the technology demonstration platform for the Research algorithms' group.")
 set (CPACK_PACKAGE_VENDOR "Oxford Nanopore Technologies")
@@ -79,8 +85,8 @@ endif (BUILD_SHARED_LIB)
 ##
 #  Check whether compiler supports openmp.
 ##
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -ffast-math -std=c99 -DUSE_SSE2")
-#set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -DABORT_ON_NULL -Wno-unused-function -fgnu89-inline -g -march=native -ffast-math -std=c99 -DUSE_SSE2")
+set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -std=c99 -DUSE_SSE2 -DNDEBUG")
+set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Wall -DABORT_ON_NULL -Wno-unused-function -fgnu89-inline -g -march=native -std=c99 -DUSE_SSE2")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
@@ -103,11 +109,28 @@ else (HDF5_STANDARD)
 	endif (HDF5_SERIAL)
 endif (HDF5_STANDARD)
 
-
-
 target_link_libraries (scrappie scrappie_static ${BLAS} ${HDF5} m)
 if (APPLE)
 	target_link_libraries (scrappie argp)
 endif (APPLE)
 
 install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTINATION lib)
+
+
+enable_testing()
+add_executable(scrappie_test src/test/test_scrappie_matrix.c src/test/scrappie_matrix_util.c)
+target_include_directories(scrappie_test PUBLIC "src/test" "src")
+target_link_libraries(scrappie_test scrappie_static ${BLAS} ${HDF5} m cunit)
+
+set (READSDIR ${PROJECT_SOURCE_DIR}/reads)
+set (ENV{OPENBLAS_NUM_THREADS} 1)
+
+add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND scrappie_test)
+add_test(test_events_call scrappie events --threads 1 ${READSDIR})
+add_test(test_raw_call scrappie raw --threads 1 ${READSDIR})
+add_test(test_licence scrappie licence)
+add_test(test_licence scrappie license)
+add_test(test_help scrappie help)
+add_test(test_help_events scrappie help events)
+add_test(test_help_raw scrappie help raw)
+add_test(test_version scrappie version)
