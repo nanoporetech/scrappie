@@ -34,13 +34,7 @@ building:
 testing:
   stage: test
   script:
-      - ${BUILD_DIR}/scrappie events --threads 1 reads > test_events.fa
-      - ${BUILD_DIR}/scrappie raw --threads 1 reads > test_raw.fa
-      - ${BUILD_DIR}/scrappie licence 
-      - ${BUILD_DIR}/scrappie license 
-      - ${BUILD_DIR}/scrappie help
-      - ${BUILD_DIR}/scrappie version
-      
+      - cd ${BUILD_DIR} && make test
 
 
 upload-development:
