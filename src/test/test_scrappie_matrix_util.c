@@ -76,3 +76,28 @@ void test_roundtrip_scrappie_matrix_util(void){
 	mat_in = free_scrappie_matrix(mat_in);
 }
 
+int register_scrappie_matrix_util(void){
+	// Would be preferable to contruct CU_SuiteInfo and use CU_register_suites
+	// but this is incompatible between Trusty (CUnit 2.1-2) and Xenial (CUnit 2.1-3)
+	// due to the addition of setup and teardown functions to the CU_SuiteInfo structure
+
+	CU_pSuite suite = CU_add_suite("Scrappie matrix IO tests",
+					init_test_scrappie_matrix_util,
+					clean_test_scrappie_matrix_util);
+	if(NULL == suite){
+		return CU_get_error();
+	}
+
+	if(NULL == CU_add_test(suite, "Reading scrappie_matrix from file", test_read_scrappie_matrix_util)){
+		return CU_get_error();
+	}
+	if(NULL == CU_add_test(suite, "Writing scrappie_matrix to file", test_write_scrappie_matrix_util)){
+		return CU_get_error();
+	}
+	if(NULL == CU_add_test(suite, "Round-trip scrappie_matrix to / from file", test_roundtrip_scrappie_matrix_util)){
+		return CU_get_error();
+	}
+
+
+	return 0;
+}

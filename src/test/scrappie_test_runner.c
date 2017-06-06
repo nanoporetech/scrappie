@@ -1,5 +1,6 @@
 #include <CUnit/Basic.h>
-#include "test_scrappie_matrix_util.h"
+
+int register_scrappie_matrix_util(void);
 
 int main(void){
 
@@ -8,13 +9,11 @@ int main(void){
 		return CU_get_error();
 	}
 
-	//  Register test suites
-	CU_SuiteInfo suites[] = {
-		scrappie_matrix_util_suite,
-		CU_SUITE_INFO_NULL};
-
-	CU_register_suites(suites);
-
+	int err = register_scrappie_matrix_util();
+	if(err){
+		CU_cleanup_registry();
+		return err;
+	}
 
 	// Run all tests using the CUnit Basic interface
 	CU_basic_set_mode(CU_BRM_VERBOSE);
