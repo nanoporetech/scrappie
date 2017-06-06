@@ -119,14 +119,14 @@ install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTIN
 
 
 enable_testing()
-add_executable(scrappie_test src/test/test_scrappie_matrix.c src/test/scrappie_matrix_util.c)
-target_include_directories(scrappie_test PUBLIC "src/test" "src")
-target_link_libraries(scrappie_test scrappie_static ${BLAS} ${HDF5} m cunit)
+add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_matrix_util.c src/test/scrappie_matrix_util.c)
+target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
+target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 
 set (READSDIR ${PROJECT_SOURCE_DIR}/reads)
 set (ENV{OPENBLAS_NUM_THREADS} 1)
 
-add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND scrappie_test)
+add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND scrappie_unittest)
 add_test(test_events_call scrappie events --threads 1 ${READSDIR})
 add_test(test_raw_call scrappie raw --threads 1 ${READSDIR})
 add_test(test_licence scrappie licence)
