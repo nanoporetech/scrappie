@@ -37,12 +37,9 @@ testing:
   script:
       - cd ${BUILD_DIR} && make test
   artifacts:
-    when: on_success
-      paths:
-        - ${BUILD_DIR}/Testing
     when: on_failure
-      paths:
-        - ${BUILD_DIR}/Testing
+    paths:
+      - ${BUILD_DIR}/Testing
 
 
 upload-development:
