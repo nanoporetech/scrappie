@@ -25,7 +25,7 @@ building:
     paths:
       - ${BUILD_DIR}/*.deb
       - ${BUILD_DIR}/scrappie
-      - ${BUILD_DIR}/scrappie_unittest
+      - ${BUILD_DIR}/scrappie_nittest
       - ${BUILD_DIR}/libscrappie.so
       - ${BUILD_DIR}/libscrappie.a
       - ${BUILD_DIR}/Makefile
@@ -37,6 +37,7 @@ testing:
   script:
       - cd ${BUILD_DIR} && make test
   artifacts:
+    when: on_failure
     paths:
       - ${BUILD_DIR}/Testing
 
