@@ -135,3 +135,5 @@ add_test(test_help scrappie help)
 add_test(test_help_events scrappie help events)
 add_test(test_help_raw scrappie help raw)
 add_test(test_version scrappie version)
+
+add_custom_target(test-verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)

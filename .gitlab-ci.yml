@@ -37,7 +37,7 @@ testing:
   script:
       - cd ${BUILD_DIR} && make test
   artifacts:
-    when: on_failure
+    when: always
     paths:
       - ${BUILD_DIR}/Testing
 
