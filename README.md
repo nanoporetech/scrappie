@@ -120,9 +120,9 @@ and does not do any processing itself.  By default the segmentation is read from
 `--segmenation` option.  
 The default beahviour is equivalent to `--segmentation  Segmentation:segmentation`.
 Other values of historical significance are:
-    * `--segmentation Hairpin_Split:split_hairpin`
-    * `Segment_Linear:split_hairpin`
-    * `Segmentation:split_hairpin`
+* `--segmentation Hairpin_Split:split_hairpin`
+* `Segment_Linear:split_hairpin`
+* `Segmentation:split_hairpin`
 
 When no segmentation can be found, all events are used for basecalling.
 
