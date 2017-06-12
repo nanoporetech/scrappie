@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-import cPickle
+#!/usr/bin/env python3
+import pickle
 import math
 import numpy as np
 import sys
@@ -44,8 +44,8 @@ def reshape_lstmV(mat):
 	return mat.reshape((-1, 4)).transpose().reshape(-1)
 
 
-with open(model_file, 'r') as fh:
-    network = cPickle.load(fh)
+with open(model_file, 'rb') as fh:
+    network = pickle.load(fh, encoding='latin1')
 
 sys.stdout.write("""#ifndef NANONET_EVENTS_MODEL_H
 #define NANONET_EVENTS_MODEL_H
