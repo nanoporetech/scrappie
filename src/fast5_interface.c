@@ -66,10 +66,14 @@ range_t get_segmentation(hid_t file, int analysis_no, const char * segloc1, cons
 
 	if(analysis_no < 0){
 		analysis_no = get_latest_group(file, "/Analyses", segloc1);
-		if(analysis_no < 0){ return segcoord; }
+		if(analysis_no < 0){
+			warnx("No segmentation group found.  You may want to specify it using the --segmentation option.\n"
+			      "Will use all events for calling.  See READ.md for details.");
+			return segcoord;
+		}
 	}
 
-        int segnamelen = strlen(segloc1) + strlen(segloc2) + 24;
+	int segnamelen = strlen(segloc1) + strlen(segloc2) + 24;
 	char * segname = calloc(segnamelen, sizeof(char));
 	(void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/%s", segloc1, analysis_no, segloc2);
 	hid_t seggroup = H5Gopen(file, segname, H5P_DEFAULT);

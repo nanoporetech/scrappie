@@ -113,6 +113,20 @@ Scrappie basecaller -- basecall from raw signal
   -V, --version              Print program version
 ```
 
+## Segmentation
+When calling from events, Scrappie relies on the segmentation already being present in the fast5 file
+and does not do any processing itself.  By default the segmentation is read from 
+`/Analyses/Segmentation_XXX/Summary/segmentation` but other locations can be specified using the
+`--segmenation` option.  
+The default beahviour is equivalent to `--segmentation  Segmentation:segmentation`.
+Other values of historical significance are:
+* `--segmentation Hairpin_Split:split_hairpin`
+* `Segment_Linear:split_hairpin`
+* `Segmentation:split_hairpin`
+
+When no segmentation can be found, all events are used for basecalling.
+
+
 ## Output formats
 Scrappie current supports two ouput formats, FASTA and SAM.  The default format is currently FASTA;
 SAM format output is enabled using the `--outformat SAM` commandline argument.
@@ -133,18 +147,13 @@ When the output is set to FASTA (default) then some metadata is stored in the de
     * `events_per_base` Number of events per base called
 
 
-
 ## Gotya's and notes
 * Scrappie does not call events and relies on this information already being present in the fast5 files.  In particular:
   * Event calls are taken from (where `XXX` is the number set by the `--analysis` flag)
     * `--no-albacore` (default) --> `/Analyses/EventDetection_XXX/Reads/Read_???/Events`
     * `--albacore` --> `/Analyses/Basecall_1D_XXX/BaseCalled_template/Events`
-  * Segmentation for events is taken (by default) from /Analyses/Segmentation\_XXX/Summary/segmentation.  The group and summary names for the segmentation can be set using the `--segmentation` flag, the default behaviour being equivalent to `--segmentation Segmentation:segmentation`.  Other values of historical significance are:
-    * Hairpin\_Split:split\_hairpin
-    * Segment\_Linear:split\_hairpin
-    * Segmentation:split\_hairpin
 * Model is hard-coded.  Generate new header files using 
   * Events: `parse_events.py model.pkl > src/nanonet_events.h`
   * Raw: `parse_raw.py model.pkl > src/nanonet_raw.h`
 * The normalised score (- total score / number of events) correlates well with read accuracy.
-* Events with unusual rate metrics (number of events or blocks / bases called) may be unreliable.
+* Reads with unusual rate metrics (number of events or blocks / bases called) may be unreliable.
