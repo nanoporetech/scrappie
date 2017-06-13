@@ -131,10 +131,11 @@ When no segmentation can be found, all events are used for basecalling.
 Scrappie current supports two ouput formats, FASTA and SAM.  The default format is currently FASTA;
 SAM format output is enabled using the `--outformat SAM` commandline argument.
 
-Scrappie can emit SAM "alignment" lines containing the sequences but no quality information.  No other fields, include a SAM header are emitted.  A BAM file can be obtained using `samtools` (tested with version 0.1.19-96b5f2294a) as follows:
+Scrappie can emit SAM "alignment" lines containing the sequences but no quality information.  No other fields, include a SAM header are emitted.  A CRAM or BAM file can be obtained using `samtools` (tested with version 1.4.1) as follows:
 
 ```bash
-scrappie -o sam reads | samtools -Sb - > output.bam
+scrappie raw -o sam reads | samtools view -Sb - > output.bam
+scrappie raw -o sam reads | samtools view -SC - > output.cram
 ```
 
 ### FASTA
