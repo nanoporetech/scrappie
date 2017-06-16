@@ -5,13 +5,13 @@
 #include <stdlib.h>
 
 #ifdef ABORT_ON_NULL
-	#define ASSERT_OR_RETURN_NULL(A, B) \
+#define ASSERT_OR_RETURN_NULL(A, B) \
 		if(!(A)){  	\
 			fprintf(stderr, "Failure at %s : %d", __FILE__, __LINE__);	\
 			abort();	\
 		}
 #else
-	#define ASSERT_OR_RETURN_NULL(A, B) if(!(A)){ return B; }
+#define ASSERT_OR_RETURN_NULL(A, B) if(!(A)){ return B; }
 #endif
 
-#endif /* SCRAPPIE_ASSERT_H */
+#endif                          /* SCRAPPIE_ASSERT_H */
