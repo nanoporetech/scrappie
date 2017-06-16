@@ -47,7 +47,8 @@ def cformatV(fh, name, X):
 with open(model_file, 'rb') as fh:
     network = pickle.load(fh, encoding='latin1')
 
-sys.stdout.write("""#ifndef NANONET_RAW_MODEL_H
+sys.stdout.write("""#pragma once
+#ifndef NANONET_RAW_MODEL_H
 #define NANONET_RAW_MODEL_H
 #include <assert.h>
 #include "util.h"

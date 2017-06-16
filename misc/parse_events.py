@@ -47,7 +47,8 @@ def reshape_lstmV(mat):
 with open(model_file, 'rb') as fh:
     network = pickle.load(fh, encoding='latin1')
 
-sys.stdout.write("""#ifndef NANONET_EVENTS_MODEL_H
+sys.stdout.write("""#pragma once
+#ifndef NANONET_EVENTS_MODEL_H
 #define NANONET_EVENTS_MODEL_H
 #include "util.h"
 """)
