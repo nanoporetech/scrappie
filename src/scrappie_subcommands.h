@@ -1,8 +1,9 @@
+#pragma once
 #ifndef SCRAPPIE_SUBCOMMANDS_H
-#define SCRAPPIE_SUBCOMMANDS_H
+#    define SCRAPPIE_SUBCOMMANDS_H
 
-#include <stdbool.h>
-#include <stdio.h>
+#    include <stdbool.h>
+#    include <stdio.h>
 
 // Helper functions for subcommmads
 static const int scrappie_ncommand = 5;

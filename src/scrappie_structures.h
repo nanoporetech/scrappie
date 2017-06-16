@@ -1,5 +1,6 @@
+#pragma once
 #ifndef SCRAPPIE_STRUCTURES_H
-#define SCRAPPIE_STRUCTURES_H
+#    define SCRAPPIE_STRUCTURES_H
 
 typedef struct {
     double start;

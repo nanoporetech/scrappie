@@ -1,8 +1,8 @@
 #include <assert.h>
 #ifdef __APPLE__
-#include <Accelerate/Accelerate.h>
+#    include <Accelerate/Accelerate.h>
 #else
-#include <cblas.h>
+#    include <cblas.h>
 #endif
 #include <err.h>
 #include <math.h>

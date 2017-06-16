@@ -1,13 +1,55 @@
 #ifdef __APPLE__
-#include <Accelerate/Accelerate.h>
+#    include <Accelerate/Accelerate.h>
 #else
-#include <cblas.h>
+#    include <cblas.h>
 #endif
 #include <math.h>
 #include <string.h>
 #include "layers.h"
 #include "scrappie_assert.h"
 #include "util.h"
+
+/**  Apply tanh to a matrix element-wise
+ *  @param C Matrix
+ *
+ **/
+void tanh_activation_inplace(scrappie_matrix C) {
+    for (int c = 0; c < C->nc; ++c) {
+        const size_t offset = c * C->nrq;
+        for (int r = 0; r < C->nrq; ++r) {
+            C->data.v[offset + r] = tanhfv(C->data.v[offset + r]);
+        }
+    }
+    (void)validate_scrappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
+}
+
+/**  Apply exp to a matrix element-wise
+ *  @param C Matrix
+ *
+ **/
+void exp_activation_inplace(scrappie_matrix C) {
+    for (int c = 0; c < C->nc; ++c) {
+        const size_t offset = c * C->nrq;
+        for (int r = 0; r < C->nrq; ++r) {
+            C->data.v[offset + r] = EXPFV(C->data.v[offset + r]);
+        }
+    }
+    (void)validate_scrappie_matrix(C, 0.0, INFINITY, 1.0, true, __FILE__,
+                                   __LINE__);
+}
+
+/**  Apply log to a matrix element-wise
+ *  @param C Matrix
+ *
+ **/
+void log_activation_inplace(scrappie_matrix C) {
+    for (int c = 0; c < C->nc; ++c) {
+        const size_t offset = c * C->nrq;
+        for (int r = 0; r < C->nrq; ++r) {
+            C->data.v[offset + r] = LOGFV(C->data.v[offset + r]);
+        }
+    }
+}
 
 scrappie_matrix window(const scrappie_matrix input, int w, int stride) {
     ASSERT_OR_RETURN_NULL(NULL != input, NULL);
@@ -131,16 +173,8 @@ scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,
                     C->data.f + offsetC_R + ldC * (w / stride), 1);
     }
 
-    // Apply an activation function
-    for (int c = 0; c < C->nc; c++) {
-        const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; r++) {
-            C->data.v[offset + r] = tanhfv(C->data.v[offset + r]);
-        }
-    }
-
     assert(validate_scrappie_matrix
-           (C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
+           (C, NAN, NAN, 0.0, true, __FILE__, __LINE__));
     return C;
 }
 

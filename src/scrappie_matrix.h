@@ -1,10 +1,11 @@
+#pragma once
 #ifndef SCRAPPIE_MATRIX_H
-#define SCRAPPIE_MATRIX_H
+#    define SCRAPPIE_MATRIX_H
 
-#include <immintrin.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
+#    include <immintrin.h>
+#    include <stdbool.h>
+#    include <stdint.h>
+#    include <stdio.h>
 
 typedef struct {
     unsigned int nr, nrq, nc;
@@ -31,7 +32,8 @@ scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 void zero_scrappie_matrix(scrappie_matrix M);
 scrappie_matrix mat_from_array(const float *x, int nr, int nc);
 void fprint_scrappie_matrix(FILE * fh, const char *header,
-                            const scrappie_matrix mat, int nr, int nc);
+                            const scrappie_matrix mat, int nr, int nc,
+                            bool include_padding);
 bool equality_scrappie_matrix(const scrappie_matrix mat1,
                               const scrappie_matrix mat2, const float tol);
 bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
