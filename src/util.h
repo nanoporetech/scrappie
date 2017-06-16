@@ -1,22 +1,23 @@
+#pragma once
 #ifndef UTIL_H
-#define UTIL_H
-#include <immintrin.h>
-#include <math.h>
-#include <stdint.h>
-#include <stdio.h>
-#include "sse_mathfun.h"
+#    define UTIL_H
+#    include <immintrin.h>
+#    include <math.h>
+#    include <stdint.h>
+#    include <stdio.h>
+#    include "sse_mathfun.h"
 
-#ifdef FAST_LOG
-#define LOGFV fast_logfv
-#else
-#define LOGFV logfv
-#endif
+#    ifdef FAST_LOG
+#        define LOGFV fast_logfv
+#    else
+#        define LOGFV logfv
+#    endif
 
-#ifdef FAST_EXP
-#define EXPFV fast_expfv
-#else
-#define EXPFV expfv
-#endif
+#    ifdef FAST_EXP
+#        define EXPFV fast_expfv
+#    else
+#        define EXPFV expfv
+#    endif
 
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__ ((__gnu_inline__, __always_inline__))
@@ -54,10 +55,10 @@ static inline float fast_tanhf(float x) {
 }
 
 static inline __m128 fast_expfv(__m128 x) {
-#define _A 12102203.161561485f
+#    define _A 12102203.161561485f
     //#define _B 1064872507.1541044f
-#define _B 1065353216.0f
-#define _BOUND 88.02969193111305
+#    define _B 1065353216.0f
+#    define _BOUND 88.02969193111305
     const __m128 a = (__m128) (__v4sf) { _A, _A, _A, _A };
     const __m128 b = (__m128) (__v4sf) { _B, _B, _B, _B };
     const __m128 _bound = (__m128) (__v4sf) { _BOUND, _BOUND, _BOUND, _BOUND };
@@ -82,8 +83,8 @@ static inline __m128 __attribute__ ((__always_inline__)) tanhfv(__m128 x) {
 }
 
 static inline __m128 fast_logfv(__m128 x) {
-#define _Alogfv 8.262958294867817e-08f
-#define _Blogfv 1064872507.1541044f
+#    define _Alogfv 8.262958294867817e-08f
+#    define _Blogfv 1064872507.1541044f
     const __m128 a = (__m128) (__v4sf) { _Alogfv, _Alogfv, _Alogfv, _Alogfv };
     const __m128 b = (__m128) (__v4sf) { _Blogfv, _Blogfv, _Blogfv, _Blogfv };
     x = _mm_cvtepi32_ps(_mm_castps_si128(x));

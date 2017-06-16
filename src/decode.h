@@ -1,8 +1,9 @@
+#pragma once
 #ifndef DECODE_H
-#define DECODE_H
-#include <stdbool.h>
-#include "fast5_interface.h"
-#include "scrappie_matrix.h"
+#    define DECODE_H
+#    include <stdbool.h>
+#    include "fast5_interface.h"
+#    include "scrappie_matrix.h"
 
 typedef struct {
     float scale;

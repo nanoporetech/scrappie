@@ -5,7 +5,7 @@
 #include "version.h"
 
 #if !defined(SCRAPPIE_VERSION)
-#define SCRAPPIE_VERSION "unknown"
+#    define SCRAPPIE_VERSION "unknown"
 #endif
 const char *argp_program_version = "scrappie " SCRAPPIE_VERSION;
 const char *argp_program_bug_address = "<tim.massingham@nanoporetech.com>";

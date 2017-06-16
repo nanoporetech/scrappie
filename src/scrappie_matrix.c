@@ -1,8 +1,8 @@
 #include <assert.h>
 #ifdef __APPLE__
-#include <Accelerate/Accelerate.h>
+#    include <Accelerate/Accelerate.h>
 #else
-#include <cblas.h>
+#    include <cblas.h>
 #endif
 #include <err.h>
 #include <float.h>
@@ -54,11 +54,14 @@ scrappie_matrix mat_from_array(const float *x, int nr, int nc) {
 }
 
 void fprint_scrappie_matrix(FILE * fh, const char *header,
-                            const scrappie_matrix mat, int nr, int nc) {
+                            const scrappie_matrix mat, int nr, int nc,
+                            bool include_padding) {
     assert(NULL != fh);
     assert(NULL != mat);
-    if (nr <= 0 || nr > mat->nr) {
-        nr = mat->nr;
+    const int rlim = include_padding ? (4 * mat->nrq) : mat->nr;
+
+    if (nr <= 0 || nr > rlim) {
+        nr = rlim;
     }
     if (nc <= 0 || nc > mat->nc) {
         nc = mat->nc;

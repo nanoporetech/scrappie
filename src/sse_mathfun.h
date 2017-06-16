@@ -35,6 +35,10 @@
    and is not the original software, which can be obtained from
    http://gruntthepeon.free.fr/ssemath/
 */
+#pragma once
+#ifndef SSE_MATHFUN_H
+#define SSE_MATHFUN_H
+
 
 #include <xmmintrin.h>
 
@@ -715,4 +719,4 @@ static void sincos_ps(v4sf x, v4sf *s, v4sf *c) {
   *s = _mm_xor_ps(xmm1, sign_bit_sin);
   *c = _mm_xor_ps(xmm2, sign_bit_cos);
 }
-
+#endif /* SSE_MATHFUN_H */

@@ -1,5 +1,6 @@
+#pragma once
 #ifndef LICENCE_H
-#define LICENCE_H
+#    define LICENCE_H
 
 static const char *scrappie_licence_text =
     "This software is subject to the terms of the Mozilla Public\n"

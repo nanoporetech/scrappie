@@ -1,9 +1,10 @@
+#pragma once
 #ifndef EVENTS_H
-#define EVENTS_H
+#    define EVENTS_H
 
-#include <hdf5.h>
-#include <stdbool.h>
-#include "scrappie_structures.h"
+#    include <hdf5.h>
+#    include <stdbool.h>
+#    include "scrappie_structures.h"
 
 typedef struct {
     int start, end;
