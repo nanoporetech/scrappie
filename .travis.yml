@@ -15,8 +15,7 @@ language: c
 compiler:
     - gcc
 
-script: 
-    - mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j 4 && make test
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j 4 && make test ; fi
 
 env:
   global:
