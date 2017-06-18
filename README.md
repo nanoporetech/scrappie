@@ -6,6 +6,8 @@ Ref   : GACACAGTGAGGCTGCGTCTC-AAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGTTTGCATTTA
 Query : GACACAG-GAGGCTGCGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAATTGCCCCTTCTTAAGCTT-CA--CAGA-CT-TT
 ```
 
+[![Travis](https://img.shields.io/travis/nanoporetech/scrappie.svg)]()
+
 For a complete release history, see [RELEASES.md]
 
 ## Dependencies
