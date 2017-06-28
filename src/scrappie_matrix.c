@@ -17,6 +17,18 @@ scrappie_matrix make_scrappie_matrix(int nr, int nc) {
     mat->nr = nr;
     mat->nrq = nrq;
     mat->nc = nc;
+
+    {
+        // Check for overflow to please Coverity scanner
+        size_t tmp1 = nrq * sizeof(__m128);
+        size_t tmp2 = tmp1 * nc;
+        if (tmp1 != 0 && tmp2 / tmp1 != nc) {
+            // Have overflow in memory allocation
+            free(mat);
+            return NULL;
+        }
+    }
+
     int status =
         posix_memalign((void **)&(mat->data.v), 16, nrq * nc * sizeof(__m128));
     if (0 != status) {
@@ -38,7 +50,7 @@ scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc) {
 }
 
 void zero_scrappie_matrix(scrappie_matrix M) {
-    if (NULL != M) {
+    if (NULL == M) {
         return;
     }
     memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(float));
@@ -68,7 +80,10 @@ void fprint_scrappie_matrix(FILE * fh, const char *header,
     }
 
     if (NULL != header) {
-        fputs(header, fh);
+        int ret = fputs(header, fh);
+        if (EOF == ret || ret < 0) {
+            return;
+        }
         fputc('\n', fh);
     }
     for (int c = 0; c < nc; c++) {
@@ -250,7 +265,7 @@ scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat) {
 }
 
 void zero_scrappie_imatrix(scrappie_imatrix M) {
-    if (NULL != M) {
+    if (NULL == M) {
         return;
     }
     memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));

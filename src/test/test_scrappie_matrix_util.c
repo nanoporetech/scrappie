@@ -1,14 +1,21 @@
+// Needed for mkstemp and fdopen
+#define _BSD_SOURCE 1
+
 #include "scrappie_matrix_util.h"
 
 #include <CUnit/Basic.h>
 #include <err.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 static const char testfile[] = "test_matrix.crp";
 
 static FILE *infile = NULL;
 static FILE *outfile = NULL;
 static scrappie_matrix mat = NULL;
+char scrappie_matrix_tmpfile_name[] = "scrappie_matrix_XXXXXX";
 
 /**  Initialise scrappie matrix test
  *
@@ -23,8 +30,12 @@ int init_test_scrappie_matrix_util(void) {
         warnx("Failed to open %s to read matrix from.\n", testfile);
     }
 
-    outfile = tmpfile();
-    if (NULL == outfile) {
+    (void)umask(022);
+    int outfileno = mkstemp(scrappie_matrix_tmpfile_name);
+    if (-1 != outfileno) {
+        outfile = fdopen(outfileno, "w+b");
+    }
+    if (-1 == outfileno || NULL == outfile) {
         warnx("Failed to open temporary file to write to.\n");
     }
 

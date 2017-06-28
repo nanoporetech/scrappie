@@ -78,8 +78,8 @@ static inline __m128 __attribute__ ((__always_inline__)) logisticfv(__m128 x) {
 }
 
 static inline __m128 __attribute__ ((__always_inline__)) tanhfv(__m128 x) {
-    const __m128 y = logisticfv(x + x);
-    return y + y - _mm_setone_ps();
+    const __m128 y = logisticfv(_mm_add_ps(x, x));
+    return _mm_sub_ps(_mm_add_ps(y, y), _mm_setone_ps());
 }
 
 static inline __m128 fast_logfv(__m128 x) {

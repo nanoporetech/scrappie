@@ -107,6 +107,7 @@ scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,
     const int padR = winlen / 2;
     const int ncolC = iceil(X->nc, stride);
     C = remake_scrappie_matrix(C, nfilter, ncolC);
+    ASSERT_OR_RETURN_NULL(NULL != C, NULL);
 
     // Matrix strides
     const int ldC = C->nrq * 4;
@@ -547,7 +548,7 @@ void lstm_step(const scrappie_matrix xAffine, const scrappie_matrix out_prev,
         __m128 update = logisticfv(xF->data.v[sizeq + i]
                                    + state->data.v[i] * peep->data.v[i])
             * tanhfv(xF->data.v[i]);
-        state->data.v[i] = forget + update;
+        state->data.v[i] = _mm_add_ps(forget, update);
         // Output gate
         output->data.v[i] = logisticfv(xF->data.v[3 * sizeq + i]
                                        +
