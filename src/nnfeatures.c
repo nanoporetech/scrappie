@@ -52,12 +52,12 @@ void studentise_features_kahan(scrappie_matrix features) {
     sumsq = sum = comp = compsq = _mm_setzero_ps();
     for (int ev = 0; ev < nevent; ev++) {
         __m128 d1 = features->data.v[ev] - comp;
-        __m128 sum_tmp = sum + d1;
+        __m128 sum_tmp = _mm_add_ps(sum, d1);
         comp = (sum_tmp - sum) - d1;
         sum = sum_tmp;
 
         __m128 d2 = features->data.v[ev] * features->data.v[ev] - compsq;
-        __m128 sumsq_tmp = sumsq + d2;
+        __m128 sumsq_tmp = _mm_add_ps(sumsq, d2);
         compsq = (sumsq_tmp - sumsq) - d2;
         sumsq = sumsq_tmp;
     }
