@@ -22,7 +22,7 @@
  *
  *   @returns vector of integers containing the lower 32 bits of x * y
  **/
-static inline __m128i _mm_mullo_epi32(const __m128i x, const __m128i y) {
+static inline __m128i __attribute__((__gnu_inline__, __always_inline__)) _mm_mullo_epi32(const __m128i x, const __m128i y) {
     __m128i tmp1 = _mm_mul_epu32(x, y);
     __m128i tmp2 = _mm_mul_epu32(_mm_srli_si128(x, 4), _mm_srli_si128(y, 4));
     return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp1, _MM_SHUFFLE(0, 0, 2, 0)),
