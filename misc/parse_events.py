@@ -27,7 +27,7 @@ def cformatM(fh, name, X):
 def cformatV(fh, name, X):
     nrq = int(math.ceil(X.shape[0] / 4.0))
     pad = nrq * 4 - X.shape[0]
-    lines = ', '.join(map(lambda f: str(f), X) + ["0.0"] * pad)
+    lines = ', '.join(list(map(lambda f: str(f), X)) + ["0.0"] * pad)
     fh.write('float {}[] = {}\n'.format( '__' + name, '{'))
     fh.write('\t' + lines)
     fh.write('};\n')

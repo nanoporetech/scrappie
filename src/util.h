@@ -36,13 +36,36 @@ static inline float logisticf(float x) {
     return 1.0 / (1.0 + expf(-x));
 }
 
+
+// Constants for fast exp approximation.  See Schraudolph (1999)
+#    define _A 12102203.161561485f
+//  Minimum maximum relative error
+//#    define _B 1064986822.5027076f
+//  No bias at zero
+#    define _B 1065353216.0f
+//  Minimum RMS relative error
+//#    define _B 1064866803.6193156f
+//  Minimum mean relative error
+//#    define _B 1064807268.0425934f
+#    define _BOUND 88.02969193111305
 static inline float fast_expf(float x) {
+    x = fmaxf(-_BOUND, fminf(_BOUND, x));
     union {
         uint32_t i;
         float f;
     } value = {
-    .i = (uint32_t) (12102203.161561485 * x + 1064872507.1541044)};
+    .i = (uint32_t) (_A * x + _B)};
     return value.f;
+}
+
+static inline __m128 fast_expfv(__m128 x) {
+    const __m128 a = (__m128) (__v4sf) { _A, _A, _A, _A };
+    const __m128 b = (__m128) (__v4sf) { _B, _B, _B, _B };
+    const __m128 _bound = (__m128) (__v4sf) { _BOUND, _BOUND, _BOUND, _BOUND };
+    x = _mm_max_ps(-_bound, _mm_min_ps(_bound, x));
+
+    __m128 y = a * x + b;
+    return _mm_castsi128_ps(_mm_cvtps_epi32(y));
 }
 
 static inline float fast_logisticf(float x) {
@@ -51,21 +74,7 @@ static inline float fast_logisticf(float x) {
 
 static inline float fast_tanhf(float x) {
     const float y = fast_logisticf(x + x);
-    return y * y - 1.0;
-}
-
-static inline __m128 fast_expfv(__m128 x) {
-#    define _A 12102203.161561485f
-    //#define _B 1064872507.1541044f
-#    define _B 1065353216.0f
-#    define _BOUND 88.02969193111305
-    const __m128 a = (__m128) (__v4sf) { _A, _A, _A, _A };
-    const __m128 b = (__m128) (__v4sf) { _B, _B, _B, _B };
-    const __m128 _bound = (__m128) (__v4sf) { _BOUND, _BOUND, _BOUND, _BOUND };
-    x = _mm_max_ps(-_bound, _mm_min_ps(_bound, x));
-
-    __m128 y = a * x + b;
-    return _mm_castsi128_ps(_mm_cvtps_epi32(y));
+    return y + y - 1.0;
 }
 
 static inline __m128 __attribute__ ((__always_inline__)) expfv(__m128 x) {
