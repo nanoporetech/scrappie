@@ -3,7 +3,7 @@ project (scrappie C)
 
 option (BUILD_SHARED_LIB "Build a shared library" OFF)
 
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release") 
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 if(NOT CMAKE_BUILD_TYPE)
 	message("Defaulting to release build")
 	set(CMAKE_BUILD_TYPE Release)
@@ -67,7 +67,7 @@ endif()
 ##
 #   Set up what is to be built
 ##
-add_library (scrappie_objects OBJECT src/decode.c src/nnfeatures.c src/layers.c src/util.c src/networks.c src/scrappie_matrix.c)
+add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/layers.c src/networks.c src/nnfeatures.c src/scrappie_common.c src/scrappie_matrix.c src/util.c)
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)

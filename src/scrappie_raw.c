@@ -13,9 +13,11 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/types.h>
+
 #include "decode.h"
 #include "networks.h"
 #include "scrappie_assert.h"
+#include "scrappie_common.h"
 #include "scrappie_licence.h"
 #include "util.h"
 
@@ -81,7 +83,8 @@ struct arguments {
     enum format outformat;
     float skip_pen;
     bool use_slip;
-    int trim_start, trim_end;
+    int trim_start;
+    int trim_end;
     int varseg_chunk;
     float varseg_thresh;
     char *dump;
@@ -141,7 +144,7 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         }
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
-        printf("Trim -- %d %d\n", args.trim_start, args.trim_end);
+        fprintf(stderr, "Trim -- %d %d\n", args.trim_start, args.trim_end);
         break;
     case 1:
         args.use_slip = true;
@@ -159,8 +162,8 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         args.varseg_thresh = atof(next_tok) / 100.0;
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
-        printf("Segmentation -- %d %f\n", args.varseg_chunk,
-               args.varseg_thresh);
+        fprintf(stderr, "Segmentation -- %d %f\n", args.varseg_chunk,
+                args.varseg_thresh);
         break;
     case 4:
         args.dump = arg;
@@ -212,25 +215,8 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_arg, args_doc, doc };
 
 static struct _raw_basecall_info calculate_post(char *filename) {
-    ASSERT_OR_RETURN_NULL(NULL != filename, _raw_basecall_info_null);
-
-    raw_table rt = read_raw(filename, true);
-    ASSERT_OR_RETURN_NULL(NULL != rt.raw, _raw_basecall_info_null);
-
-    const int nsample = rt.end - rt.start;
-    if (nsample <= args.trim_end + args.trim_start) {
-        warnx("Too few samples in %s to call (%d, originally %u).", filename,
-              nsample, rt.n);
-        free(rt.raw);
-        return _raw_basecall_info_null;
-    }
-    rt.start += args.trim_start;
-    rt.end -= args.trim_end;
-
-    range_t segmentation =
-        trim_raw_by_mad(rt, args.varseg_chunk, args.varseg_thresh);
-    rt.start = segmentation.start;
-    rt.end = segmentation.end;
+    raw_table rt = read_trim_and_segment_raw(filename, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
+    RETURN_NULL_IF(NULL == rt.raw, _raw_basecall_info_null);
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
     scrappie_matrix post = nanonet_raw_posterior(rt, args.min_prob, true);
@@ -258,7 +244,7 @@ static struct _raw_basecall_info calculate_post(char *filename) {
 static int fprintf_fasta(FILE * fp, const char *readname,
                          const struct _raw_basecall_info res) {
     return fprintf(fp,
-                   ">%s  { \"normalised_score\" : %f,  \"nblock\" : %lu,  \"sequence_length\" : %lu,  \"blocks_per_base\" : %f }\n%s\n",
+                   ">%s  { \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f }\n%s\n",
                    readname, -res.score / res.nblock, res.nblock,
                    res.basecall_length,
                    (float)res.nblock / (float)res.basecall_length,

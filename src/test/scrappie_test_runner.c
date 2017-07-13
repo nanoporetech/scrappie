@@ -1,16 +1,12 @@
 #include <stdlib.h>
 #include <CUnit/Basic.h>
 
-
 int register_scrappie_matrix_util(void);
 int register_test_skeleton(void);
 int register_test_convolution(void);
 
 int (*test_suites[]) (void) = {
-    register_test_skeleton,
-    register_scrappie_matrix_util,
-    register_test_convolution,
-    NULL // Last element of array should be NULL
+    register_test_skeleton, register_scrappie_matrix_util, register_test_convolution, NULL      // Last element of array should be NULL
 };
 
 int main(void) {

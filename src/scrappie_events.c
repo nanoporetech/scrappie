@@ -4,7 +4,6 @@
 #include <glob.h>
 #include <libgen.h>
 #include <math.h>
-
 #if defined(_OPENMP)
 #    include <omp.h>
 #endif
@@ -13,8 +12,12 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/types.h>
+
 #include "decode.h"
+#include "event_detection.h"
 #include "networks.h"
+#include "scrappie_assert.h"
+#include "scrappie_common.h"
 #include "scrappie_licence.h"
 #include "util.h"
 
@@ -30,9 +33,16 @@ struct _bs {
     event_table et;
 };
 
+static const struct _bs _bs_null = {
+    .score = 0.0f,
+    .nev = 0,
+    .bases = NULL,
+    .et = {0, 0, 0, NULL}
+};
+
 extern const char *argp_program_version;
 extern const char *argp_program_bug_address;
-static char doc[] = "Scrappie basecaller -- basecall from events";
+static char doc[] = "Scrappie basecaller -- basecall via events";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
     {"analysis", 'a', "number", 0, "Analysis to read events from"},
@@ -48,10 +58,6 @@ static struct argp_option options[] = {
     {"trim", 't', "start:end", 0, "Number of events to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-    {"segmentation", 3, "group:summary", 0,
-     "Fast5 group from which to read segmentation"},
-    {"segmentation-analysis", 7, "number", 0,
-     "Analysis number to read segmentation from"},
     {"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
     {"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
     {"no-albacore", 9, 0, OPTION_ALIAS,
@@ -64,6 +70,8 @@ static struct argp_option options[] = {
 #if defined(_OPENMP)
     {"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
 #endif
+    {"segmentation", 14, "chunk:percentile", 0,
+     "Chunk size and percentile for variance based segmentation"},
     {0}
 };
 
@@ -71,16 +79,16 @@ enum format { FORMAT_FASTA, FORMAT_SAM };
 
 struct arguments {
     int analysis;
-    int seganalysis;
     bool dwell_correction;
     int limit;
     float min_prob;
     enum format outformat;
     float skip_pen;
     bool use_slip;
-    int trim_start, trim_end;
-    char *segloc1;
-    char *segloc2;
+    int trim_start;
+    int trim_end;
+    int varseg_chunk;
+    float varseg_thresh;
     char *dump;
     bool albacore;
     int compression_level;
@@ -90,17 +98,16 @@ struct arguments {
 
 static struct arguments args = {
     .analysis = -1,
-    .seganalysis = -1,
     .dwell_correction = true,
     .limit = 0,
     .min_prob = 1e-5,
     .outformat = FORMAT_FASTA,
     .skip_pen = 0.0,
     .use_slip = false,
-    .trim_start = 50,
+    .trim_start = 200,
     .trim_end = 50,
-    .segloc1 = "Segmentation",
-    .segloc2 = "segmentation",
+    .varseg_chunk = 100,
+    .varseg_thresh = 0.7,
     .dump = NULL,
     .albacore = false,
     .compression_level = 1,
@@ -153,17 +160,6 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     case 2:
         args.use_slip = false;
         break;
-    case 3:
-        args.segloc1 = strtok(arg, ":");
-        char *next_token = strtok(NULL, ":");
-        if (NULL == next_token) {
-            warnx
-                ("Segmentation should be of form 'loc1:loc2' but loc2 not found.  Going to use default of %s.",
-                 args.segloc2);
-        } else {
-            args.segloc2 = next_token;
-        }
-        break;
     case 4:
         args.dump = arg;
         break;
@@ -172,10 +168,6 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         break;
     case 6:
         args.dwell_correction = false;
-        break;
-    case 7:
-        args.seganalysis = atoi(arg);
-        assert(args.seganalysis >= -1 && args.seganalysis < 1000);
         break;
     case 8:
         args.albacore = true;
@@ -195,6 +187,19 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     case 13:
         args.compression_chunk_size = atoi(arg);
         assert(args.compression_chunk_size > 0);
+        break;
+    case 14:
+        args.varseg_chunk = atoi(strtok(arg, ":"));
+        next_tok = strtok(NULL, ":");
+        if (NULL == next_tok) {
+            errx(EXIT_FAILURE,
+                 "--segmentation should be of form chunk:percentile");
+        }
+        args.varseg_thresh = atof(next_tok) / 100.0;
+        assert(args.varseg_chunk >= 0);
+        assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
+        fprintf(stderr, "Segmentation -- %d %f\n", args.varseg_chunk,
+                args.varseg_thresh);
         break;
 #if defined(_OPENMP)
     case '#':
@@ -230,33 +235,20 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_arg, args_doc, doc };
 
 static struct _bs calculate_post(char *filename) {
+    raw_table rt = read_trim_and_segment_raw(filename, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
+    RETURN_NULL_IF(NULL == rt.raw, _bs_null);
 
-    event_table et = args.albacore ?
-        read_albacore_events(filename, args.analysis, "template") :
-        read_detected_events(filename, args.analysis, args.segloc1,
-                             args.segloc2, args.seganalysis);
-
+    event_table et = detect_events(rt);
     if (NULL == et.event) {
-        return (struct _bs) {
-        0, 0, NULL};
+        free(rt.raw);
+        return _bs_null;
     }
-    const int nevent = et.end - et.start;
-    if (nevent <= args.trim_start + args.trim_end) {
-        warnx
-            ("Too few events in %s to call (%d after segmentation, originally %u).",
-             filename, nevent, et.n);
-        free(et.event);
-        return (struct _bs) {
-        0, 0, NULL};
-    }
-    et.start += args.trim_start;
-    et.end -= args.trim_end;
 
     scrappie_matrix post = nanonet_posterior(et, args.min_prob, true);
     if (NULL == post) {
         free(et.event);
-        return (struct _bs) {
-        0, 0, NULL};
+        free(rt.raw);
+        return _bs_null;
     }
     const int nev = post->nc;
     const int nstate = post->nr;
@@ -287,6 +279,7 @@ static struct _bs calculate_post(char *filename) {
 
     free(pos);
     free(history_state);
+    free(rt.raw);
 
     return (struct _bs) {
     score, nev, basecall, et};

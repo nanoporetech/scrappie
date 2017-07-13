@@ -19,7 +19,7 @@ static const char *scrappie_help_footer =
     "\n"
     "Scrappie's purpose is to demonstrate the next generation of base calling and, as\n"
     "such, may change drastically between releases and breaks backwards\n"
-    "compatibility.  Newer versions may drop support older features or change their\n"
+    "compatibility.  Newer versions may drop support of current features or change their\n"
     "behaviour.\n";
 
 extern const char *argp_program_version;

@@ -1,8 +1,9 @@
-#include "scrappie_matrix_util.h"
-
 #include <assert.h>
 #include <err.h>
 #include <math.h>
+
+#include "scrappie_assert.h"
+#include "scrappie_matrix_util.h"
 
 /**  Simple writer for scrappie_matrix structures
  *
@@ -48,9 +49,7 @@ int write_scrappie_matrix(FILE * fh, const scrappie_matrix mat) {
  *  @returns Matrix read or NULL on failure
  **/
 scrappie_matrix read_scrappie_matrix(FILE * fh) {
-    if (NULL == fh) {
-        return NULL;
-    }
+    RETURN_NULL_IF(NULL == fh, NULL);
 
     int nr, nc;
     int ret = fscanf(fh, "%d\t%d\n", &nr, &nc);
@@ -126,9 +125,7 @@ scrappie_matrix random_scrappie_matrix(int nr, int nc, float lower, float upper)
     assert(upper >= lower);
 
     scrappie_matrix mat = make_scrappie_matrix(nr, nc);
-    if (NULL == mat) {
-        return NULL;
-    }
+    RETURN_NULL_IF(NULL == mat, NULL);
 
     for (int c = 0; c < mat->nc; ++c) {
         const int offset = c * 4 * mat->nrq;

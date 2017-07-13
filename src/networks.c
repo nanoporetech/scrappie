@@ -9,7 +9,8 @@
 scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
                                   bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
-    ASSERT_OR_RETURN_NULL(events.n > 0 && NULL != events.event, NULL);
+    RETURN_NULL_IF(events.n == 0, NULL);
+    RETURN_NULL_IF(NULL == events.event, NULL);
 
     const int WINLEN = 3;
 
@@ -45,7 +46,7 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
 
     scrappie_matrix post = softmax(lstmFF, FF3_W, FF3_b, NULL);
     lstmFF = free_scrappie_matrix(lstmFF);
-    ASSERT_OR_RETURN_NULL(NULL != post, NULL);
+    RETURN_NULL_IF(NULL == post, NULL);
 
     if (return_log) {
         const int nev = post->nc;
@@ -67,7 +68,8 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
 scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
                                       bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
-    ASSERT_OR_RETURN_NULL(signal.n > 0 && NULL != signal.raw, NULL);
+    RETURN_NULL_IF(signal.n == 0, NULL);
+    RETURN_NULL_IF(NULL == signal.raw, NULL);
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
     scrappie_matrix conv =
@@ -100,7 +102,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
 
     scrappie_matrix post = softmax(gruFF, FF3_raw_W, FF3_raw_b, NULL);
     gruFF = free_scrappie_matrix(gruFF);
-    ASSERT_OR_RETURN_NULL(NULL != post, NULL);
+    RETURN_NULL_IF(NULL == post, NULL);
 
     if (return_log) {
         const int nblock = post->nc;
