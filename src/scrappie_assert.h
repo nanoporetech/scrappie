@@ -6,13 +6,13 @@
 #    include <stdlib.h>
 
 #    ifdef ABORT_ON_NULL
-#        define ASSERT_OR_RETURN_NULL(A, B) \
-		if(!(A)){  	\
+#        define RETURN_NULL_IF(A, B) \
+		if (A) {  	\
 			fprintf(stderr, "Failure at %s : %d", __FILE__, __LINE__);	\
 			abort();	\
 		}
 #    else
-#        define ASSERT_OR_RETURN_NULL(A, B) if(!(A)){ return B; }
+#        define RETURN_NULL_IF(A, B) if (A) { return B; }
 #    endif
 
 #endif                          /* SCRAPPIE_ASSERT_H */

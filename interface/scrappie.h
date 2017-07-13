@@ -1,28 +1,35 @@
 #ifndef SCRAPPIE_H
-#define SCRAPPIE_H
+#    define SCRAPPIE_H
 
-#ifdef __cplusplus
+#    ifdef __cplusplus
 extern "C" {
-#endif
+#    endif
 
-#include <immintrin.h>
-#include <stdbool.h>
+#    include <immintrin.h>
+#    include <stdbool.h>
+#    include <inttypes.h>
 
 /*  Structure definitions from scrappie_structures.h  */
     typedef struct {
-        double start;
+        uint64_t start;
         float length;
-        float mean, stdv;
-        int pos, state;
+        float mean;
+        float stdv;
+        int pos;
+        int state;
     } event_t;
 
     typedef struct {
-        unsigned int n, start, end;
+        size_t n;
+        size_t start;
+        size_t end;
         event_t *event;
     } event_table;
 
     typedef struct {
-        unsigned int n, start, end;
+        size_t n;
+        size_t start;
+        size_t end;
         float *raw;
     } raw_table;
 
@@ -43,7 +50,7 @@ extern "C" {
 
     scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 
-#ifdef __cplusplus
+#    ifdef __cplusplus
 }
-#endif
+#    endif
 #endif                          /* SCRAPPIE_H */

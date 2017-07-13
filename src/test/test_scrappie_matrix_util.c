@@ -56,6 +56,7 @@ int init_test_scrappie_matrix_util(void) {
 int clean_test_scrappie_matrix_util(void) {
     int ret = fclose(infile);
     ret |= fclose(outfile);
+    remove(scrappie_matrix_tmpfile_name);
     (void)free_scrappie_matrix(mat);
     return ret;
 }

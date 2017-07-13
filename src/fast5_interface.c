@@ -6,9 +6,6 @@
 #include "fast5_interface.h"
 #include "util.h"
 
-event_table read_events(hid_t hdf5file, const char *tablepath,
-                        const float sample_rate);
-
 struct _gop_data {
     const char *prefix;
     int latest;
@@ -21,241 +18,6 @@ typedef struct {
     float range;
     float sample_rate;
 } fast5_raw_scaling;
-
-herr_t group_op_func(hid_t loc_id, const char *name, const H5L_info_t * info,
-                     void *operator_data) {
-    struct _gop_data *gop = (struct _gop_data *)operator_data;
-    if (strncmp(name, gop->prefix, strlen(gop->prefix)) == 0) {
-        const size_t name_l = strlen(name);
-        int analysis_number = atoi(name + name_l - 3);
-        if (analysis_number > gop->latest) {
-            gop->latest = analysis_number;
-        }
-    }
-
-    return 0;
-}
-
-int get_latest_group(hid_t file, const char *root, const char *prefix) {
-    assert(NULL != root);
-    assert(NULL != prefix);
-
-    struct _gop_data gop_data = { prefix, -1 };
-    hid_t grp = H5Gopen(file, root, H5P_DEFAULT);
-    if (grp < 0) {
-        warnx("Failed to open group '%s' at %s:%d.", root, __FILE__, __LINE__);
-        return gop_data.latest;
-    }
-
-    herr_t status =
-        H5Literate(grp, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, group_op_func,
-                   &gop_data);
-    if (status < 0 || gop_data.latest < 0) {
-        warnx("Error trying to find group of form '%s/%s_XXX'.", root, prefix);
-    }
-    H5Gclose(grp);
-
-    return gop_data.latest;
-}
-
-range_t get_segmentation(hid_t file, int analysis_no, const char *segloc1,
-                         const char *segloc2) {
-    assert(NULL != segloc1);
-    assert(NULL != segloc2);
-    range_t segcoord = { -1, -1 };
-
-    if (analysis_no < 0) {
-        analysis_no = get_latest_group(file, "/Analyses", segloc1);
-        if (analysis_no < 0) {
-            warnx
-                ("No segmentation group found.  You may want to specify it using the --segmentation option.\n"
-                 "Will use all events for calling.  See READ.md for details.");
-            return segcoord;
-        }
-    }
-
-    int segnamelen = strlen(segloc1) + strlen(segloc2) + 24;
-    char *segname = calloc(segnamelen, sizeof(char));
-    (void)snprintf(segname, segnamelen, "/Analyses/%s_%03d/Summary/%s", segloc1,
-                   analysis_no, segloc2);
-    hid_t seggroup = H5Gopen(file, segname, H5P_DEFAULT);
-    if (seggroup < 0) {
-        warnx
-            ("Failed to open group '%s' to read segmentation from.  Will use all events.",
-             segname);
-        goto clean1;
-    }
-    //  Get start location
-    hid_t temp_start = H5Aopen_name(seggroup, "first_sample_template");
-    if (temp_start < 0) {
-        // Try old-style location
-        temp_start = H5Aopen_name(seggroup, "start_index_temp");
-    }
-    if (temp_start >= 0) {
-        H5Aread(temp_start, H5T_NATIVE_INT, &segcoord.start);
-        H5Aclose(temp_start);
-    } else {
-        warnx
-            ("Segmentation group '%s_%03d/Summary/%s'does not contain valid attribute.",
-             segloc1, analysis_no, segloc2);
-    }
-
-    // Get end location
-    hid_t temp_end = H5Aopen_name(seggroup, "duration_template");
-    if (temp_end >= 0) {
-        H5Aread(temp_end, H5T_NATIVE_INT, &segcoord.end);
-        H5Aclose(temp_end);
-        segcoord.end += segcoord.start;
-    } else {
-        // Try old style coordinates
-        temp_end = H5Aopen_name(seggroup, "end_index_temp");
-        if (temp_end >= 0) {
-            H5Aread(temp_end, H5T_NATIVE_INT, &segcoord.end);
-            H5Aclose(temp_end);
-            // Use Python-like convention where final index is exclusive upper bound
-            segcoord.end += 1;
-        } else {
-            warnx
-                ("Segmentation group '%s_%03d/Summary/%s' does not contain valid attribute.",
-                 segloc1, analysis_no, segloc2);
-        }
-    }
-
-    H5Gclose(seggroup);
- clean1:
-    free(segname);
-
-    return segcoord;
-}
-
-event_table read_events(hid_t hdf5file, const char *tablepath,
-                        const float sample_rate) {
-    assert(NULL != tablepath);
-    event_table ev = { 0, 0, 0, NULL };
-
-    hid_t dset = H5Dopen(hdf5file, tablepath, H5P_DEFAULT);
-    if (dset < 0) {
-        warnx("Failed to open dataset '%s' to read events from.", tablepath);
-        return ev;
-    }
-
-    hid_t space = H5Dget_space(dset);
-    if (space < 0) {
-        warnx("Failed to create copy of dataspace for event table %s.",
-              tablepath);
-        goto clean1;
-    }
-
-    hsize_t dims[1];
-    H5Sget_simple_extent_dims(space, dims, NULL);
-    const size_t nevent = dims[0];
-    hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
-    if (memtype < 0) {
-        warnx("Failed to create memory representation for event table %s:%d.",
-              __FILE__, __LINE__);
-        goto clean2;
-    }
-    //  Using doubles to store time and length is a poor choice but forced by the
-    //  need to be compatible with both Albacore and Minknow files.
-    H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
-    H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_FLOAT);
-    H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_FLOAT);
-    H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_FLOAT);
-    event_t *events = calloc(nevent, sizeof(event_t));
-    if (NULL == events) {
-        warnx("Failed to allocate memory for events");
-        goto clean3;
-    }
-    herr_t status =
-        H5Dread(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, events);
-    if (status < 0) {
-        free(events);
-        warnx("Failed to read events out of dataset %s.", tablepath);
-        goto clean3;
-    }
-
-    for (int ev = 0; ev < nevent; ev++) {
-        // Convert to samples if necessary
-        events[ev].start = round(events[ev].start * sample_rate);
-        events[ev].length = roundf(events[ev].length * sample_rate);
-    }
-
-    for (int ev = 0; ev < nevent; ev++) {
-        // Negative means unassigned
-        events[ev].pos = -1;
-        events[ev].state = -1;
-    }
-    ev = (event_table) {
-    nevent, 0, nevent, events};
-
- clean3:
-    H5Tclose(memtype);
- clean2:
-    H5Sclose(space);
- clean1:
-    H5Dclose(dset);
-
-    return ev;
-}
-
-event_table read_detected_events(const char *filename, int analysis_no,
-                                 const char *segloc1, const char *segloc2,
-                                 int seganalysis_no) {
-    assert(NULL != filename);
-    assert(NULL != segloc1);
-    assert(NULL != segloc2);
-    event_table ev = { 0, 0, 0, NULL };
-    const size_t rootstr_len = 36;
-
-    hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-    if (hdf5file < 0) {
-        warnx("Failed to open %s for reading.", filename);
-        return ev;
-    }
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-
-    if (analysis_no < 0) {
-        analysis_no = get_latest_group(hdf5file, "/Analyses", "EventDetection");
-        if (analysis_no < 0) {
-            return ev;
-        }
-    }
-    //  Find group name of read (take first if there are multiple)
-    char *root = calloc(rootstr_len, sizeof(char));
-    (void)snprintf(root, rootstr_len, "/Analyses/EventDetection_%03d/Reads/",
-                   analysis_no);
-    ssize_t size =
-        H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, NULL,
-                           0, H5P_DEFAULT);
-    if (size < 0) {
-        warnx("Failed find read name under %s.", root);
-        goto cleanup1;
-    }
-    char *name = calloc(1 + size, sizeof(char));
-    H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name,
-                       1 + size, H5P_DEFAULT);
-
-    //  Prepare event group
-    char *event_group = calloc(rootstr_len + size + 7, sizeof(char));
-    (void)snprintf(event_group, rootstr_len + size + 7, "%s%s/Events", root,
-                   name);
-    free(name);
-    ev = read_events(hdf5file, event_group, 1.0);
-    free(event_group);
-
-    //  Add segmentation information
-    range_t segcoord =
-        get_segmentation(hdf5file, seganalysis_no, segloc1, segloc2);
-    ev.start = (segcoord.start >= 0) ? segcoord.start : 0;
-    ev.end = (segcoord.end >= 0
-              && segcoord.end <= ev.end) ? segcoord.end : ev.end;
-
- cleanup1:
-    free(root);
-    H5Fclose(hdf5file);
-
-    return ev;
-}
 
 float read_float_attribute(hid_t group, const char *attribute) {
     float val = NAN;
@@ -373,46 +135,11 @@ raw_table read_raw(const char *filename, bool scale_to_pA) {
     return rawtbl;
 }
 
-event_table read_albacore_events(const char *filename, int analysis_no,
-                                 const char *section) {
-    assert(NULL != filename);
-    assert(NULL != section);
-    event_table ev = { 0, 0, 0, NULL };
-
-    hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-    if (hdf5file < 0) {
-        warnx("Failed to open %s for reading.", filename);
-        return ev;
-    }
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-
-    if (analysis_no < 0) {
-        analysis_no = get_latest_group(hdf5file, "/Analyses", "Basecall_1D_");
-        if (analysis_no < 0) {
-            return ev;
-        }
-    }
-
-    const int loclen = 45 + strlen(section);
-    char *event_group = calloc(loclen, sizeof(char));
-    (void)snprintf(event_group, loclen,
-                   "/Analyses/Basecall_1D_%03d/BaseCalled_%s/Events",
-                   analysis_no, section);
-
-    // Read sample rate from attribute in file
-    const fast5_raw_scaling scaling = get_raw_scaling(hdf5file);
-
-    ev = read_events(hdf5file, event_group, scaling.sample_rate);
-    free(event_group);
-    H5Fclose(hdf5file);
-
-    return ev;
-}
-
 void write_annotated_events(hid_t hdf5file, const char *readname,
-                            const event_table ev, hsize_t chunk_size,
+                            const event_table et, hsize_t chunk_size,
                             int compression_level) {
     assert(compression_level >= 0 && compression_level <= 9);
+
     // Memory representation
     hid_t memtype = H5Tcreate(H5T_COMPOUND, sizeof(event_t));
     if (memtype < 0) {
@@ -420,7 +147,7 @@ void write_annotated_events(hid_t hdf5file, const char *readname,
               __FILE__, __LINE__);
         goto clean1;
     }
-    H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_DOUBLE);
+    H5Tinsert(memtype, "start", HOFFSET(event_t, start), H5T_NATIVE_UINT64);
     H5Tinsert(memtype, "length", HOFFSET(event_t, length), H5T_NATIVE_FLOAT);
     H5Tinsert(memtype, "mean", HOFFSET(event_t, mean), H5T_NATIVE_FLOAT);
     H5Tinsert(memtype, "stdv", HOFFSET(event_t, stdv), H5T_NATIVE_FLOAT);
@@ -434,14 +161,14 @@ void write_annotated_events(hid_t hdf5file, const char *readname,
         goto clean2;
     }
 
-    H5Tinsert(filetype, "start", 0, H5T_STD_U32LE);
-    H5Tinsert(filetype, "length", 4, H5T_STD_U32LE);
+    H5Tinsert(filetype, "start", 0, H5T_STD_U64LE);
+    H5Tinsert(filetype, "length", 4, H5T_IEEE_F32LE);
     H5Tinsert(filetype, "mean", 4 * 2, H5T_IEEE_F32LE);
     H5Tinsert(filetype, "stdv", 4 * 3, H5T_IEEE_F32LE);
     H5Tinsert(filetype, "pos", 4 * 4, H5T_STD_I32LE);
 
     // Create dataset
-    const hsize_t dims = ev.n;
+    const hsize_t dims = et.n;
     hid_t space = H5Screate_simple(1, &dims, NULL);
     if (space < 0) {
         warnx("Failed to allocate dataspace for event table %s:%d.", __FILE__,
@@ -473,7 +200,7 @@ void write_annotated_events(hid_t hdf5file, const char *readname,
     }
     // Write data
     herr_t writeret =
-        H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, ev.event);
+        H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, et.event);
     if (writeret < 0) {
         warnx("Failed to write dataset for event table %s:%d.", __FILE__,
               __LINE__);

@@ -8,6 +8,8 @@
 #include <float.h>
 #include <math.h>
 #include <string.h>
+
+#include "scrappie_assert.h"
 #include "scrappie_matrix.h"
 
 scrappie_matrix make_scrappie_matrix(int nr, int nc) {
@@ -279,17 +281,14 @@ scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
      *  b is [nk]
      *  C is [nk, nc] or NULL.  If NULL then C is allocated.
      */
-    if (NULL == X) {
-        // Input NULL due to earlier failure.  Propagate
-        return NULL;
-    }
+    RETURN_NULL_IF(NULL == X, NULL);
+
     assert(NULL != W);
     assert(NULL != b);
     assert(W->nr == X->nr);
+
     C = remake_scrappie_matrix(C, W->nc, X->nc);
-    if (NULL == C) {
-        return NULL;
-    }
+    RETURN_NULL_IF(NULL == C, NULL);
 
     /* Copy bias */
     for (int c = 0; c < C->nc; c++) {
@@ -307,10 +306,9 @@ scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
 scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
                             const scrappie_matrix Wf, const scrappie_matrix Wb,
                             const scrappie_matrix b, scrappie_matrix C) {
-    if (NULL == Xf || NULL == Xb) {
-        // Input NULL due to earlier failure.  Propagate
-        return NULL;
-    }
+    RETURN_NULL_IF(NULL == Xf, NULL);
+    RETURN_NULL_IF(NULL == Xb, NULL);
+
     assert(NULL != Wf);
     assert(NULL != Wb);
     assert(NULL != b);
@@ -319,9 +317,7 @@ scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
     assert(Xf->nc == Xb->nc);
     assert(Wf->nc == Wb->nc);
     C = remake_scrappie_matrix(C, Wf->nc, Xf->nc);
-    if (NULL == C) {
-        return NULL;
-    }
+    RETURN_NULL_IF(NULL == C, NULL);
 
     /* Copy bias */
     for (int c = 0; c < C->nc; c++) {

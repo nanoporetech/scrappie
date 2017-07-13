@@ -52,7 +52,7 @@ void log_activation_inplace(scrappie_matrix C) {
 }
 
 scrappie_matrix window(const scrappie_matrix input, int w, int stride) {
-    ASSERT_OR_RETURN_NULL(NULL != input, NULL);
+    RETURN_NULL_IF(NULL == input, NULL);
     assert(w > 0);
     const int wh = (w + 1) / 2;
 
@@ -93,7 +93,7 @@ scrappie_matrix window(const scrappie_matrix input, int w, int stride) {
 scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,
                             const scrappie_matrix b, int stride,
                             scrappie_matrix C) {
-    ASSERT_OR_RETURN_NULL(NULL != X, NULL);
+    RETURN_NULL_IF(NULL == X, NULL);
     assert(NULL != W);
     assert(NULL != b);
     assert(W->nc == b->nr);
@@ -107,7 +107,7 @@ scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,
     const int padR = winlen / 2;
     const int ncolC = iceil(X->nc, stride);
     C = remake_scrappie_matrix(C, nfilter, ncolC);
-    ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+    RETURN_NULL_IF(NULL == C, NULL);
 
     // Matrix strides
     const int ldC = C->nrq * 4;
@@ -189,7 +189,7 @@ scrappie_matrix feedforward_tanh(const scrappie_matrix X,
                                  const scrappie_matrix W,
                                  const scrappie_matrix b, scrappie_matrix C) {
     C = affine_map(X, W, b, C);
-    ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+    RETURN_NULL_IF(NULL == C, NULL);
 
     for (int c = 0; c < C->nc; c++) {
         const size_t offset = c * C->nrq;
@@ -207,7 +207,7 @@ scrappie_matrix feedforward_exp(const scrappie_matrix X,
                                 const scrappie_matrix W,
                                 const scrappie_matrix b, scrappie_matrix C) {
     C = affine_map(X, W, b, C);
-    ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+    RETURN_NULL_IF(NULL == C, NULL);
 
     for (int c = 0; c < C->nc; c++) {
         const size_t offset = c * C->nrq;
@@ -224,7 +224,7 @@ scrappie_matrix feedforward_exp(const scrappie_matrix X,
 scrappie_matrix softmax(const scrappie_matrix X, const scrappie_matrix W,
                         const scrappie_matrix b, scrappie_matrix C) {
     C = feedforward_exp(X, W, b, C);
-    ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+    RETURN_NULL_IF(NULL == C, NULL);
 
     row_normalise_inplace(C);
 
@@ -239,7 +239,7 @@ scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf,
                                   const scrappie_matrix Wb,
                                   const scrappie_matrix b, scrappie_matrix C) {
     C = affine_map2(Xf, Xb, Wf, Wb, b, C);
-    ASSERT_OR_RETURN_NULL(NULL != C, NULL);
+    RETURN_NULL_IF(NULL == C, NULL);
 
     for (int c = 0; c < C->nc; c++) {
         const size_t offset = c * C->nrq;
@@ -256,7 +256,7 @@ scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf,
 scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW,
                             const scrappie_matrix sW, const scrappie_matrix sW2,
                             const scrappie_matrix b, scrappie_matrix ostate) {
-    ASSERT_OR_RETURN_NULL(NULL != X, NULL);
+    RETURN_NULL_IF(NULL == X, NULL);
 
     assert(NULL != iW);
     assert(NULL != sW);
@@ -273,7 +273,7 @@ scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW,
     assert(sW->nc == 2 * size);
     assert(sW2->nc == size);
     ostate = remake_scrappie_matrix(ostate, size, bsize);
-    ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
+    RETURN_NULL_IF(NULL == ostate, NULL);
 
     _Mat xCol, sCol1, sCol2;
     scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
@@ -305,7 +305,7 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW,
                              const scrappie_matrix sW,
                              const scrappie_matrix sW2, const scrappie_matrix b,
                              scrappie_matrix ostate) {
-    ASSERT_OR_RETURN_NULL(NULL != X, NULL);
+    RETURN_NULL_IF(NULL == X, NULL);
     assert(NULL != iW);
     assert(NULL != sW);
     assert(NULL != sW2);
@@ -321,7 +321,7 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW,
     assert(sW->nc == 2 * size);
     assert(sW2->nc == size);
     ostate = remake_scrappie_matrix(ostate, size, bsize);
-    ASSERT_OR_RETURN_NULL(NULL != ostate, NULL);
+    RETURN_NULL_IF(NULL == ostate, NULL);
 
     _Mat xCol, sCol1, sCol2;
     scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
@@ -417,7 +417,7 @@ void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
 scrappie_matrix lstm_forward(const scrappie_matrix Xaffine,
                              const scrappie_matrix sW, const scrappie_matrix p,
                              scrappie_matrix output) {
-    ASSERT_OR_RETURN_NULL(NULL != Xaffine, NULL);
+    RETURN_NULL_IF(NULL == Xaffine, NULL);
     assert(NULL != sW);
     assert(NULL != p);
 
@@ -427,7 +427,7 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine,
     assert(p->nr == 3 * size);
     assert(sW->nc == 4 * size);
     output = remake_scrappie_matrix(output, size, bsize);
-    ASSERT_OR_RETURN_NULL(NULL != output, NULL);
+    RETURN_NULL_IF(NULL == output, NULL);
 
     scrappie_matrix tmp = make_scrappie_matrix(4 * size, 1);
     scrappie_matrix state = make_scrappie_matrix(size, 1);
@@ -460,7 +460,7 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine,
 scrappie_matrix lstm_backward(const scrappie_matrix Xaffine,
                               const scrappie_matrix sW, const scrappie_matrix p,
                               scrappie_matrix output) {
-    ASSERT_OR_RETURN_NULL(NULL != Xaffine, NULL);
+    RETURN_NULL_IF(NULL == Xaffine, NULL);
     assert(NULL != sW);
     assert(NULL != p);
 
@@ -470,7 +470,7 @@ scrappie_matrix lstm_backward(const scrappie_matrix Xaffine,
     assert(sW->nc == 4 * size);
     assert(p->nr == 3 * size);
     output = remake_scrappie_matrix(output, size, bsize);
-    ASSERT_OR_RETURN_NULL(NULL != output, NULL);
+    RETURN_NULL_IF(NULL == output, NULL);
 
     scrappie_matrix tmp = make_scrappie_matrix(4 * size, 1);
     scrappie_matrix state = make_scrappie_matrix(size, 1);
