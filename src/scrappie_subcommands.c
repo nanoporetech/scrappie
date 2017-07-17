@@ -1,6 +1,5 @@
 #include <err.h>
-#include <stdlib.h>
-#include <string.h>
+#include "scrappie_stdlib.h"
 
 #include "scrappie_subcommands.h"
 

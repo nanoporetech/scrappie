@@ -1,11 +1,8 @@
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "decode.h"
-#include "util.h"
 
-#include "scrappie_assert.h"
+#include "decode.h"
+#include "scrappie_stdlib.h"
+#include "util.h"
 
 #define NBASE 4
 
@@ -33,12 +30,35 @@ static inline __m128i __attribute__((__gnu_inline__, __always_inline__)) _mm_mul
 }
 #endif
 
+float viterbi_backtrace(float const *score, int n, scrappie_imatrix const traceback, int * seq){
+    RETURN_NULL_IF(NULL == score, NAN);
+    RETURN_NULL_IF(NULL == seq, NAN);
+
+    const size_t nblock = traceback->nc;
+
+    int last_state = argmaxf(score, n);
+    float logscore = score[last_state];
+    seq[nblock - 1] = last_state;
+    for(int i=1 ; i < nblock ; i++){
+        const int ri = nblock - i;
+        const int state = traceback->data.f[ri * traceback->nrq * 4 + last_state];
+        if(state >= 0){
+            last_state = state;
+        }
+        seq[ri - 1] = state;
+    }
+
+    return logscore;
+}
+
 float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
                         bool use_slip) {
-    assert(NULL != logpost);
+    float logscore = NAN;
     assert(skip_pen >= 0.0);
-    assert(NULL != seq);
-    const int nev = logpost->nc;
+    RETURN_NULL_IF(NULL == logpost, logscore);
+    RETURN_NULL_IF(NULL == seq, logscore);
+
+    const int nblock = logpost->nc;
     const int nstate = logpost->nr;
     const int ldp = logpost->nrq * 4;
     const int nhistory = nstate - 1;
@@ -58,8 +78,11 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
     scrappie_matrix score = make_scrappie_matrix(nhistory, 1);
     scrappie_matrix prev_score = make_scrappie_matrix(nhistory, 1);
     scrappie_matrix tmp = make_scrappie_matrix(nhistory, 1);
-    scrappie_imatrix itmp = make_scrappie_imatrix(nhistory, nev);
-    scrappie_imatrix traceback = make_scrappie_imatrix(nhistory, nev);
+    scrappie_imatrix itmp = make_scrappie_imatrix(nhistory, nblock);
+    scrappie_imatrix traceback = make_scrappie_imatrix(nhistory, nblock);
+    if(NULL == score || NULL == prev_score || NULL == tmp || NULL == itmp || NULL == traceback){
+        goto cleanup;
+    }
 
     //  Initialise
     for (int i = 0; i < nhistoryq; i++) {
@@ -67,10 +90,10 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
     }
 
     //  Forwards Viterbi iteration
-    for (int ev = 1; ev < nev; ev++) {
-        const size_t offsetTq = ev * nhistoryq;
-        const size_t offsetP = ev * ldp;
-        const size_t offsetPq = ev * logpost->nrq;
+    for (int blk = 1; blk < nblock; blk++) {
+        const size_t offsetTq = blk * nhistoryq;
+        const size_t offsetP = blk * ldp;
+        const size_t offsetPq = blk * logpost->nrq;
         // Swap score and previous score
         {
             scrappie_matrix tmptr = score;
@@ -231,29 +254,17 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
     }
 
     //  Viterbi traceback
-    float logscore = valmaxf(score->data.f, nhistory);
-    int pstate = argmaxf(score->data.f, nhistory);
-    for (int ev = 1; ev < nev; ev++) {
-        const int iev = nev - ev;
-        const int tstate = traceback->data.f[iev * nhistory + pstate];
-        if (tstate >= 0) {
-            // Non-stay
-            seq[iev] = pstate;
-            pstate = tstate;
-        } else {
-            // Move was a stay
-            seq[iev] = -1;
-        }
-    }
-    seq[0] = pstate;
+    logscore = viterbi_backtrace(score->data.f, nhistory, traceback, seq);
 
+    assert(validate_ivector(seq, nblock, -1, nhistory - 1, __FILE__, __LINE__));
+
+cleanup:
     traceback = free_scrappie_imatrix(traceback);
     itmp = free_scrappie_imatrix(itmp);
     tmp = free_scrappie_matrix(tmp);
     prev_score = free_scrappie_matrix(prev_score);
     score = free_scrappie_matrix(score);
 
-    assert(validate_ivector(seq, nev, -1, nhistory - 1, __FILE__, __LINE__));
     return logscore;
 }
 
@@ -281,6 +292,7 @@ int position_highest_bit(int x) {
 }
 
 int first_nonnegative(const int *seq, int n) {
+    RETURN_NULL_IF(NULL == seq, n);
     int st;
     for (st = 0; st < n && seq[st] < 0; st++) ;
     return st;
@@ -301,14 +313,16 @@ bool iskmerhomopolymer(int kmer, int klen) {
 
 const char base_lookup[4] = { 'A', 'C', 'G', 'T' };
 char *overlapper(const int *seq, int n, int nkmer, int *pos) {
-    assert(NULL != seq);
+    RETURN_NULL_IF(NULL == seq, NULL);
+    RETURN_NULL_IF(NULL == pos, NULL);
     const int kmer_len = position_highest_bit(nkmer) / 2;
 
     //  Determine length of final sequence
     int length = kmer_len;
     // Find first non-stay
     const int st = first_nonnegative(seq, n);
-    assert(st != n);
+    RETURN_NULL_IF(st == n, NULL);
+
     int kprev = seq[st];
     for (int k = st + 1; k < n; k++) {
         if (seq[k] < 0) {
@@ -362,8 +376,8 @@ int calibrated_dwell(int hdwell, int inhomo, const dwell_model dm) {
 
 char *dwell_corrected_overlapper(const int *seq, const int *dwell, int n,
                                  int nkmer, const dwell_model dm) {
-    assert(NULL != seq);
-    assert(NULL != dwell);
+    RETURN_NULL_IF(NULL == seq, NULL);
+    RETURN_NULL_IF(NULL == dwell, NULL);
     const int kmer_len = position_highest_bit(nkmer) / 2;
 
     //  Determine length of final sequence
@@ -546,4 +560,109 @@ char *homopolymer_dwell_correction(const event_table et, const int *seq,
     free(dwell);
 
     return newbases;
+}
+
+void colmaxf(float * x, int nr, int nc, int * idx){
+    assert(nr > 0);
+    assert(nc > 0);
+    RETURN_NULL_IF(NULL == x,);
+    RETURN_NULL_IF(NULL == idx,);
+
+    for(int r=0 ; r < nr ; r++){
+        // Initialise
+        idx[r] = 0;
+    }
+
+    for(int c=1 ; c < nc ; c++){
+        const size_t offset2 = c * nr;
+        for(int r=0 ; r<nr ; r++){
+            if(x[offset2 + r] > x[idx[r] * nr + r]){
+                idx[r] = c;
+            }
+        }
+    }
+}
+
+float sloika_viterbi(scrappie_matrix const logpost, float skip_pen, int *seq){
+    assert(skip_pen >= 0.0);
+
+    float logscore = NAN;
+    RETURN_NULL_IF(NULL == logpost, logscore);
+    RETURN_NULL_IF(NULL == seq, logscore);
+
+    const int nbase = 4;
+    const size_t nblock = logpost->nc;
+    const size_t nst = logpost->nr;
+    const size_t nhst = nst - 1;
+    const int nstep = nbase;
+    const int nskip = nbase * nbase;
+    assert(nhst % nstep == 0);
+    assert(nhst % nskip == 0);
+    const int step_rem = nhst / nstep;
+    const int skip_rem = nhst / nskip;
+
+    float * cscore = calloc(nhst, sizeof(float));
+    float * pscore = calloc(nhst, sizeof(float));
+    int * step_idx = calloc(step_rem, sizeof(int));
+    int * skip_idx = calloc(skip_rem, sizeof(int));
+    scrappie_imatrix traceback = make_scrappie_imatrix(nhst, nblock);
+    if(NULL != cscore && NULL != pscore && NULL != step_idx && NULL != skip_idx && NULL != traceback){
+        // Initialise
+        memcpy(cscore, logpost->data.f, nhst * sizeof(float));
+
+        //  Forwards Viterbi
+        for(int i=1 ; i < nblock ; i++){
+            const size_t lpoffset = i * logpost->nrq * 4;
+            const size_t toffset = i * traceback->nrq * 4;
+            {  // Swap vectors
+                float * tmp = pscore;
+                pscore = cscore;
+                cscore = tmp;
+            }
+
+            //  Step indices
+            colmaxf(pscore, step_rem, nstep, step_idx);
+            //  Skip indices
+            colmaxf(pscore, skip_rem, nskip, skip_idx);
+
+            // Update score for step and skip
+            for(int hst=0 ; hst < nhst ; hst++){
+                int step_prefix = hst / nstep;
+                int skip_prefix = hst / nskip;
+                int step_hst = step_prefix + step_idx[step_prefix] * step_rem;
+                int skip_hst = skip_prefix + skip_idx[skip_prefix] * skip_rem;
+
+                float step_score = pscore[step_hst];
+                float skip_score = pscore[skip_hst] - skip_pen;
+                if(step_score > skip_score){
+                    // Arbitrary assumption here!  Should be >= ?
+                    cscore[hst] = step_score;
+                    traceback->data.f[toffset + hst] = step_hst;
+                } else {
+                    cscore[hst] = skip_score;
+                    traceback->data.f[toffset + hst] = skip_hst;
+                }
+                cscore[hst] += logpost->data.f[lpoffset + hst];
+            }
+
+            // Stay
+            for(int hst=0 ; hst < nhst ; hst++){
+                const float score = pscore[hst] + logpost->data.f[lpoffset + nhst];
+                if(score > cscore[hst]){
+                    cscore[hst] = score;
+                    traceback->data.f[toffset + hst] = -1;
+                }
+            }
+        }
+
+        logscore = viterbi_backtrace(cscore, nhst, traceback, seq);
+    }
+
+    free_scrappie_imatrix(traceback);
+    free(skip_idx);
+    free(step_idx);
+    free(pscore);
+    free(cscore);
+
+    return logscore;
 }

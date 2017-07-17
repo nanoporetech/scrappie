@@ -1,15 +1,11 @@
-#include <assert.h>
-#include <err.h>
 #include <float.h>
-#include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "event_detection.h"
-#include "scrappie_assert.h"
+#include "scrappie_stdlib.h"
 
 typedef struct {
     int DEF_PEAK_POS;
@@ -53,6 +49,7 @@ void compute_sum_sumsq(const float *data, double *sum,
 
 /**
  *   Compute windowed t-statistic from summary information
+ *
  *   @param sum       double[d_length]  Cumulative sums of data (in)
  *   @param sumsq     double[d_length]  Cumulative sum of squares of data (in)
  *   @param d_length                    Length of data vector
@@ -119,7 +116,8 @@ float *compute_tstat(const double *sum, const double *sumsq,
 
 /**
  *
- *   @returns array containing peak positions
+ *   @returns array of length nsample whose elements contain peak positions
+ *   Remaining elements are padded by zeros.
  **/
 size_t *short_long_peak_detector(DetectorPtr short_detector,
                                  DetectorPtr long_detector,
@@ -241,7 +239,7 @@ event_table create_events(size_t const *peaks, double const *sums,
     RETURN_NULL_IF(NULL == peaks, et);
 
     // Count number of events found
-    size_t n = 0;
+    size_t n = 1;
     for (size_t i = 0; i < nsample; ++i) {
         if (peaks[i] > 0 && peaks[i] < nsample) {
             n++;
@@ -254,15 +252,15 @@ event_table create_events(size_t const *peaks, double const *sums,
     et.n = n;
     et.end = et.n;
 
-    size_t last_end = 0;
-    for (size_t i = 0, j = 0; i < nsample; ++i) {
-        event_t *event = et.event;
-        if (peaks[i] > 0 && peaks[i] < nsample) {
-            event[j] = create_event(last_end, peaks[i], sums, sumsqs, nsample);
-            last_end = peaks[i];
-            j++;
-        }
+
+    // First event -- starts at zero
+    et.event[0] = create_event(0, peaks[0], sums, sumsqs, nsample);
+    // Other events -- peak[i-1] -> peak[i]
+    for(size_t ev=1 ; ev < n - 1 ; ev++){
+        et.event[ev] = create_event(peaks[ev - 1], peaks[ev], sums, sumsqs, nsample);
     }
+    // Last event -- ends at nsample
+    et.event[n - 1] = create_event(peaks[n - 2], nsample, sums, sumsqs, nsample);
 
     return et;
 }
@@ -270,9 +268,9 @@ event_table create_events(size_t const *peaks, double const *sums,
 event_table detect_events(raw_table const rt) {
     size_t const window1_length = 3;
     size_t const window2_length = 6;
-    double const threshold1 = 1.4;
-    double const threshold2 = 1.1;
-    double const peak_height = 0.2;     // TODO(semen): pass on the cmd line
+    float const threshold1 = 1.4;
+    float const threshold2 = 1.1;
+    float const peak_height = 0.2;     // TODO(semen): pass on the cmd line
 
     event_table et = { 0 };
     RETURN_NULL_IF(NULL == rt.raw, et);

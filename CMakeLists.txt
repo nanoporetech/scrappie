@@ -3,7 +3,7 @@ project (scrappie C)
 
 option (BUILD_SHARED_LIB "Build a shared library" OFF)
 
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
+set(CMAKE_CONFIGURATION_TYPES "Debug;Chaos;Release")
 if(NOT CMAKE_BUILD_TYPE)
 	message("Defaulting to release build")
 	set(CMAKE_BUILD_TYPE Release)
@@ -15,8 +15,8 @@ set (CPACK_PACKAGE_VENDOR "Oxford Nanopore Technologies")
 set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
 set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.md")
 set (CPACK_PACKAGE_VERSION_MAJOR 1)
-set (CPACK_PACKAGE_VERSION_MINOR 0)
-set (CPACK_PACKAGE_VERSION_PATCH 1)
+set (CPACK_PACKAGE_VERSION_MINOR 1)
+set (CPACK_PACKAGE_VERSION_PATCH 0)
 
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
@@ -82,17 +82,26 @@ if (BUILD_SHARED_LIB)
 	install (TARGETS scrappie_shared LIBRARY DESTINATION lib)
 endif (BUILD_SHARED_LIB)
 
+#if ((CMAKE_BUILD_VERSION strequal "Chaos") AND (not defined CHAOSMONKEY))
+#    set(CHAOSMONEY 0.1)
+#endif ((CMAKE_BUILD_VERSION strequal "Chaos") AND (not defined CHAOSMONKEY))
+if (NOT DEFINED CHAOSMONKEY)
+    set(CHAOSMONKEY 0.1)
+endif ()
+
 
 ##
 #  Check whether compiler supports openmp.
 ##
-set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fgnu89-inline -O3 -march=native -std=c99 -DUSE_SSE2 -DNDEBUG")
-set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Wall -DABORT_ON_NULL -Wno-unused-function -fgnu89-inline -g -march=native -std=c99 -DUSE_SSE2")
+set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -O3 -march=native -std=c11 -DUSE_SSE2 -DNDEBUG")
+set (CMAKE_C_FLAGS_CHAOS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2 -DNDEBUG -DCHAOSMONKEY=${CHAOSMONKEY}")
+set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Wall -DABORT_ON_NULL -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
 if (HAS_OPENMP)
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+    set (USE_THREADS "--threads" "1")
 endif (HAS_OPENMP)
 
 
@@ -105,8 +114,9 @@ else (HDF5_STANDARD)
 	check_include_file ("hdf5/serial/hdf5.h" HDF5_SERIAL)
 	if (HDF5_SERIAL)
 		set (HDF5 "hdf5_serial")
-		target_include_directories (scrappie_objects PUBLIC "/usr/include/hdf5/serial")
-		target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
+        #target_include_directories (scrappie_objects PUBLIC "/usr/include/hdf5/serial")
+		include_directories ("/usr/include/hdf5/serial")
+        #target_include_directories (scrappie PUBLIC "/usr/include/hdf5/serial")
 	endif (HDF5_SERIAL)
 endif (HDF5_STANDARD)
 
@@ -119,7 +129,7 @@ install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTIN
 
 
 enable_testing()
-add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_matrix_util.c src/test/scrappie_matrix_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c)
+add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_elu.c src/test/test_eventdetection.c src/test/test_scrappie_signal.c src/fast5_interface.c)
 target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 
@@ -127,8 +137,9 @@ set (READSDIR ${PROJECT_SOURCE_DIR}/reads)
 set (ENV{OPENBLAS_NUM_THREADS} 1)
 
 add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND scrappie_unittest)
-add_test(test_events_call scrappie events --threads 1 ${READSDIR})
-add_test(test_raw_call scrappie raw --threads 1 ${READSDIR})
+add_test(test_events_call scrappie events ${USE_THREADS} ${READSDIR})
+add_test(test_raw_call scrappie raw --no-rgr ${USE_THREADS} ${READSDIR})
+add_test(test_rawrgr_call scrappie raw --rgr ${USE_THREADS} ${READSDIR})
 add_test(test_licence scrappie licence)
 add_test(test_licence scrappie license)
 add_test(test_help scrappie help)

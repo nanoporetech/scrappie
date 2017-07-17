@@ -1,6 +1,4 @@
-#include <assert.h>
 #include <dirent.h>
-#include <err.h>
 #include <glob.h>
 #include <libgen.h>
 #include <math.h>
@@ -8,17 +6,15 @@
 #    include <omp.h>
 #endif
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <strings.h>
 #include <sys/types.h>
 
 #include "decode.h"
 #include "event_detection.h"
 #include "networks.h"
-#include "scrappie_assert.h"
 #include "scrappie_common.h"
 #include "scrappie_licence.h"
+#include "scrappie_stdlib.h"
 #include "util.h"
 
 void scrappie_network_setup(void);
@@ -235,8 +231,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_arg, args_doc, doc };
 
 static struct _bs calculate_post(char *filename) {
+    RETURN_NULL_IF(NULL == filename, (struct _bs){0};);
     raw_table rt = read_trim_and_segment_raw(filename, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
-    RETURN_NULL_IF(NULL == rt.raw, _bs_null);
+    RETURN_NULL_IF(NULL == rt.raw, (struct _bs){0};);
 
     event_table et = detect_events(rt);
     if (NULL == et.event) {
@@ -248,7 +245,7 @@ static struct _bs calculate_post(char *filename) {
     if (NULL == post) {
         free(et.event);
         free(rt.raw);
-        return _bs_null;
+        return (struct _bs){0};
     }
     const int nev = post->nc;
     const int nstate = post->nr;
@@ -261,19 +258,24 @@ static struct _bs calculate_post(char *filename) {
     char *basecall = overlapper(history_state, nev, nstate - 1, pos);
     const size_t basecall_len = strlen(basecall);
 
-    const int evoffset = et.start;
-    for (int ev = 0; ev < nev; ev++) {
-        et.event[ev + evoffset].state = 1 + history_state[ev];
-        et.event[ev + evoffset].pos = pos[ev];
-    }
 
-    if (args.dwell_correction) {
-        char *newbasecall =
-            homopolymer_dwell_correction(et, history_state, nstate,
-                                         basecall_len);
-        if (NULL != newbasecall) {
-            free(basecall);
-            basecall = newbasecall;
+    if(NULL != history_state && NULL != pos){
+        // Need not explicitly guard here since directly accessing
+        // Factor out into separate update events function?
+        const int evoffset = et.start;
+        for (int ev = 0; ev < nev; ev++) {
+            et.event[ev + evoffset].state = 1 + history_state[ev];
+            et.event[ev + evoffset].pos = pos[ev];
+        }
+
+        if (args.dwell_correction) {
+            char *newbasecall =
+                homopolymer_dwell_correction(et, history_state, nstate,
+                                             basecall_len);
+            if (NULL != newbasecall) {
+                free(basecall);
+                basecall = newbasecall;
+            }
         }
     }
 

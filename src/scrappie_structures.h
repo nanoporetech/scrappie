@@ -2,8 +2,8 @@
 #ifndef SCRAPPIE_STRUCTURES_H
 #    define SCRAPPIE_STRUCTURES_H
 
-#    include <stddef.h>
 #    include <inttypes.h>
+#    include <stddef.h>
 
 typedef struct {
     uint64_t start;

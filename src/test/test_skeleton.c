@@ -1,3 +1,4 @@
+#define BANANA 1
 #include <CUnit/Basic.h>
 #include <stdbool.h>
 

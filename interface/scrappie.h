@@ -6,8 +6,8 @@ extern "C" {
 #    endif
 
 #    include <immintrin.h>
-#    include <stdbool.h>
 #    include <inttypes.h>
+#    include <stdbool.h>
 
 /*  Structure definitions from scrappie_structures.h  */
     typedef struct {
