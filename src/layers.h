@@ -7,6 +7,9 @@
 void tanh_activation_inplace(scrappie_matrix C);
 void exp_activation_inplace(scrappie_matrix C);
 void log_activation_inplace(scrappie_matrix C);
+void elu_activation_inplace(scrappie_matrix C);
+void robustlog_activation_inplace(scrappie_matrix C, float min_prob);
+
 
 scrappie_matrix window(const scrappie_matrix input, int w, int stride);
 scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,

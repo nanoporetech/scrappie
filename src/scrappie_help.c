@@ -1,7 +1,7 @@
-#include <err.h>
 #include <stdio.h>
-#include <stdlib.h>
+
 #include "scrappie_licence.h"
+#include "scrappie_stdlib.h"
 #include "scrappie_subcommands.h"
 
 char *help_options[2] = { NULL, "--help" };

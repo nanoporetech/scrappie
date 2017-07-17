@@ -4,9 +4,8 @@
 #    include <cblas.h>
 #endif
 #include <math.h>
-#include <string.h>
 #include "layers.h"
-#include "scrappie_assert.h"
+#include "scrappie_stdlib.h"
 #include "util.h"
 
 /**  Apply tanh to a matrix element-wise
@@ -14,10 +13,11 @@
  *
  **/
 void tanh_activation_inplace(scrappie_matrix C) {
+    RETURN_NULL_IF(NULL == C, );
     for (int c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
         for (int r = 0; r < C->nrq; ++r) {
-            C->data.v[offset + r] = tanhfv(C->data.v[offset + r]);
+            C->data.v[offset + r] = TANHFV(C->data.v[offset + r]);
         }
     }
     (void)validate_scrappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
@@ -28,6 +28,7 @@ void tanh_activation_inplace(scrappie_matrix C) {
  *
  **/
 void exp_activation_inplace(scrappie_matrix C) {
+    RETURN_NULL_IF(NULL == C, );
     for (int c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
         for (int r = 0; r < C->nrq; ++r) {
@@ -43,10 +44,52 @@ void exp_activation_inplace(scrappie_matrix C) {
  *
  **/
 void log_activation_inplace(scrappie_matrix C) {
+    RETURN_NULL_IF(NULL == C, );
     for (int c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
         for (int r = 0; r < C->nrq; ++r) {
             C->data.v[offset + r] = LOGFV(C->data.v[offset + r]);
+        }
+    }
+}
+
+/**  Apply ELU activation function to a matrix element-wise
+ *  @param C Matrix
+ *
+ **/
+void elu_activation_inplace(scrappie_matrix C) {
+    RETURN_NULL_IF(NULL == C, );
+    for (int c = 0; c < C->nc; ++c) {
+        const size_t offset = c * C->nrq;
+        for (int r = 0; r < C->nrq; ++r) {
+            C->data.v[offset + r] = ELUFV(C->data.v[offset + r]);
+        }
+    }
+}
+
+/** Apply robost log activation
+ *
+ *  Applies log(min_prob / nrow + (1 - min_prob) * x) elementwise to matrix
+ *  where x in element and nrow is the number of rows
+ *
+ *  @param C Matrix
+ *  @param min_prob  Minimum probability
+ *
+ **/
+void robustlog_activation_inplace(scrappie_matrix C, float min_prob) {
+    assert(min_prob >= 0.0);
+    assert(min_prob <= 1.0);
+    RETURN_NULL_IF(NULL == C, );
+
+    const int nblock = C->nc;
+    const int nstate = C->nr;
+    const __m128 mpv = _mm_set1_ps(min_prob / nstate);
+    const __m128 mpvm1 = _mm_set1_ps(1.0f - min_prob);
+    for (int i = 0; i < nblock; i++) {
+        const size_t offset = i * C->nrq;
+        for (int r = 0; r < C->nrq; r++) {
+            C->data.v[offset + r] =
+                LOGFV(mpv + mpvm1 * C->data.v[offset + r]);
         }
     }
 }
@@ -191,12 +234,7 @@ scrappie_matrix feedforward_tanh(const scrappie_matrix X,
     C = affine_map(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
-    for (int c = 0; c < C->nc; c++) {
-        const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; r++) {
-            C->data.v[offset + r] = tanhfv(C->data.v[offset + r]);
-        }
-    }
+    tanh_activation_inplace(C);
 
     assert(validate_scrappie_matrix
            (C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -209,12 +247,7 @@ scrappie_matrix feedforward_exp(const scrappie_matrix X,
     C = affine_map(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
-    for (int c = 0; c < C->nc; c++) {
-        const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; r++) {
-            C->data.v[offset + r] = EXPFV(C->data.v[offset + r]);
-        }
-    }
+    exp_activation_inplace(C);
 
     assert(validate_scrappie_matrix
            (C, 0.0, NAN, 1.0, true, __FILE__, __LINE__));
@@ -241,15 +274,9 @@ scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf,
     C = affine_map2(Xf, Xb, Wf, Wb, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
-    for (int c = 0; c < C->nc; c++) {
-        const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; r++) {
-            C->data.v[offset + r] = tanhfv(C->data.v[offset + r]);
-        }
-    }
+    tanh_activation_inplace(C);
 
-    assert(validate_scrappie_matrix
-           (C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
+    assert(validate_scrappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
     return C;
 }
 
@@ -272,13 +299,19 @@ scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW,
     assert(iW->nc == 3 * size);
     assert(sW->nc == 2 * size);
     assert(sW2->nc == size);
+
     ostate = remake_scrappie_matrix(ostate, size, bsize);
     RETURN_NULL_IF(NULL == ostate, NULL);
 
-    _Mat xCol, sCol1, sCol2;
     scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
+    if(NULL == tmp){
+        //  Memory allocation falled, clean-up and return
+        free(ostate);
+        return NULL;
+    }
 
     /* First step state is zero.  Set second column of ostate to zero and use that */
+    _Mat xCol, sCol1, sCol2;
     memset(ostate->data.v + ostate->nrq, 0, ostate->nrq * sizeof(__m128));
     xCol = *X;
     sCol1 = *ostate;
@@ -320,13 +353,19 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW,
     assert(iW->nc == 3 * size);
     assert(sW->nc == 2 * size);
     assert(sW2->nc == size);
+
     ostate = remake_scrappie_matrix(ostate, size, bsize);
     RETURN_NULL_IF(NULL == ostate, NULL);
 
-    _Mat xCol, sCol1, sCol2;
     scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
+    if(NULL == tmp){
+        //  Memory allocation falled, clean-up and return
+        free(ostate);
+        return NULL;
+    }
 
     /* First step state is zero.  Set first column of ostate to zero and use that */
+    _Mat xCol, sCol1, sCol2;
     memset(ostate->data.v, 0, ostate->nrq * sizeof(__m128));
     xCol = *X;
     sCol1 = *ostate;
@@ -372,6 +411,8 @@ void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
     assert(NULL != bias);
     assert(x->nr == xW->nr);
     const int size = istate->nr;
+    assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
+    const int sizeq = size / 4;
     assert(3 * size == xW->nc);
     assert(size == sW->nr);
     assert(2 * size == sW->nc);
@@ -391,25 +432,24 @@ void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
      */
     cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f,
                 sW->nrq * 4, istate->data.f, 1, 1.0, xF->data.f, 1);
-    for (int i = 0; i < (size / 2); i++) {
-        xF->data.v[i] = logisticfv(xF->data.v[i]);
+    for (int i = 0; i < (sizeq +sizeq); i++) {
+        xF->data.v[i] = LOGISTICFV(xF->data.v[i]);
     }
 
-    const int sizeq = size / 4;
     const __m128 *z = xF->data.v;
     __m128 *r = xF->data.v + sizeq;
-    __m128 *hbar = xF->data.v + 2 * sizeq;
+    __m128 *hbar = xF->data.v + sizeq + sizeq;
     for (int i = 0; i < sizeq; i++) {
         r[i] *= istate->data.v[i];
     }
     cblas_sgemv(CblasColMajor, CblasTrans, sW2->nr, sW2->nc, 1.0, sW2->data.f,
                 sW2->nrq * 4, (float *)r, 1, 1.0, (float *)hbar, 1);
     for (int i = 0; i < sizeq; i++) {
-        hbar[i] = tanhfv(hbar[i]);
+        hbar[i] = TANHFV(hbar[i]);
     }
 
     const __m128 ones = _mm_set1_ps(1.0f);
-    for (int i = 0; i < sizeq; i++) {
+    for (int i = 0; i < sizeq ; i++) {
         ostate->data.v[i] = z[i] * istate->data.v[i] + (ones - z[i]) * hbar[i];
     }
 }
@@ -426,11 +466,19 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine,
     assert(Xaffine->nr == 4 * size);
     assert(p->nr == 3 * size);
     assert(sW->nc == 4 * size);
+
     output = remake_scrappie_matrix(output, size, bsize);
     RETURN_NULL_IF(NULL == output, NULL);
 
     scrappie_matrix tmp = make_scrappie_matrix(4 * size, 1);
     scrappie_matrix state = make_scrappie_matrix(size, 1);
+    if(NULL == tmp || NULL == state){
+        //  Memory allocation falled, clean-up and return
+        free(state);
+        free(tmp);
+        free(output);
+        return NULL;
+    }
 
     /* First step state & output are zero.  Set second column of output to zero and use that */
     memset(output->data.v + output->nrq, 0, output->nrq * sizeof(__m128));
@@ -469,11 +517,19 @@ scrappie_matrix lstm_backward(const scrappie_matrix Xaffine,
     assert(Xaffine->nr == 4 * size);
     assert(sW->nc == 4 * size);
     assert(p->nr == 3 * size);
+
     output = remake_scrappie_matrix(output, size, bsize);
     RETURN_NULL_IF(NULL == output, NULL);
 
     scrappie_matrix tmp = make_scrappie_matrix(4 * size, 1);
     scrappie_matrix state = make_scrappie_matrix(size, 1);
+    if(NULL == tmp || NULL == state){
+        //  Memory allocation falled, clean-up and return
+        free(state);
+        free(tmp);
+        free(output);
+        return NULL;
+    }
 
     /* First step state is zero.  Set first column of ostate to zero and use that */
     memset(output->data.v, 0, output->nrq * sizeof(__m128));
@@ -537,24 +593,24 @@ void lstm_step(const scrappie_matrix xAffine, const scrappie_matrix out_prev,
     cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f,
                 sW->nrq * 4, out_prev->data.f, 1, 1.0, xF->data.f, 1);
 
-    assert((size % 4) == 0);
+    assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
     const int sizeq = size / 4;
     for (int i = 0; i < sizeq; i++) {
         // Forget gate
-        __m128 forget = logisticfv(xF->data.v[2 * sizeq + i]
+        __m128 forget = LOGISTICFV(xF->data.v[2 * sizeq + i]
                                    + state->data.v[i] * peep->data.v[sizeq + i])
             * state->data.v[i];
         // Update gate
-        __m128 update = logisticfv(xF->data.v[sizeq + i]
+        __m128 update = LOGISTICFV(xF->data.v[sizeq + i]
                                    + state->data.v[i] * peep->data.v[i])
-            * tanhfv(xF->data.v[i]);
+            * TANHFV(xF->data.v[i]);
         state->data.v[i] = _mm_add_ps(forget, update);
         // Output gate
-        output->data.v[i] = logisticfv(xF->data.v[3 * sizeq + i]
+        output->data.v[i] = LOGISTICFV(xF->data.v[3 * sizeq + i]
                                        +
                                        state->data.v[i] * peep->data.v[2 *
                                                                        sizeq +
                                                                        i])
-            * tanhfv(state->data.v[i]);
+            * TANHFV(state->data.v[i]);
     }
 }

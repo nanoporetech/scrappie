@@ -103,6 +103,7 @@ Scrappie basecaller -- basecall from raw signal
       --licence, --license   Print licensing information
   -m, --min_prob=probability Minimum bound on probability of match
   -o, --outformat=format     Format to output reads (FASTA or SAM)
+  -r, --rgr, --no-rgr        Use rGr model
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=chunk:percentile
                              Chunk size and percentile for variance based

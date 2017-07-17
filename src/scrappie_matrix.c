@@ -1,21 +1,21 @@
-#include <assert.h>
 #ifdef __APPLE__
 #    include <Accelerate/Accelerate.h>
 #else
 #    include <cblas.h>
 #endif
-#include <err.h>
 #include <float.h>
 #include <math.h>
-#include <string.h>
-
-#include "scrappie_assert.h"
 #include "scrappie_matrix.h"
+#include "scrappie_stdlib.h"
 
 scrappie_matrix make_scrappie_matrix(int nr, int nc) {
+    assert(nr > 0);
+    assert(nc > 0);
     // Matrix padded so row length is multiple of 4
-    int nrq = (int)ceil(nr / 4.0);
+    const int nrq = (int)ceil(nr / 4.0);
     scrappie_matrix mat = malloc(sizeof(*mat));
+    RETURN_NULL_IF(NULL == mat, NULL);
+
     mat->nr = nr;
     mat->nrq = nrq;
     mat->nc = nc;
@@ -31,9 +31,8 @@ scrappie_matrix make_scrappie_matrix(int nr, int nc) {
         }
     }
 
-    int status =
-        posix_memalign((void **)&(mat->data.v), 16, nrq * nc * sizeof(__m128));
-    if (0 != status) {
+    mat->data.v = aligned_alloc(16, nrq * nc * sizeof(__m128));
+    if (NULL == mat->data.v) {
         warnx("Error allocating memory in %s.\n", __func__);
         free(mat);
         return NULL;
@@ -51,6 +50,15 @@ scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc) {
     return M;
 }
 
+scrappie_matrix copy_scrappie_matrix(scrappie_matrix const M){
+    RETURN_NULL_IF(NULL == M, NULL);
+    scrappie_matrix C = make_scrappie_matrix(M->nr, M->nc);
+    RETURN_NULL_IF(NULL == C, NULL);
+    memcpy(C->data.f, M->data.f, sizeof(__m128) * C->nrq * C->nc);
+    return C;
+}
+
+
 void zero_scrappie_matrix(scrappie_matrix M) {
     if (NULL == M) {
         return;
@@ -60,12 +68,33 @@ void zero_scrappie_matrix(scrappie_matrix M) {
 
 scrappie_matrix mat_from_array(const float *x, int nr, int nc) {
     scrappie_matrix res = make_scrappie_matrix(nr, nc);
+    RETURN_NULL_IF(NULL == res, NULL);
+
     for (int col = 0; col < nc; col++) {
         memcpy(res->data.f + col * res->nrq * 4, x + col * nr,
                nr * sizeof(float));
     }
     return res;
 }
+
+float * array_from_scrappie_matrix(scrappie_matrix const mat){
+    RETURN_NULL_IF(NULL == mat, NULL);
+
+    const size_t nelt = mat->nr * mat->nc;
+    float * res = calloc(nelt, sizeof(float));
+    RETURN_NULL_IF(NULL == res, NULL);
+
+    for(size_t c=0 ; c < mat->nc ; c++){
+        const size_t offset_out = c * mat->nr;
+        const size_t offset_in = c * mat->nrq * 4;
+        for(size_t r=0 ; r < mat->nr ; r++){
+            res[offset_out + r] = mat->data.f[offset_in + r];
+        }
+    }
+
+    return res;
+}
+
 
 void fprint_scrappie_matrix(FILE * fh, const char *header,
                             const scrappie_matrix mat, int nr, int nc,
@@ -110,6 +139,10 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
                               const float upper, const float maskval,
                               const bool only_finite, const char *file,
                               const int line) {
+#ifdef NDEBUG
+    return true;
+}
+#else
     if (NULL == mat) {
         return false;
     }
@@ -183,6 +216,7 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
 
     return true;
 }
+#endif /* NDEBUG */
 
 /**  Check whether two matrices are equal within a given tolerance
  *
@@ -232,15 +266,18 @@ bool equality_scrappie_matrix(const scrappie_matrix mat1,
 }
 
 scrappie_imatrix make_scrappie_imatrix(int nr, int nc) {
+    assert(nr > 0);
+    assert(nc > 0);
     // Matrix padded so row length is multiple of 4
-    int nrq = (int)ceil(nr / 4.0);
+    const int nrq = (int)ceil(nr / 4.0);
     scrappie_imatrix mat = malloc(sizeof(*mat));
+    RETURN_NULL_IF(NULL == mat, NULL);
+
     mat->nr = nr;
     mat->nrq = nrq;
     mat->nc = nc;
-    int status =
-        posix_memalign((void **)&(mat->data.v), 16, nrq * nc * sizeof(__m128i));
-    if (0 != status) {
+    mat->data.v = aligned_alloc(16, nrq * nc * sizeof(__m128i));
+    if (NULL == mat->data.v) {
         warnx("Error allocating memory in %s.\n", __func__);
         free(mat);
         return NULL;
@@ -256,6 +293,14 @@ scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc) {
         M = make_scrappie_imatrix(nr, nc);
     }
     return M;
+}
+
+scrappie_imatrix copy_scrappie_imatrix(scrappie_imatrix const M){
+    RETURN_NULL_IF(NULL == M, NULL);
+    scrappie_imatrix C = make_scrappie_imatrix(M->nr, M->nc);
+    RETURN_NULL_IF(NULL == C, NULL);
+    memcpy(C->data.f, M->data.f, sizeof(__m128i) * C->nrq * C->nc);
+    return C;
 }
 
 scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat) {
@@ -335,28 +380,26 @@ scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
     return C;
 }
 
-__m128 mask(int i) {
-    return (__m128) (__v4sf) {
-    i >= 1, i >= 2, i >= 3, 0.0f};
-}
-
 void row_normalise_inplace(scrappie_matrix C) {
     if (NULL == C) {
         // Input NULL due to earlier failure.  Propagate
         return;
     }
+    const int i = C->nrq * 4 - C->nr;
+    const __m128 mask = _mm_castsi128_ps(0xffffffff * _mm_set_epi32(i >= 1, i >= 2, i >= 3, 0));
     for (int col = 0; col < C->nc; col++) {
         const size_t offset = col * C->nrq;
-        __m128 sum = _mm_setzero_ps();
-        for (int row = 0; row < C->nrq; row++) {
+        __m128 sum = C->data.v[offset];
+        for (int row = 1; row < C->nrq; row++) {
             sum += C->data.v[offset + row];
         }
-        sum -= C->data.v[offset + C->nrq - 1] * mask(C->nr - C->nrq * 4);
+        sum -= _mm_and_ps(C->data.v[offset + C->nrq - 1], mask);
         const __m128 psum = _mm_hadd_ps(sum, sum);
         const __m128 tsum = _mm_hadd_ps(psum, psum);
 
+        const __m128 tsum_recip = _mm_set1_ps(1.0f) / tsum;
         for (int row = 0; row < C->nrq; row++) {
-            C->data.v[offset + row] /= tsum;
+            C->data.v[offset + row] *= tsum_recip;
         }
     }
 }
@@ -437,6 +480,10 @@ int argmin_scrappie_matrix(const scrappie_matrix x) {
 
 bool validate_vector(float *vec, const float n, const float lower,
                      const float upper, const char *file, const int line) {
+#ifdef NDEBUG
+    return true;
+}
+#else
     if (NULL == vec) {
         return false;
     }
@@ -463,9 +510,14 @@ bool validate_vector(float *vec, const float n, const float lower,
 
     return true;
 }
+#endif /* NDEBUG */
 
 bool validate_ivector(int *vec, const int n, const int lower, const int upper,
                       const char *file, const int line) {
+#ifdef NDEBUG
+    return true;
+}
+#else
     if (NULL == vec) {
         return false;
     }
@@ -489,3 +541,4 @@ bool validate_ivector(int *vec, const int n, const int lower, const int upper,
 
     return true;
 }
+#endif /* NDEBUG */

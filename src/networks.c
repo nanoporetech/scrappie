@@ -1,10 +1,10 @@
-#include <string.h>
 #include "layers.h"
 #include "nanonet_events.h"
 #include "nanonet_raw.h"
+#include "nanonet_rgr.h"
 #include "networks.h"
 #include "nnfeatures.h"
-#include "scrappie_assert.h"
+#include "scrappie_stdlib.h"
 
 scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
                                   bool return_log) {
@@ -49,17 +49,7 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
     RETURN_NULL_IF(NULL == post, NULL);
 
     if (return_log) {
-        const int nev = post->nc;
-        const int nstate = post->nr;
-        const __m128 mpv = _mm_set1_ps(min_prob / nstate);
-        const __m128 mpvm1 = _mm_set1_ps(1.0f - min_prob);
-        for (int i = 0; i < nev; i++) {
-            const size_t offset = i * post->nrq;
-            for (int r = 0; r < post->nrq; r++) {
-                post->data.v[offset + r] =
-                    LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
-            }
-        }
+        robustlog_activation_inplace(post, min_prob);
     }
 
     return post;
@@ -72,8 +62,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
-    scrappie_matrix conv =
-        Convolution(raw_mat, conv_raw_W, conv_raw_b, conv_raw_stride, NULL);
+    scrappie_matrix conv = Convolution(raw_mat, conv_raw_W, conv_raw_b, conv_raw_stride, NULL);
     tanh_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
     //  First GRU layer
@@ -105,17 +94,44 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
     RETURN_NULL_IF(NULL == post, NULL);
 
     if (return_log) {
-        const int nblock = post->nc;
-        const int nstate = post->nr;
-        const __m128 mpv = _mm_set1_ps(min_prob / nstate);
-        const __m128 mpvm1 = _mm_set1_ps(1.0f - min_prob);
-        for (int i = 0; i < nblock; i++) {
-            const size_t offset = i * post->nrq;
-            for (int r = 0; r < post->nrq; r++) {
-                post->data.v[offset + r] =
-                    LOGFV(mpv + mpvm1 * post->data.v[offset + r]);
-            }
-        }
+        robustlog_activation_inplace(post, min_prob);
+    }
+
+    return post;
+}
+
+scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
+                                      bool return_log) {
+    assert(min_prob >= 0.0 && min_prob <= 1.0);
+    RETURN_NULL_IF(signal.n == 0, NULL);
+    RETURN_NULL_IF(NULL == signal.raw, NULL);
+
+    scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
+    scrappie_matrix conv =
+        Convolution(raw_mat, conv_rgr_W, conv_rgr_b, conv_rgr_stride, NULL);
+    elu_activation_inplace(conv);
+    raw_mat = free_scrappie_matrix(raw_mat);
+    //  First GRU layer
+    scrappie_matrix gruB1 =
+        gru_backward(conv, gruB1_rgr_iW, gruB1_rgr_sW, gruB1_rgr_sW2,
+                     gruB1_rgr_b, NULL);
+    conv = free_scrappie_matrix(conv);
+    //  Second GRU layer
+    scrappie_matrix gruF2 =
+        gru_forward(gruB1, gruF2_rgr_iW, gruF2_rgr_sW, gruF2_rgr_sW2,
+                    gruF2_rgr_b, NULL);
+    gruB1 = free_scrappie_matrix(gruB1);
+    //  Thrid GRU layer
+    scrappie_matrix gruB3 =
+        gru_backward(gruF2, gruB3_rgr_iW, gruB3_rgr_sW, gruB3_rgr_sW2,
+                     gruB3_rgr_b, NULL);
+    gruF2 = free_scrappie_matrix(gruF2);
+
+    scrappie_matrix post = softmax(gruB3, FF_rgr_W, FF_rgr_b, NULL);
+    gruB3 = free_scrappie_matrix(gruB3);
+
+    if (return_log) {
+        robustlog_activation_inplace(post, min_prob);
     }
 
     return post;

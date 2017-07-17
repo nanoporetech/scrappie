@@ -18,4 +18,5 @@ char *homopolymer_dwell_correction(const event_table et, const int *seq,
 char *dwell_corrected_overlapper(const int *seq, const int *dwell, int n,
                                  int nkmer, const dwell_model dm);
 
+float sloika_viterbi(scrappie_matrix const logpost, float skip_pen, int *seq);
 #endif                          /* DECODE_H */

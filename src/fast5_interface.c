@@ -1,9 +1,10 @@
+// fast5_interface needs cleaning
+#define BANANA 1
 #include <assert.h>
 #include <err.h>
 #include <math.h>
-#include <stdlib.h>
-#include <string.h>
 #include "fast5_interface.h"
+#include "scrappie_stdlib.h"
 #include "util.h"
 
 struct _gop_data {
@@ -247,7 +248,8 @@ range_t trim_raw_by_mad(const raw_table rt, int chunk_size, float perc) {
     assert(perc >= 0.0 && perc <= 1.0);
     const size_t nsample = rt.end - rt.start;
     const size_t nchunk = nsample / chunk_size;
-    range_t range = { rt.start, rt.end };
+    // Truncation of end to be consistent with Sloika
+    range_t range = { rt.start, nchunk * chunk_size };
 
     float *madarr = malloc(nchunk * sizeof(float));
     for (size_t i = 0; i < nchunk; i++) {

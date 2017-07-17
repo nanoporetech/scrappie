@@ -1,3 +1,4 @@
+#define BANANA 1
 #include <CUnit/CUnit.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -69,6 +70,7 @@ Vec simple_convolution(Vec const x, Vec const f) {
     return y;
 }
 
+
 /**  Created strided vector from full vector
  *
  *   @param v Vector from which to create strided vector
@@ -94,6 +96,7 @@ Vec simple_stride(Vec const v, int stride) {
     return y;
 }
 
+
 /**  Initialise test
  *
  *   @returns 0 on success, non-zero on failure
@@ -113,6 +116,7 @@ int init_test_convolution(void) {
     return 0;
 }
 
+
 /**  Clean up after test
  *
  *   @returns 0 on success, non-zero on failure
@@ -122,6 +126,7 @@ int clean_test_convolution(void) {
     free_scrappie_matrix(mat_odd);
     return 0;
 }
+
 
 /**
  *
@@ -439,29 +444,51 @@ int register_test_convolution(void) {
         return CU_get_error();
     }
     if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 3",
-                    test_convolution_ones_f3)) {
+        CU_add_test(suite, "Simple stride 1", test_stride1_convolution)) {
         return CU_get_error();
     }
     if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 4",
-                    test_convolution_ones_f4)) {
+        CU_add_test(suite, "Simple stride 2", test_stride2_convolution)) {
         return CU_get_error();
     }
     if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 5",
-                    test_convolution_ones_f5)) {
+        CU_add_test(suite, "Simple stride 3", test_stride3_convolution)) {
         return CU_get_error();
     }
     if (NULL ==
-        CU_add_test(suite, "Simple convolution, antisymmetric filter length 3",
-                    test_convolution_antisymmetric_f3)) {
+        CU_add_test(suite, "Simple stride 4", test_stride4_convolution)) {
         return CU_get_error();
     }
     if (NULL ==
-        CU_add_test(suite,
-                    "Scrappie convolution, antisymmetric filter length 3",
-                    test_scrappie_convolution_f1s1)) {
+        CU_add_test(suite, "Simple stride 5", test_stride5_convolution)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Simple convolution, unit filter length 1", test_convolution_ones_f1)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Simple convolution, unit filter length 2", test_convolution_ones_f2)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Simple convolution, unit filter length 3", test_convolution_ones_f3)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Simple convolution, unit filter length 4", test_convolution_ones_f4)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Simple convolution, unit filter length 5", test_convolution_ones_f5)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Simple convolution, antisymmetric filter length 3", test_convolution_antisymmetric_f3)) {
+        return CU_get_error();
+    }
+    if (NULL ==
+        CU_add_test(suite, "Scrappie convolution, antisymmetric filter length 3", test_scrappie_convolution_f1s1)) {
         return CU_get_error();
     }
 
