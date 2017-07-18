@@ -3,7 +3,9 @@
 #include <err.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
 #include <scrappie_structures.h>
+#include "test_common.h"
 #include <util.h>
 
 void compute_sum_sumsq(const float *data, double *sum,
@@ -153,47 +155,21 @@ void test_correct_stdv(void){
 }
 
 
+static test_with_description tests[] = {
+    {"Cumulative sum and sums", test_cumulative_sums},
+    {"Calculation of t-statistic", test_calculation_tstat},
+    {"Correct number of events", test_correct_number_of_events},
+    {"Correct event start times", test_correct_starts},
+    {"Correct event length", test_correct_lengths},
+    {"Correct event means", test_correct_means},
+    {"Correct event stdv", test_correct_stdv},
+    {0}};
+
+
 /**   Register tests with CUnit
  *
  *    @returns 0 on success, non-zero on failure
  **/
 int register_test_eventdetection(void) {
-    CU_pSuite suite = CU_add_suite("Tests for event detection ported from Dragonet",
-                                   init_test_eventdetection,
-                                   clean_test_eventdetection);
-    if (NULL == suite) {
-        return CU_get_error();
-    }
-
-
-    if (NULL ==
-        CU_add_test(suite, "Cumulative sum and sums", test_cumulative_sums)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Calculation of t-statistic", test_calculation_tstat)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Correct number of events", test_correct_number_of_events)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Correct event start times", test_correct_starts)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Correct event length", test_correct_lengths)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Correct event means", test_correct_means)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Correct event stdv", test_correct_stdv)) {
-        return CU_get_error();
-    }
-
-    return 0;
+    return scrappie_register_test_suite("Tests for event detection ported from Dragonet", init_test_eventdetection, clean_test_eventdetection, tests);
 }

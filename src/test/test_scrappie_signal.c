@@ -7,6 +7,7 @@
 #include "scrappie_common.h"
 #include "scrappie_structures.h"
 #include "scrappie_util.h"
+#include "test_common.h"
 #include "util.h"
 
 static const char rawsignalfile[] = "raw_signal.crp";
@@ -130,32 +131,16 @@ void test_decode_posterior(void) {
     (void)free_scrappie_matrix(post);
 }
 
-
+static test_with_description tests[] = {
+    {"Normalise trimmed signal", test_normalise_signal},
+    {"Trimming of raw signal", test_trim_signal},
+    {"Decoding of posterior", test_decode_posterior},
+    {0}};
 
 /**   Register tests with CUnit
  *
  *    @returns 0 on success, non-zero on failure
  **/
 int register_test_signal(void) {
-    CU_pSuite suite = CU_add_suite("Test manipulating signal",
-                                   init_test_signal,
-                                   clean_test_signal);
-    if (NULL == suite) {
-        return CU_get_error();
-    }
-
-    if (NULL ==
-        CU_add_test(suite, "Normalise trimmed signal", test_normalise_signal)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Trimming of raw signal", test_trim_signal)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Decoding of posterior", test_decode_posterior)) {
-        return CU_get_error();
-    }
-
-    return 0;
+    return scrappie_register_test_suite("Test manipulating signal", init_test_signal, clean_test_signal, tests);
 }
