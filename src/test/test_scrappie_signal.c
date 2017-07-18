@@ -3,8 +3,8 @@
 #include <stdbool.h>
 
 #include "decode.h"
-#include "fast5_interface.h"
 #include "layers.h"
+#include "scrappie_common.h"
 #include "scrappie_structures.h"
 #include "scrappie_util.h"
 #include "util.h"
@@ -75,14 +75,14 @@ void test_trim_signal(void) {
         }
     }
 
-    range_t r = trim_raw_by_mad(rt, winlen, 0.0);
-    CU_ASSERT_EQUAL(r.start, 0);
-    CU_ASSERT_EQUAL(r.end, (rt.n / winlen) * winlen);
+    rt = trim_raw_by_mad(rt, winlen, 0.0);
+    CU_ASSERT_EQUAL(rt.start, 0);
+    CU_ASSERT_EQUAL(rt.end, (rt.n / winlen) * winlen);
 
-    r.start += 200;
-    r.end -= 10;
+    rt.start += 200;
+    rt.end -= 10;
 
-    scrappie_matrix mat_trim = mat_from_array(rt.raw + r.start, 1, r.end - r.start);
+    scrappie_matrix mat_trim = mat_from_array(rt.raw + rt.start, 1, rt.end - rt.start);
     CU_ASSERT_PTR_NOT_NULL_FATAL(mat_trim);
     CU_ASSERT_EQUAL(mat_trim->nc, signal->nc);
 

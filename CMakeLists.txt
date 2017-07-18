@@ -32,8 +32,8 @@ set (CPACK_PACKAGE_NAME "ont-${PROJECT_NAME}")
 
 set (CPACK_DEBIAN_PACKAGE_MAINTAINER "Tim Massingham <tim.massingham@nanoporetech.com>")
 set (CPACK_DEBIAN_PACKAGE_SECTION "base")
-set (CPACK_DEBIAN_PACKAGE_DEPENDS "libopenblas-base, libhdf5-7")
-set (CPACK_DEBIAN_BUILD_DEPENDS "libopenblas-base, libopenblas-dev, libhdf5-7, libhdf5-dev, cmake")
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "libopenblas-base, libhdf5-7, libcunit1")
+set (CPACK_DEBIAN_BUILD_DEPENDS "libopenblas-base, libopenblas-dev, libhdf5-7, libhdf5-dev, cmake, libcunit1-dev")
 set (CPACK_PACKAGING_INSTALL_PREFIX "/opt/scrappie")
 
 set (CPACK_GENERATOR "TGZ;DEB")
@@ -129,7 +129,7 @@ install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTIN
 
 
 enable_testing()
-add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_elu.c src/test/test_eventdetection.c src/test/test_scrappie_signal.c src/fast5_interface.c)
+add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_elu.c src/test/test_eventdetection.c src/test/test_scrappie_signal.c)
 target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 
