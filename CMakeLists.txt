@@ -129,7 +129,7 @@ install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTIN
 
 
 enable_testing()
-add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_elu.c src/test/test_eventdetection.c src/test/test_scrappie_signal.c)
+add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_elu.c src/test/test_scrappie_event_detection.c src/test/test_scrappie_signal.c)
 target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 

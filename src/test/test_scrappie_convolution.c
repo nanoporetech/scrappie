@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <layers.h>
+#include "test_common.h"
 
 static float test_conv_tol = 1e-5;
 
@@ -406,91 +407,33 @@ void test_scrappie_convolution_f1s1(void) {
                                     filter_base);
 }
 
+
+static const test_with_description tests[] = {
+    {"Simple stride 1", test_stride1_convolution},
+    {"Simple stride 2", test_stride2_convolution},
+    {"Simple stride 3", test_stride3_convolution},
+    {"Simple stride 4", test_stride4_convolution},
+    {"Simple stride 5", test_stride5_convolution},
+    {"Simple convolution, unit filter length 1", test_convolution_ones_f1},
+    {"Simple convolution, unit filter length 2", test_convolution_ones_f2},
+    {"Simple stride 1", test_stride1_convolution},
+    {"Simple stride 2", test_stride2_convolution},
+    {"Simple stride 3", test_stride3_convolution},
+    {"Simple stride 4", test_stride4_convolution},
+    {"Simple stride 5", test_stride5_convolution},
+    {"Simple convolution, unit filter length 1", test_convolution_ones_f1},
+    {"Simple convolution, unit filter length 2", test_convolution_ones_f2},
+    {"Simple convolution, unit filter length 3", test_convolution_ones_f3},
+    {"Simple convolution, unit filter length 4", test_convolution_ones_f4},
+    {"Simple convolution, unit filter length 5", test_convolution_ones_f5},
+    {"Simple convolution, antisymmetric filter length 3", test_convolution_antisymmetric_f3},
+    {"Scrappie convolution, antisymmetric filter length 3", test_scrappie_convolution_f1s1},
+    {0}};
+
 /**   Register tests with CUnit
  *
  *    @returns 0 on success, non-zero on failure
  **/
 int register_test_convolution(void) {
-    CU_pSuite suite = CU_add_suite("Convolution layer",
-                                   init_test_convolution,
-                                   clean_test_convolution);
-    if (NULL == suite) {
-        return CU_get_error();
-    }
-
-    if (NULL == CU_add_test(suite, "Simple stride 1", test_stride1_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL == CU_add_test(suite, "Simple stride 2", test_stride2_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL == CU_add_test(suite, "Simple stride 3", test_stride3_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL == CU_add_test(suite, "Simple stride 4", test_stride4_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL == CU_add_test(suite, "Simple stride 5", test_stride5_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 1",
-                    test_convolution_ones_f1)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 2",
-                    test_convolution_ones_f2)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple stride 1", test_stride1_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple stride 2", test_stride2_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple stride 3", test_stride3_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple stride 4", test_stride4_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple stride 5", test_stride5_convolution)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 1", test_convolution_ones_f1)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 2", test_convolution_ones_f2)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 3", test_convolution_ones_f3)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 4", test_convolution_ones_f4)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, unit filter length 5", test_convolution_ones_f5)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Simple convolution, antisymmetric filter length 3", test_convolution_antisymmetric_f3)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Scrappie convolution, antisymmetric filter length 3", test_scrappie_convolution_f1s1)) {
-        return CU_get_error();
-    }
-
-    return 0;
+    return scrappie_register_test_suite("Convolution layer", init_test_convolution, clean_test_convolution, tests);
 }

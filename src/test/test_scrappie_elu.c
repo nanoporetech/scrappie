@@ -1,6 +1,7 @@
 #include <CUnit/Basic.h>
 #include <stdbool.h>
 
+#include "test_common.h"
 #include <util.h>
 
 /**  Initialise test
@@ -69,38 +70,19 @@ void test_mixed_elu(void) {
     CU_ASSERT_DOUBLE_EQUAL(y[3], -0.9816844f, 1e-6f);
 }
 
+
+static test_with_description tests[] = {
+    {"Test input all zeros", test_zero_elu},
+    {"Test input all negative zeros", test_negzero_elu},
+    {"Test input all positive", test_positive_elu},
+    {"Test input all negative", test_negative_elu},
+    {"Test input mixed positive and negative", test_mixed_elu},
+    {0}};
+
 /**   Register tests with CUnit
  *
  *    @returns 0 on success, non-zero on failure
  **/
 int register_test_elu(void) {
-    CU_pSuite suite = CU_add_suite("Test output of vectorised ELU unit",
-                                   init_test_elu,
-                                   clean_test_elu);
-    if (NULL == suite) {
-        return CU_get_error();
-    }
-
-    if (NULL ==
-        CU_add_test(suite, "Test input all zeros", test_zero_elu)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Test input all negative zeros", test_negzero_elu)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Test input all positive", test_positive_elu)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Test input all negative", test_negative_elu)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Test input mixed positive and negative", test_mixed_elu)) {
-        return CU_get_error();
-    }
-
-    return 0;
+    return scrappie_register_test_suite("Test output of vectorised ELU unit", init_test_elu, clean_test_elu, tests);
 }

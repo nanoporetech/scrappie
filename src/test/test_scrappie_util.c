@@ -12,6 +12,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "scrappie_util.h"
+#include "test_common.h"
+
 static const char testfile[] = "test_matrix.crp";
 
 static FILE *infile = NULL;
@@ -103,6 +106,13 @@ void test_tofrom_array_scrappie_util(void) {
 }
 
 
+static test_with_description tests[] = {
+    {"Reading scrappie_matrix from file", test_read_matrix_scrappie_util},
+    {"Writing scrappie_matrix to file", test_write_matrix_scrappie_util},
+    {"Round-trip scrappie_matrix to / from file", test_roundtrip_matrix_scrappie_util},
+    {"Copy scrappie_matrix", test_copy_matrix_scrappie_util},
+    {"Round-trip scrappie_matrix to / from array", test_tofrom_array_scrappie_util},
+    {0}};
 
 
 int register_scrappie_util(void) {
@@ -110,38 +120,5 @@ int register_scrappie_util(void) {
     // but this is incompatible between Trusty (CUnit 2.1-2) and Xenial (CUnit 2.1-3)
     // due to the addition of setup and teardown functions to the CU_SuiteInfo structure
 
-    CU_pSuite suite = CU_add_suite("Scrappie matrix IO tests",
-                                   init_test_scrappie_util,
-                                   clean_test_scrappie_util);
-    if (NULL == suite) {
-        return CU_get_error();
-    }
-
-    if (NULL ==
-        CU_add_test(suite, "Reading scrappie_matrix from file",
-                    test_read_matrix_scrappie_util)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Writing scrappie_matrix to file",
-                    test_write_matrix_scrappie_util)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Round-trip scrappie_matrix to / from file",
-                    test_roundtrip_matrix_scrappie_util)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Copy scrappie_matrix",
-                    test_copy_matrix_scrappie_util)) {
-        return CU_get_error();
-    }
-    if (NULL ==
-        CU_add_test(suite, "Round-trip scrappie_matrix to / from array",
-                    test_tofrom_array_scrappie_util)) {
-        return CU_get_error();
-    }
-
-    return 0;
+    return scrappie_register_test_suite("Scrappie matrix IO tests", init_test_scrappie_util, clean_test_scrappie_util, tests);
 }
