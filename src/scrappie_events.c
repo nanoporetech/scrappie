@@ -11,6 +11,7 @@
 
 #include "decode.h"
 #include "event_detection.h"
+#include "fast5_interface.h"
 #include "networks.h"
 #include "scrappie_common.h"
 #include "scrappie_licence.h"
@@ -232,7 +233,9 @@ static struct argp argp = { options, parse_arg, args_doc, doc };
 
 static struct _bs calculate_post(char *filename) {
     RETURN_NULL_IF(NULL == filename, (struct _bs){0};);
-    raw_table rt = read_trim_and_segment_raw(filename, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
+    raw_table rt = read_raw(filename, true);
+    RETURN_NULL_IF(NULL == rt.raw, (struct _bs){0};);
+    rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, (struct _bs){0};);
 
     event_table et = detect_events(rt);

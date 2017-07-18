@@ -2,8 +2,8 @@
 #ifndef DECODE_H
 #    define DECODE_H
 #    include <stdbool.h>
-#    include "fast5_interface.h"
 #    include "scrappie_matrix.h"
+#    include "scrappie_structures.h"
 
 typedef struct {
     float scale;

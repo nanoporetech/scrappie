@@ -11,6 +11,7 @@
 #include <sys/types.h>
 
 #include "decode.h"
+#include "fast5_interface.h"
 #include "networks.h"
 #include "scrappie_common.h"
 #include "scrappie_licence.h"
@@ -206,20 +207,8 @@ static struct _raw_basecall_info calculate_post(char * filename, bool use_rgr){
     raw_table rt = read_raw(filename, true);
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
-    const size_t nsample = rt.end - rt.start;
-    if (nsample <= args.trim_end + args.trim_start) {
-        warnx("Too few samples in %s to call (%zu, originally %lu).", filename,
-              nsample, rt.n);
-        free(rt.raw);
-        return (struct _raw_basecall_info){0};
-    }
-    rt.start += args.trim_start;
-    rt.end -= args.trim_end;
-
-    range_t segmentation =
-        trim_raw_by_mad(rt, args.varseg_chunk, args.varseg_thresh);
-    rt.start = segmentation.start;
-    rt.end = segmentation.end;
+    rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
+    RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
     scrappie_matrix post = use_rgr ? nanonet_rgr_posterior(rt, args.min_prob, true)
@@ -235,7 +224,7 @@ static struct _raw_basecall_info calculate_post(char * filename, bool use_rgr){
     float score =
     //      sloika_viterbi(post, args.skip_pen, history_state);
         decode_transducer(post, args.skip_pen, history_state, args.use_slip);
-    
+
     post = free_scrappie_matrix(post);
     int *pos = calloc(nblock, sizeof(int));
     char *basecall = overlapper(history_state, nblock, nstate - 1, pos);
