@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TEST_COMMON_H
+#    define TEST_COMMON_H
+
 typedef struct {
     char * description;
     void (*testfunc)(void);
@@ -20,3 +24,4 @@ static int scrappie_register_test_suite(char const *suite_name, int (*init_test)
 
     return 0;
 }
+#endif /* TEST_COMMON_H */
