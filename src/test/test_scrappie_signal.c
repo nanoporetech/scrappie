@@ -77,7 +77,7 @@ void test_trim_signal(void) {
         }
     }
 
-    rt = trim_raw_by_mad(rt, winlen, 1e-5);
+    rt = trim_raw_by_mad(rt, winlen, 0.0f);
     CU_ASSERT_EQUAL(rt.start, 0);
     CU_ASSERT_EQUAL(rt.end, (rt.n / winlen) * winlen);
 

@@ -39,10 +39,7 @@ raw_table trim_and_segment_raw(raw_table rt, int trim_start, int trim_end, int v
 raw_table trim_raw_by_mad(raw_table rt, int chunk_size, float perc) {
     assert(chunk_size > 1);
     assert(perc >= 0.0 && perc <= 1.0);
-    if(0.0 == perc){
-        // Sloika behaviour: short circuit if perc == 0.0
-        return rt;
-    }
+
     const size_t nsample = rt.end - rt.start;
     const size_t nchunk = nsample / chunk_size;
     // Truncation of end to be consistent with Sloika
