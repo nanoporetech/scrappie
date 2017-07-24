@@ -82,8 +82,7 @@ void robustlog_activation_inplace(scrappie_matrix C, float min_prob) {
     RETURN_NULL_IF(NULL == C, );
 
     const int nblock = C->nc;
-    const int nstate = C->nr;
-    const __m128 mpv = _mm_set1_ps(min_prob / nstate);
+    const __m128 mpv = _mm_set1_ps(min_prob);
     const __m128 mpvm1 = _mm_set1_ps(1.0f - min_prob);
     for (int i = 0; i < nblock; i++) {
         const size_t offset = i * C->nrq;
@@ -94,7 +93,7 @@ void robustlog_activation_inplace(scrappie_matrix C, float min_prob) {
     }
 }
 
-scrappie_matrix window(const scrappie_matrix input, int w, int stride) {
+scrappie_matrix window(const_scrappie_matrix input, int w, int stride) {
     RETURN_NULL_IF(NULL == input, NULL);
     assert(w > 0);
     const int wh = (w + 1) / 2;
@@ -133,8 +132,8 @@ scrappie_matrix window(const scrappie_matrix input, int w, int stride) {
  *  a multiple of the SSE vector size (4).  The filter matrix must have been
  *  expanded accordingly.
  **/
-scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,
-                            const scrappie_matrix b, int stride,
+scrappie_matrix Convolution(const_scrappie_matrix X, const_scrappie_matrix W,
+                            const_scrappie_matrix b, int stride,
                             scrappie_matrix C) {
     RETURN_NULL_IF(NULL == X, NULL);
     assert(NULL != W);
@@ -222,15 +221,15 @@ scrappie_matrix Convolution(const scrappie_matrix X, const scrappie_matrix W,
     return C;
 }
 
-scrappie_matrix feedforward_linear(const scrappie_matrix X,
-                                   const scrappie_matrix W,
-                                   const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix feedforward_linear(const_scrappie_matrix X,
+                                   const_scrappie_matrix W,
+                                   const_scrappie_matrix b, scrappie_matrix C) {
     return affine_map(X, W, b, C);
 }
 
-scrappie_matrix feedforward_tanh(const scrappie_matrix X,
-                                 const scrappie_matrix W,
-                                 const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix feedforward_tanh(const_scrappie_matrix X,
+                                 const_scrappie_matrix W,
+                                 const_scrappie_matrix b, scrappie_matrix C) {
     C = affine_map(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
@@ -241,9 +240,9 @@ scrappie_matrix feedforward_tanh(const scrappie_matrix X,
     return C;
 }
 
-scrappie_matrix feedforward_exp(const scrappie_matrix X,
-                                const scrappie_matrix W,
-                                const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix feedforward_exp(const_scrappie_matrix X,
+                                const_scrappie_matrix W,
+                                const_scrappie_matrix b, scrappie_matrix C) {
     C = affine_map(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
@@ -254,8 +253,8 @@ scrappie_matrix feedforward_exp(const scrappie_matrix X,
     return C;
 }
 
-scrappie_matrix softmax(const scrappie_matrix X, const scrappie_matrix W,
-                        const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix softmax(const_scrappie_matrix X, const_scrappie_matrix W,
+                        const_scrappie_matrix b, scrappie_matrix C) {
     C = feedforward_exp(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
@@ -266,11 +265,11 @@ scrappie_matrix softmax(const scrappie_matrix X, const scrappie_matrix W,
     return C;
 }
 
-scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf,
-                                  const scrappie_matrix Xb,
-                                  const scrappie_matrix Wf,
-                                  const scrappie_matrix Wb,
-                                  const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix feedforward2_tanh(const_scrappie_matrix Xf,
+                                  const_scrappie_matrix Xb,
+                                  const_scrappie_matrix Wf,
+                                  const_scrappie_matrix Wb,
+                                  const_scrappie_matrix b, scrappie_matrix C) {
     C = affine_map2(Xf, Xb, Wf, Wb, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
 
@@ -280,9 +279,9 @@ scrappie_matrix feedforward2_tanh(const scrappie_matrix Xf,
     return C;
 }
 
-scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW,
-                            const scrappie_matrix sW, const scrappie_matrix sW2,
-                            const scrappie_matrix b, scrappie_matrix ostate) {
+scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix iW,
+                            const_scrappie_matrix sW, const_scrappie_matrix sW2,
+                            const_scrappie_matrix b, scrappie_matrix ostate) {
     RETURN_NULL_IF(NULL == X, NULL);
 
     assert(NULL != iW);
@@ -334,9 +333,9 @@ scrappie_matrix gru_forward(const scrappie_matrix X, const scrappie_matrix iW,
     return ostate;
 }
 
-scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW,
-                             const scrappie_matrix sW,
-                             const scrappie_matrix sW2, const scrappie_matrix b,
+scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix iW,
+                             const_scrappie_matrix sW,
+                             const_scrappie_matrix sW2, const_scrappie_matrix b,
                              scrappie_matrix ostate) {
     RETURN_NULL_IF(NULL == X, NULL);
     assert(NULL != iW);
@@ -390,9 +389,9 @@ scrappie_matrix gru_backward(const scrappie_matrix X, const scrappie_matrix iW,
     return ostate;
 }
 
-void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
-              const scrappie_matrix xW, const scrappie_matrix sW,
-              const scrappie_matrix sW2, const scrappie_matrix bias,
+void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
+              const_scrappie_matrix xW, const_scrappie_matrix sW,
+              const_scrappie_matrix sW2, const_scrappie_matrix bias,
               scrappie_matrix xF, scrappie_matrix ostate) {
     /* Perform a single GRU step
      * x      is [isize]
@@ -454,8 +453,8 @@ void gru_step(const scrappie_matrix x, const scrappie_matrix istate,
     }
 }
 
-scrappie_matrix lstm_forward(const scrappie_matrix Xaffine,
-                             const scrappie_matrix sW, const scrappie_matrix p,
+scrappie_matrix lstm_forward(const_scrappie_matrix Xaffine,
+                             const_scrappie_matrix sW, const_scrappie_matrix p,
                              scrappie_matrix output) {
     RETURN_NULL_IF(NULL == Xaffine, NULL);
     assert(NULL != sW);
@@ -505,8 +504,8 @@ scrappie_matrix lstm_forward(const scrappie_matrix Xaffine,
     return output;
 }
 
-scrappie_matrix lstm_backward(const scrappie_matrix Xaffine,
-                              const scrappie_matrix sW, const scrappie_matrix p,
+scrappie_matrix lstm_backward(const_scrappie_matrix Xaffine,
+                              const_scrappie_matrix sW, const_scrappie_matrix p,
                               scrappie_matrix output) {
     RETURN_NULL_IF(NULL == Xaffine, NULL);
     assert(NULL != sW);
@@ -558,8 +557,8 @@ scrappie_matrix lstm_backward(const scrappie_matrix Xaffine,
     return output;
 }
 
-void lstm_step(const scrappie_matrix xAffine, const scrappie_matrix out_prev,
-               const scrappie_matrix sW, const scrappie_matrix peep,
+void lstm_step(const_scrappie_matrix xAffine, const_scrappie_matrix out_prev,
+               const_scrappie_matrix sW, const_scrappie_matrix peep,
                scrappie_matrix xF, scrappie_matrix state,
                scrappie_matrix output) {
     /* Perform a single LSTM step

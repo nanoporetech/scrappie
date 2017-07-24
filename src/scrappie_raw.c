@@ -45,6 +45,7 @@ static struct argp_option options[] = {
     {"rgr", 'r', 0, 0, "Use rGr model"},
     {"no-rgr", 5, 0, OPTION_ALIAS, "Use nanonet-raw model"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
+    {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -68,6 +69,7 @@ struct arguments {
     float min_prob;
     enum format outformat;
     float skip_pen;
+    float stay_pen;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -85,11 +87,12 @@ static struct arguments args = {
     .min_prob = 1e-5,
     .outformat = FORMAT_FASTA,
     .skip_pen = 0.0,
+    .stay_pen = 0.0,
     .use_slip = false,
     .trim_start = 200,
-    .trim_end = 50,
+    .trim_end = 10,
     .varseg_chunk = 100,
-    .varseg_thresh = 0.7,
+    .varseg_thresh = 0.0,
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
@@ -123,7 +126,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         break;
     case 's':
         args.skip_pen = atof(arg);
-        assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
+        assert(isfinite(args.skip_pen));
         break;
     case 't':
         args.trim_start = atoi(strtok(arg, ":"));
@@ -136,6 +139,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
         printf("Trim -- %d %d\n", args.trim_start, args.trim_end);
+        break;
+    case 'y':
+        args.stay_pen = atof(arg);
+        assert(isfinite(args.stay_pen));
         break;
     case 1:
         args.use_slip = true;
@@ -222,8 +229,7 @@ static struct _raw_basecall_info calculate_post(char * filename, bool use_rgr){
 
     int *history_state = calloc(nblock, sizeof(int));
     float score =
-    //      sloika_viterbi(post, args.skip_pen, history_state);
-        decode_transducer(post, args.skip_pen, history_state, args.use_slip);
+        decode_transducer(post, args.stay_pen, args.skip_pen, history_state, args.use_slip);
 
     post = free_scrappie_matrix(post);
     int *pos = calloc(nblock, sizeof(int));
@@ -239,11 +245,11 @@ static struct _raw_basecall_info calculate_post(char * filename, bool use_rgr){
 static int fprintf_fasta(FILE * fp, const char *readname,
                          const struct _raw_basecall_info res) {
     return fprintf(fp,
-                   ">%s  { \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f }\n%s\n",
+                   ">%s  { \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n%s\n",
                    readname, -res.score / res.nblock, res.nblock,
                    res.basecall_length,
                    (float)res.nblock / (float)res.basecall_length,
-                   res.basecall);
+                   res.rt.n, res.rt.start, res.rt.end, res.basecall);
 }
 
 static int fprintf_sam(FILE * fp, const char *readname,

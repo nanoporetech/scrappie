@@ -67,7 +67,7 @@ int clean_test_scrappie_util(void) {
 }
 
 void test_read_matrix_scrappie_util(void) {
-    scrappie_matrix mat_in = read_scrappie_matrix_from_handel(infile);
+    scrappie_matrix mat_in = read_scrappie_matrix_from_handle(infile);
     CU_ASSERT_FATAL(NULL != mat_in);
     CU_ASSERT(validate_scrappie_matrix
               (mat_in, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -76,13 +76,13 @@ void test_read_matrix_scrappie_util(void) {
 
 void test_write_matrix_scrappie_util(void) {
     const int nelt = mat->nc * mat->nr;
-    int ret = write_scrappie_matrix(outfile, mat);
+    int ret = write_scrappie_matrix_to_handle(outfile, mat);
     CU_ASSERT(ret == nelt);
 }
 
 void test_roundtrip_matrix_scrappie_util(void) {
     rewind(outfile);
-    scrappie_matrix mat_in = read_scrappie_matrix_from_handel(outfile);
+    scrappie_matrix mat_in = read_scrappie_matrix_from_handle(outfile);
     CU_ASSERT_FATAL(NULL != mat_in);
     CU_ASSERT(equality_scrappie_matrix(mat_in, mat, 0.0));
     mat_in = free_scrappie_matrix(mat_in);

@@ -26,6 +26,7 @@ The intention is that behaviour will be stable within a series, with only bug fi
     * *release-1.1.0*
         * Implementation of rGr model
         * Stand-alone event detection
+        * Stay penalty to allow ratio of insertions to deletions to be chanaged
 * 1.0 series: Public release
     * *release-1.0.1*
         * Integration with Travis-ci

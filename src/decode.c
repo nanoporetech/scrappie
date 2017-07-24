@@ -51,10 +51,9 @@ float viterbi_backtrace(float const *score, int n, scrappie_imatrix const traceb
     return logscore;
 }
 
-float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
+float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float skip_pen, int *seq,
                         bool use_slip) {
     float logscore = NAN;
-    assert(skip_pen >= 0.0);
     RETURN_NULL_IF(NULL == logpost, logscore);
     RETURN_NULL_IF(NULL == seq, logscore);
 
@@ -103,7 +102,7 @@ float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
 
         // Stay
         const __m128 stay_m128 =
-            _mm_set1_ps(logpost->data.f[offsetP + nhistory]);
+            _mm_set1_ps(logpost->data.f[offsetP + nhistory] - stay_pen);
         const __m128i negone_m128i = _mm_set1_epi32(-1);
         for (int i = 0; i < nhistoryq; i++) {
             // Traceback for stay is negative
@@ -583,9 +582,7 @@ void colmaxf(float * x, int nr, int nc, int * idx){
     }
 }
 
-float sloika_viterbi(scrappie_matrix const logpost, float skip_pen, int *seq){
-    assert(skip_pen >= 0.0);
-
+float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen, int *seq){
     float logscore = NAN;
     RETURN_NULL_IF(NULL == logpost, logscore);
     RETURN_NULL_IF(NULL == seq, logscore);
@@ -647,7 +644,7 @@ float sloika_viterbi(scrappie_matrix const logpost, float skip_pen, int *seq){
 
             // Stay
             for(int hst=0 ; hst < nhst ; hst++){
-                const float score = pscore[hst] + logpost->data.f[lpoffset + nhst];
+                const float score = pscore[hst] + logpost->data.f[lpoffset + nhst] - stay_pen;
                 if(score > cscore[hst]){
                     cscore[hst] = score;
                     traceback->data.f[toffset + hst] = -1;

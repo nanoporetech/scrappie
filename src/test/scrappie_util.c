@@ -1,9 +1,13 @@
 #define BANANA 1
+#define _BSD_SOURCE
 
 #include <math.h>
 
 #include "scrappie_stdlib.h"
 #include "scrappie_util.h"
+
+#define CRP_MAX_ROW (1<<16)
+#define CRP_MAX_COL (1<<16)
 
 /**  Simple writer for scrappie_matrix structures
  *
@@ -15,7 +19,7 @@
  *
  *  @returns Number of elements written
  **/
-int write_scrappie_matrix(FILE * fh, const scrappie_matrix mat) {
+int write_scrappie_matrix_to_handle(FILE * fh, const_scrappie_matrix mat) {
     if (NULL == fh || NULL == mat) {
         return 0;
     }
@@ -42,13 +46,29 @@ int write_scrappie_matrix(FILE * fh, const scrappie_matrix mat) {
     return nelt;
 }
 
+int write_scrappie_matrix(const char * fn, const_scrappie_matrix mat) {
+    if(NULL == fn){
+        return 0;
+    }
+
+    FILE * fh = fopen(fn, "w");
+    if(NULL == fh){
+        return 0;
+    }
+
+    int res = write_scrappie_matrix_to_handle(fh, mat);
+    fclose(fh);
+
+    return res;
+}
+
 /**   Simple reader for scrappie_matrix structures
  *
  *  @param fh A FILE pointer to read from.
  *
  *  @returns Matrix read or NULL on failure
  **/
-scrappie_matrix read_scrappie_matrix_from_handel(FILE * fh) {
+scrappie_matrix read_scrappie_matrix_from_handle(FILE * fh) {
     RETURN_NULL_IF(NULL == fh, NULL);
 
     int nr, nc;
@@ -59,6 +79,10 @@ scrappie_matrix read_scrappie_matrix_from_handel(FILE * fh) {
     }
     if (nr <= 0 || nc <= 0) {
         warnx("Number of rows or columns invalid (got %d %d).\n", nr, nc);
+        return NULL;
+    }
+    if (nr > CRP_MAX_ROW || nc > CRP_MAX_COL) {
+        warnx("Number of rows or columns too large (got %d %d).\n", nr, nc);
         return NULL;
     }
 
@@ -100,7 +124,7 @@ scrappie_matrix read_scrappie_matrix(char const * fn) {
     FILE *fh = fopen(fn, "r");
     RETURN_NULL_IF(NULL == fh, NULL);
 
-    scrappie_matrix mat = read_scrappie_matrix_from_handel(fh);
+    scrappie_matrix mat = read_scrappie_matrix_from_handle(fh);
     fclose(fh);
     return mat;
 }
@@ -113,8 +137,8 @@ scrappie_matrix read_scrappie_matrix(char const * fn) {
  *  @returns A unformly distributed random number
  **/
 float scrappie_random_uniform(float lower, float upper) {
-    // rand() is awful but we don't require good random numbers
-    return lower + (upper - lower) * (float)rand() / RAND_MAX;
+    // random() is awful but we don't require good random numbers
+    return lower + (upper - lower) * (float)((double)random() / RAND_MAX);
 }
 
 /**  Matrix filed with random values

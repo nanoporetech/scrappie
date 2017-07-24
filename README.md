@@ -16,10 +16,12 @@ For a complete release history, see [RELEASES.md]
 * The HDF5 library and development headers.
 
 On Debian based systems, the following packages are sufficient (tested Ubuntu 14.04 and 16.04)
-* libopenblas-base
-* libopenblas-dev
+* libcunit1
+* libcunit1-dev
 * libhdf5
 * libhdf5-dev
+* libopenblas-base
+* libopenblas-dev
 
 The Intel MKL may be used to provide the BLAS library.  The combination of the Intel `icc`
 compiler and linking against the MKL can result in significant performance improvements, a
@@ -84,6 +86,7 @@ Scrappie basecaller -- basecall via events
                              segmentation
       --slip, --no-slip      Use slipping
   -t, --trim=start:end       Number of events to trim, as start:end
+  -y, --stay=penalty         Penalty for staying
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
@@ -110,6 +113,7 @@ Scrappie basecaller -- basecall from raw signal
                              segmentation
       --slip, --no-slip      Use slipping
   -t, --trim=start:end       Number of samples to trim, as start:end
+  -y, --stay=penalty         Penalty for staying
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version

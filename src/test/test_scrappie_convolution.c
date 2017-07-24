@@ -366,9 +366,9 @@ void test_convolution_antisymmetric_f3(void) {
                                    test_conv_tol);
 }
 
-void compare_convolution_to_baseline(scrappie_matrix const input,
-                                     scrappie_matrix const filter,
-                                     scrappie_matrix const bias, Vec input_base,
+void compare_convolution_to_baseline(const_scrappie_matrix input,
+                                     const_scrappie_matrix filter,
+                                     const_scrappie_matrix bias, Vec input_base,
                                      Vec filter_base) {
     scrappie_matrix res_odd = Convolution(mat_odd, filter, bias, 1, NULL);
     Vec res_odd_base = simple_convolution(input_base, filter_base);
