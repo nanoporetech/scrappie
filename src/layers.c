@@ -279,23 +279,18 @@ scrappie_matrix feedforward2_tanh(const_scrappie_matrix Xf,
     return C;
 }
 
-scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix iW,
-                            const_scrappie_matrix sW, const_scrappie_matrix sW2,
-                            const_scrappie_matrix b, scrappie_matrix ostate) {
+scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
+                            const_scrappie_matrix sW2, scrappie_matrix ostate) {
     RETURN_NULL_IF(NULL == X, NULL);
 
-    assert(NULL != iW);
     assert(NULL != sW);
     assert(NULL != sW2);
-    assert(NULL != b);
 
-    assert(X->nr == iW->nr);
     const int bsize = X->nc;
     const int size = sW2->nc;
+    assert(X->nr == 3 * size);
     assert(sW->nr == size);
     assert(sW2->nr == size);
-    assert(b->nr == 3 * size);
-    assert(iW->nc == 3 * size);
     assert(sW->nc == 2 * size);
     assert(sW2->nc == size);
 
@@ -318,12 +313,12 @@ scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix iW,
     xCol.nc = sCol1.nc = sCol2.nc = 1;
     sCol1.data.v = ostate->data.v + ostate->nrq;
     sCol2.data.v = ostate->data.v;
-    gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
+    gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     for (int i = 1; i < bsize; i++) {
         xCol.data.v = X->data.v + i * X->nrq;
         sCol1.data.v = ostate->data.v + (i - 1) * ostate->nrq;
         sCol2.data.v = ostate->data.v + i * ostate->nrq;
-        gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
+        gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     }
 
     tmp = free_scrappie_matrix(tmp);
@@ -333,23 +328,17 @@ scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix iW,
     return ostate;
 }
 
-scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix iW,
-                             const_scrappie_matrix sW,
-                             const_scrappie_matrix sW2, const_scrappie_matrix b,
-                             scrappie_matrix ostate) {
+scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
+                             const_scrappie_matrix sW2, scrappie_matrix ostate) {
     RETURN_NULL_IF(NULL == X, NULL);
-    assert(NULL != iW);
     assert(NULL != sW);
     assert(NULL != sW2);
-    assert(NULL != b);
 
-    assert(X->nr == iW->nr);
     const int size = sW2->nc;
     const int bsize = X->nc;
+    assert(X->nr == 3 * size);
     assert(sW->nr == size);
     assert(sW2->nr == size);
-    assert(b->nr == 3 * size);
-    assert(iW->nc == 3 * size);
     assert(sW->nc == 2 * size);
     assert(sW2->nc == size);
 
@@ -373,13 +362,13 @@ scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix iW,
     xCol.data.v = X->data.v + (X->nc - 1) * X->nrq;
     sCol1.data.v = ostate->data.v + (ostate->nc - 1) * ostate->nrq;
     sCol2.data.v = ostate->data.v;
-    gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
+    gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     for (int i = 1; i < bsize; i++) {
         const int index = bsize - i - 1;
         xCol.data.v = X->data.v + index * X->nrq;
         sCol1.data.v = ostate->data.v + (index + 1) * ostate->nrq;
         sCol2.data.v = ostate->data.v + index * ostate->nrq;
-        gru_step(&xCol, &sCol1, iW, sW, sW2, b, tmp, &sCol2);
+        gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     }
 
     tmp = free_scrappie_matrix(tmp);
@@ -390,8 +379,7 @@ scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix iW,
 }
 
 void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
-              const_scrappie_matrix xW, const_scrappie_matrix sW,
-              const_scrappie_matrix sW2, const_scrappie_matrix bias,
+              const_scrappie_matrix sW, const_scrappie_matrix sW2,
               scrappie_matrix xF, scrappie_matrix ostate) {
     /* Perform a single GRU step
      * x      is [isize]
@@ -404,28 +392,22 @@ void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
      * ostate is [size]
      */
     assert(NULL != x);
-    assert(NULL != xW);
     assert(NULL != sW);
     assert(NULL != sW2);
-    assert(NULL != bias);
-    assert(x->nr == xW->nr);
     const int size = istate->nr;
+    assert(x->nr == 3 * size);
     assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
     const int sizeq = size / 4;
-    assert(3 * size == xW->nc);
     assert(size == sW->nr);
     assert(2 * size == sW->nc);
     assert(size == sW2->nr);
     assert(size == sW2->nc);
-    assert(3 * size == bias->nr);
     assert(3 * size == xF->nr);
     assert(size == ostate->nr);
 
-    /* Copy bias vector to output */
-    memcpy(xF->data.v, bias->data.v, bias->nrq * sizeof(__m128));
-    //  Following line could be lifted out of GRU iteration at the expense of more memory use
-    cblas_sgemv(CblasColMajor, CblasTrans, xW->nr, xW->nc, 1.0, xW->data.f,
-                xW->nrq * 4, x->data.f, 1, 1.0, xF->data.f, 1);
+
+    // Copy input vector = iW x + b to temporary vector
+    memcpy(xF->data.v, x->data.v, x->nrq * sizeof(__m128));
     /*  Add sW * istate to first 2 * size elts of xF
      *  then apply gate function to get r and z
      */
