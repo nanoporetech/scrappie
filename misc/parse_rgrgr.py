@@ -97,7 +97,7 @@ cformatM(sys.stdout, 'gruB3_rgrgr_sW', gru3.sW.get_value())
 cformatM(sys.stdout, 'gruB3_rgrgr_sW2', gru3.sW2.get_value())
 cformatV(sys.stdout, 'gruB3_rgrgr_b', gru3.b.get_value().reshape(-1))
 
-"""  Forward GRU (second layer)
+"""  Forward GRU (fourth layer)
 """
 gru4 = network.layers[4]
 cformatM(sys.stdout, 'gruF4_rgrgr_iW', gru4.iW.get_value())
@@ -105,7 +105,7 @@ cformatM(sys.stdout, 'gruF4_rgrgr_sW', gru4.sW.get_value())
 cformatM(sys.stdout, 'gruF4_rgrgr_sW2', gru4.sW2.get_value())
 cformatV(sys.stdout, 'gruF4_rgrgr_b', gru4.b.get_value().reshape(-1))
 
-""" backward GRU(third layer)
+""" backward GRU(fifth layer)
 """
 gru5 = network.layers[5].layer
 cformatM(sys.stdout, 'gruB5_rgrgr_iW', gru5.iW.get_value())
