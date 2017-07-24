@@ -8,6 +8,7 @@ int register_test_convolution(void);
 int register_test_elu(void);
 int register_test_signal(void);
 int register_test_eventdetection(void);
+int register_test_util(void);
 
 int (*test_suites[]) (void) = {
     register_test_skeleton,
@@ -16,6 +17,7 @@ int (*test_suites[]) (void) = {
     register_test_elu,
     register_test_signal,
     register_test_eventdetection,
+    register_test_util,
     NULL // Last element of array should be NULL
 };
 

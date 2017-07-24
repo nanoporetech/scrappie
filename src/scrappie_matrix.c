@@ -50,7 +50,7 @@ scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc) {
     return M;
 }
 
-scrappie_matrix copy_scrappie_matrix(scrappie_matrix const M){
+scrappie_matrix copy_scrappie_matrix(const_scrappie_matrix M){
     RETURN_NULL_IF(NULL == M, NULL);
     scrappie_matrix C = make_scrappie_matrix(M->nr, M->nc);
     RETURN_NULL_IF(NULL == C, NULL);
@@ -77,7 +77,7 @@ scrappie_matrix mat_from_array(const float *x, int nr, int nc) {
     return res;
 }
 
-float * array_from_scrappie_matrix(scrappie_matrix const mat){
+float * array_from_scrappie_matrix(const_scrappie_matrix mat){
     RETURN_NULL_IF(NULL == mat, NULL);
 
     const size_t nelt = mat->nr * mat->nc;
@@ -97,7 +97,7 @@ float * array_from_scrappie_matrix(scrappie_matrix const mat){
 
 
 void fprint_scrappie_matrix(FILE * fh, const char *header,
-                            const scrappie_matrix mat, int nr, int nc,
+                            const_scrappie_matrix mat, int nr, int nc,
                             bool include_padding) {
     assert(NULL != fh);
     assert(NULL != mat);
@@ -119,9 +119,9 @@ void fprint_scrappie_matrix(FILE * fh, const char *header,
     }
     for (int c = 0; c < nc; c++) {
         const size_t offset = c * mat->nrq * 4;
-        fprintf(fh, "%4d : % 6.4f", c, mat->data.f[offset]);
+        fprintf(fh, "%4d : % 12e", c, mat->data.f[offset]);
         for (int r = 1; r < nr; r++) {
-            fprintf(fh, "  % 6.4f", mat->data.f[offset + r]);
+            fprintf(fh, "  % 12e", mat->data.f[offset + r]);
         }
         fputc('\n', fh);
     }
@@ -232,8 +232,8 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
  *
  *  @return A boolean of whether the two matrices are equal.
  **/
-bool equality_scrappie_matrix(const scrappie_matrix mat1,
-                              const scrappie_matrix mat2, const float tol) {
+bool equality_scrappie_matrix(const_scrappie_matrix mat1,
+                              const_scrappie_matrix mat2, const float tol) {
     if (NULL == mat1 || NULL == mat2) {
         // One or both matrices are NULL
         if (NULL == mat1 && NULL == mat2) {
@@ -318,8 +318,8 @@ void zero_scrappie_imatrix(scrappie_imatrix M) {
     memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));
 }
 
-scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
-                           const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix affine_map(const_scrappie_matrix X, const_scrappie_matrix W,
+                           const_scrappie_matrix b, scrappie_matrix C) {
     /*  Affine transform C = W^t X + b
      *  X is [nr, nc]
      *  W is [nr, nk]
@@ -348,9 +348,9 @@ scrappie_matrix affine_map(const scrappie_matrix X, const scrappie_matrix W,
     return C;
 }
 
-scrappie_matrix affine_map2(const scrappie_matrix Xf, const scrappie_matrix Xb,
-                            const scrappie_matrix Wf, const scrappie_matrix Wb,
-                            const scrappie_matrix b, scrappie_matrix C) {
+scrappie_matrix affine_map2(const_scrappie_matrix Xf, const_scrappie_matrix Xb,
+                            const_scrappie_matrix Wf, const_scrappie_matrix Wb,
+                            const_scrappie_matrix b, scrappie_matrix C) {
     RETURN_NULL_IF(NULL == Xf, NULL);
     RETURN_NULL_IF(NULL == Xb, NULL);
 
@@ -404,7 +404,7 @@ void row_normalise_inplace(scrappie_matrix C) {
     }
 }
 
-float max_scrappie_matrix(const scrappie_matrix x) {
+float max_scrappie_matrix(const_scrappie_matrix x) {
     if (NULL == x) {
         // Input NULL due to earlier failure.  Propagate
         return NAN;
@@ -421,7 +421,7 @@ float max_scrappie_matrix(const scrappie_matrix x) {
     return amax;
 }
 
-float min_scrappie_matrix(const scrappie_matrix x) {
+float min_scrappie_matrix(const_scrappie_matrix x) {
     if (NULL == x) {
         // Input NULL due to earlier failure.  Propagate
         return NAN;
@@ -438,7 +438,7 @@ float min_scrappie_matrix(const scrappie_matrix x) {
     return amin;
 }
 
-int argmax_scrappie_matrix(const scrappie_matrix x) {
+int argmax_scrappie_matrix(const_scrappie_matrix x) {
     if (NULL == x) {
         // Input NULL due to earlier failure.  Propagate
         return -1;
@@ -458,7 +458,7 @@ int argmax_scrappie_matrix(const scrappie_matrix x) {
     return imax;
 }
 
-int argmin_scrappie_matrix(const scrappie_matrix x) {
+int argmin_scrappie_matrix(const_scrappie_matrix x) {
     if (NULL == x) {
         // Input NULL due to earlier failure.  Propagate
         return -1;

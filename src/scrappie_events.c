@@ -52,6 +52,7 @@ static struct argp_option options[] = {
      "Minimum bound on probability of match"},
     {"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
+    {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of events to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -81,6 +82,7 @@ struct arguments {
     float min_prob;
     enum format outformat;
     float skip_pen;
+    float stay_pen;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -100,11 +102,12 @@ static struct arguments args = {
     .min_prob = 1e-5,
     .outformat = FORMAT_FASTA,
     .skip_pen = 0.0,
+    .stay_pen = 0.0,
     .use_slip = false,
     .trim_start = 200,
-    .trim_end = 50,
+    .trim_end = 10,
     .varseg_chunk = 100,
-    .varseg_thresh = 0.7,
+    .varseg_thresh = 0.0,
     .dump = NULL,
     .albacore = false,
     .compression_level = 1,
@@ -138,7 +141,7 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         break;
     case 's':
         args.skip_pen = atof(arg);
-        assert(isfinite(args.skip_pen) && args.skip_pen >= 0.0);
+        assert(isfinite(args.skip_pen));
         break;
     case 't':
         args.trim_start = atoi(strtok(arg, ":"));
@@ -150,6 +153,10 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         }
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
+        break;
+    case 'y':
+        args.stay_pen = atof(arg);
+        assert(isfinite(args.stay_pen));
         break;
     case 1:
         args.use_slip = true;
@@ -255,7 +262,7 @@ static struct _bs calculate_post(char *filename) {
 
     int *history_state = calloc(nev, sizeof(int));
     float score =
-        decode_transducer(post, args.skip_pen, history_state, args.use_slip);
+        decode_transducer(post, args.stay_pen, args.skip_pen, history_state, args.use_slip);
     post = free_scrappie_matrix(post);
     int *pos = calloc(nev, sizeof(int));
     char *basecall = overlapper(history_state, nev, nstate - 1, pos);

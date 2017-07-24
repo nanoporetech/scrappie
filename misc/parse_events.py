@@ -2,14 +2,20 @@
 import pickle
 import math
 import numpy as np
+import re
 import sys
 
 
 model_file = sys.argv[1]
+trim_trailing_zeros = re.compile('0+p')
+
+def small_hex(f):
+    hf = float(f).hex()
+    return trim_trailing_zeros.sub('p', hf)
 
 def process_column(v, pad):
     """ process and pad """
-    return [str(f) for f in v] + ["0.0"] * pad
+    return [small_hex(f) for f in v] + [small_hex(0.0)] * pad
 
 
 def cformatM(fh, name, X):
@@ -27,7 +33,7 @@ def cformatM(fh, name, X):
 def cformatV(fh, name, X):
     nrq = int(math.ceil(X.shape[0] / 4.0))
     pad = nrq * 4 - X.shape[0]
-    lines = ', '.join(list(map(lambda f: str(f), X)) + ["0.0"] * pad)
+    lines = ', '.join(list(map(lambda f: small_hex(f), X)) + [small_hex(0.0)] * pad)
     fh.write('float {}[] = {}\n'.format( '__' + name, '{'))
     fh.write('\t' + lines)
     fh.write('};\n')

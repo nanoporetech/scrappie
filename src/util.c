@@ -268,11 +268,9 @@ void studentise_array_kahan(float *x, size_t n) {
 }
 
 bool equality_array(double const * x, double const * y, size_t n, double const tol){
+    
     if(NULL == x || NULL == y){
-        if(NULL == x && NULL == y){
-            return true;
-        }
-        return false;
+        return NULL == x && NULL == y;
     }
     for(size_t i=0 ; i < n ; i++){
         if(fabs(x[i] - y[i]) > tol){
@@ -286,14 +284,25 @@ bool equality_array(double const * x, double const * y, size_t n, double const t
 
 bool equality_arrayf(float const * x, float const * y, size_t n, float const tol){
     if(NULL == x || NULL == y){
-        if(NULL == x && NULL == y){
-            return true;
-        }
-        return false;
+        return NULL == x && NULL == y;
     }
     for(size_t i=0 ; i < n ; i++){
         if(fabsf(x[i] - y[i]) > tol){
             warnx("Failure at elt %zu: %f %f\n", i, x[i], y[i]);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool equality_arrayi(int const * x, int const * y, size_t n){
+    if(NULL == x || NULL == y){
+        return NULL == x && NULL == y;
+    }
+    for(size_t i=0 ; i < n ; i++){
+        if(x[i] != y[i]){
+            warnx("Failure at elt %zu: %d %d\n", i, x[i], y[i]);
             return false;
         }
     }

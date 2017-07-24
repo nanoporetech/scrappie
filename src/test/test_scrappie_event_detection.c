@@ -1,6 +1,5 @@
 #define BANANA 1
 #include <CUnit/Basic.h>
-#include <err.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -128,28 +127,24 @@ void test_correct_number_of_events(void){
 
 void test_correct_starts(void){
     for(size_t i=0 ; i < events.n ; i++){
-        warnx("start: %zu %zu %zu", i, events.event[i].start, i * 2);
         CU_ASSERT_EQUAL(events.event[i].start, i * 2);
     }
 }
 
 void test_correct_lengths(void){
     for(size_t i=0 ; i < events.n ; i++){
-        warnx("start: %zu %f %f", i, events.event[i].length, 2.0f);
         CU_ASSERT_EQUAL(events.event[i].length, 2.0f);
     }
 }
 
 void test_correct_means(void){
     for(size_t i=0 ; i < events.n ; i++){
-        warnx("start: %zu %f %f", i, events.event[i].mean, (float)(i+1));
         CU_ASSERT_EQUAL(events.event[i].mean, (float)(i+1));
     }
 }
 
 void test_correct_stdv(void){
     for(size_t i=0 ; i < events.n ; i++){
-        warnx("start: %zu %f %f", i, events.event[i].stdv, 0.0f);
         CU_ASSERT_EQUAL(events.event[i].stdv, 0.0f);
     }
 }

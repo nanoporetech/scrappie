@@ -56,7 +56,7 @@ extern __inline __m128d __attribute__ ((__gnu_inline__, __always_inline__))
  *   Standard implementations
  **/
 static inline float logisticf(float x) {
-    return 1.0 / (1.0 + expf(-x));
+    return 1.0f / (1.0f + expf(-x));
 }
 
 static inline float eluf(float x){
@@ -111,7 +111,8 @@ static inline __m128 __attribute__ ((__always_inline__)) logfv(__m128 x) {
 }
 
 static inline __m128 __attribute__ ((__always_inline__)) logisticfv(__m128 x) {
-    return _mm_rcp_ps(_mm_add_ps(_mm_setone_ps(), expfv(-x)));
+    const __m128 ones = _mm_setone_ps();
+    return _mm_div_ps(ones, _mm_add_ps(ones, expfv(-x)));
 }
 
 static inline __m128 __attribute__ ((__always_inline__)) tanhfv(__m128 x) {
@@ -193,5 +194,6 @@ void studentise_array_kahan(float *x, size_t n);
 
 bool equality_array(double const * x, double const * y, size_t n, double const tol);
 bool equality_arrayf(float const * x, float const * y, size_t n, float const tol);
+bool equality_arrayi(int const * x, int const * y, size_t n);
 
 #endif                          /* UTIL_H */

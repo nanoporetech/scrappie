@@ -10,13 +10,13 @@ typedef struct {
     float base_adj[4];
 } dwell_model;
 
-float decode_transducer(const scrappie_matrix logpost, float skip_pen, int *seq,
-                        bool use_slip);
+float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                        int *seq, bool use_slip);
 char *overlapper(const int *seq, int n, int nkmer, int *pos);
 char *homopolymer_dwell_correction(const event_table et, const int *seq,
                                    size_t nstate, size_t basecall_len);
 char *dwell_corrected_overlapper(const int *seq, const int *dwell, int n,
                                  int nkmer, const dwell_model dm);
 
-float sloika_viterbi(scrappie_matrix const logpost, float skip_pen, int *seq);
+float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen, int *seq);
 #endif                          /* DECODE_H */
