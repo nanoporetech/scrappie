@@ -40,13 +40,12 @@ static struct argp_option options[] = {
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     {"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
     {"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
-    {"rgr", 'r', 0, 0, "Use rGr model"},
-    {"no-rgr", 5, 0, OPTION_ALIAS, "Use nanonet-raw model"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
+    {"model", 5, "name", 0, "Raw model to use: \"raw\", \"rgr\", \"rgrgr\""},
     // Currently disabled
     //{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},
@@ -76,7 +75,7 @@ struct arguments {
     char * dump;
     int compression_level;
     int compression_chunk_size;
-    bool use_rgr;
+    enum raw_model_type model_type;
     char ** files;
 };
 
@@ -94,7 +93,7 @@ static struct arguments args = {
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
-    .use_rgr = true,
+    .model_type = SCRAPPIE_MODEL_RGR,
     .files = NULL
 };
 
@@ -118,9 +117,6 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         } else {
             errx(EXIT_FAILURE, "Unrecognised format");
         }
-        break;
-    case 'r':
-        args.use_rgr = true;
         break;
     case 's':
         args.skip_pen = atof(arg);
@@ -161,7 +157,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         args.dump = arg;
         break;
     case 5:
-        args.use_rgr = false;
+        args.model_type = get_raw_model(arg);
+        if(SCRAPPIE_MODEL_INVALID == args.model_type){
+            errx(EXIT_FAILURE, "Invalid model name \"%s\"", arg);
+        }
         break;
     case 10:
     case 11:
@@ -206,7 +205,11 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 
 static struct argp argp = {options, parse_arg, args_doc, doc};
 
-static struct _raw_basecall_info calculate_post(char * filename, bool use_rgr){
+static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_type model){
+    RETURN_NULL_IF(NULL == filename, (struct _raw_basecall_info){0});
+    RETURN_NULL_IF(SCRAPPIE_MODEL_INVALID == model, (struct _raw_basecall_info){0});
+    posterior_function_ptr calcpost = get_posterior_function(model);
+
     raw_table rt = read_raw(filename, true);
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
@@ -214,8 +217,7 @@ static struct _raw_basecall_info calculate_post(char * filename, bool use_rgr){
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-    scrappie_matrix post = use_rgr ? nanonet_rgr_posterior(rt, args.min_prob, true)
-                                   : nanonet_raw_posterior(rt, args.min_prob, true);
+    scrappie_matrix post = calcpost(rt, args.min_prob, true);
     if (NULL == post) {
         free(rt.raw);
         return (struct _raw_basecall_info){0};
@@ -311,7 +313,7 @@ int main_raw(int argc, char * argv[]){
             reads_started += 1;
 
             char * filename = globbuf.gl_pathv[fn2];
-            struct _raw_basecall_info res = calculate_post(filename, args.use_rgr);
+            struct _raw_basecall_info res = calculate_post(filename, args.model_type);
             if(NULL == res.basecall){
                 warnx("No basecall returned for %s", filename);
                 continue;
