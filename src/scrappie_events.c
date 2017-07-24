@@ -18,8 +18,6 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-void scrappie_network_setup(void);
-
 // Doesn't play nice with other headers, include last
 #include <argp.h>
 
@@ -202,8 +200,6 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         args.varseg_thresh = atof(next_tok) / 100.0;
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
-        fprintf(stderr, "Segmentation -- %d %f\n", args.varseg_chunk,
-                args.varseg_thresh);
         break;
 #if defined(_OPENMP)
     case '#':
