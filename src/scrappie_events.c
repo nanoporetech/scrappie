@@ -18,8 +18,6 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-void scrappie_network_setup(void);
-
 // Doesn't play nice with other headers, include last
 #include <argp.h>
 
