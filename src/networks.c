@@ -65,24 +65,31 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
     scrappie_matrix conv = Convolution(raw_mat, conv_raw_W, conv_raw_b, conv_raw_stride, NULL);
     tanh_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
+
     //  First GRU layer
-    scrappie_matrix gruF =
-        gru_forward(conv, gruF1_raw_iW, gruF1_raw_sW, gruF1_raw_sW2,
-                    gruF1_raw_b, NULL);
-    scrappie_matrix gruB =
-        gru_backward(conv, gruB1_raw_iW, gruB1_raw_sW, gruB1_raw_sW2,
-                     gruB1_raw_b, NULL);
+    scrappie_matrix gruF1in = feedforward_linear(conv, gruF1_raw_iW, gruF1_raw_b, NULL);
+    scrappie_matrix gruB1in = feedforward_linear(conv, gruB1_raw_iW, gruB1_raw_b, NULL);
     conv = free_scrappie_matrix(conv);
+
+    scrappie_matrix gruF = gru_forward(gruF1in, gruF1_raw_sW, gruF1_raw_sW2, NULL);
+    gruF1in = free_scrappie_matrix(gruF1in);
+    scrappie_matrix gruB = gru_backward(gruB1in, gruB1_raw_sW, gruB1_raw_sW2, NULL);
+    gruB1in = free_scrappie_matrix(gruB1in);
+
     //  Combine with feed forward layer
     scrappie_matrix gruFF =
         feedforward2_tanh(gruF, gruB, FF1_raw_Wf, FF1_raw_Wb, FF1_raw_b, NULL);
+
     //  Second GRU layer
-    gruF =
-        gru_forward(gruFF, gruF2_raw_iW, gruF2_raw_sW, gruF2_raw_sW2,
-                    gruF2_raw_b, gruF);
-    gruB =
-        gru_backward(gruFF, gruB2_raw_iW, gruB2_raw_sW, gruB2_raw_sW2,
-                     gruB2_raw_b, gruB);
+    scrappie_matrix gruF2in = feedforward_linear(gruFF, gruF2_raw_iW, gruF2_raw_b, NULL);
+    scrappie_matrix gruB2in = feedforward_linear(gruFF, gruB2_raw_iW, gruB2_raw_b, NULL);
+    gruFF = free_scrappie_matrix(gruFF);
+    gruF = gru_forward(gruF2in, gruF2_raw_sW, gruF2_raw_sW2, gruF);
+    gruF2in = free_scrappie_matrix(gruF2in);
+    gruB = gru_backward(gruB2in, gruB2_raw_sW, gruB2_raw_sW2, gruB);
+    gruB2in = free_scrappie_matrix(gruB2in);
+
+
     //  Combine with feed forward layer
     gruFF =
         feedforward2_tanh(gruF, gruB, FF2_raw_Wf, FF2_raw_Wb, FF2_raw_b, gruFF);
@@ -112,20 +119,20 @@ scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
     elu_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
     //  First GRU layer
-    scrappie_matrix gruB1 =
-        gru_backward(conv, gruB1_rgr_iW, gruB1_rgr_sW, gruB1_rgr_sW2,
-                     gruB1_rgr_b, NULL);
+    scrappie_matrix gruB1in = feedforward_linear(conv, gruB1_rgr_iW, gruB1_rgr_b, NULL);
     conv = free_scrappie_matrix(conv);
+    scrappie_matrix gruB1 = gru_backward(gruB1in, gruB1_rgr_sW, gruB1_rgr_sW2, NULL);
+    gruB1in = free_scrappie_matrix(gruB1in);
     //  Second GRU layer
-    scrappie_matrix gruF2 =
-        gru_forward(gruB1, gruF2_rgr_iW, gruF2_rgr_sW, gruF2_rgr_sW2,
-                    gruF2_rgr_b, NULL);
+    scrappie_matrix gruF2in = feedforward_linear(gruB1, gruF2_rgr_iW, gruF2_rgr_b, NULL);
     gruB1 = free_scrappie_matrix(gruB1);
-    //  Thrid GRU layer
-    scrappie_matrix gruB3 =
-        gru_backward(gruF2, gruB3_rgr_iW, gruB3_rgr_sW, gruB3_rgr_sW2,
-                     gruB3_rgr_b, NULL);
+    scrappie_matrix gruF2 = gru_forward(gruF2in, gruF2_rgr_sW, gruF2_rgr_sW2, NULL);
+    gruF2in = free_scrappie_matrix(gruF2in);
+    //  Third GRU layer
+    scrappie_matrix gruB3in = feedforward_linear(gruF2, gruB3_rgr_iW, gruB3_rgr_b, NULL);
     gruF2 = free_scrappie_matrix(gruF2);
+    scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_rgr_sW, gruB3_rgr_sW2, NULL);
+    gruB3in = free_scrappie_matrix(gruB3in);
 
     scrappie_matrix post = softmax(gruB3, FF_rgr_W, FF_rgr_b, NULL);
     gruB3 = free_scrappie_matrix(gruB3);
