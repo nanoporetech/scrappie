@@ -284,27 +284,27 @@ event_table detect_events(raw_table const rt) {
 
     Detector short_detector = {
         .DEF_PEAK_POS = -1,
-        .DEF_PEAK_VAL = 1e100,
+        .DEF_PEAK_VAL = FLT_MAX,
         .signal = tstat1,
         .signal_length = rt.n,
         .threshold = threshold1,
         .window_length = window1_length,
         .masked_to = 0,
         .peak_pos = -1,
-        .peak_value = 1e100,
+        .peak_value = FLT_MAX,
         .valid_peak = false
     };
 
     Detector long_detector = {
         .DEF_PEAK_POS = -1,
-        .DEF_PEAK_VAL = 1e100,
+        .DEF_PEAK_VAL = FLT_MAX,
         .signal = tstat2,
         .signal_length = rt.n,
         .threshold = threshold2,
         .window_length = window2_length,
         .masked_to = 0,
         .peak_pos = -1,
-        .peak_value = 1e100,
+        .peak_value = FLT_MAX,
         .valid_peak = false
     };
 
