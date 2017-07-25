@@ -15,13 +15,13 @@ scrappie_matrix nanonet_rgrgr_posterior(const raw_table signal, float min_prob, 
 
 
 enum raw_model_type get_raw_model(const char * modelstr){
-    if(0 == strcmp(modelstr, "raw")){
+    if(0 == strcmp(modelstr, "raw_r94")){
         return SCRAPPIE_MODEL_RAW;
     }
-    if(0 == strcmp(modelstr, "rgr")){
+    if(0 == strcmp(modelstr, "rgr_r94")){
         return SCRAPPIE_MODEL_RGR;
     }
-    if(0 == strcmp(modelstr, "rgrgr")){
+    if(0 == strcmp(modelstr, "rgrgr_r95")){
         return SCRAPPIE_MODEL_RGRGR;
     }
     return SCRAPPIE_MODEL_INVALID;
@@ -29,12 +29,12 @@ enum raw_model_type get_raw_model(const char * modelstr){
 
 const char * raw_model_string(const enum raw_model_type model){
     switch(model){
-    case SCRAPPIE_MODEL_RAW: 
-        return "raw";
-    case SCRAPPIE_MODEL_RGR: 
-        return "rgr";
-    case SCRAPPIE_MODEL_RGRGR: 
-        return "rgrgr";
+    case SCRAPPIE_MODEL_RAW:
+        return "raw_r94";
+    case SCRAPPIE_MODEL_RGR:
+        return "rgr_r94";
+    case SCRAPPIE_MODEL_RGRGR:
+        return "rgrgr_r95";
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
     default:
@@ -47,11 +47,11 @@ const char * raw_model_string(const enum raw_model_type model){
 
 posterior_function_ptr get_posterior_function(const enum raw_model_type model){
     switch(model){
-    case SCRAPPIE_MODEL_RAW: 
+    case SCRAPPIE_MODEL_RAW:
         return nanonet_raw_posterior;
-    case SCRAPPIE_MODEL_RGR: 
+    case SCRAPPIE_MODEL_RGR:
         return nanonet_rgr_posterior;
-    case SCRAPPIE_MODEL_RGRGR: 
+    case SCRAPPIE_MODEL_RGRGR:
         return nanonet_rgrgr_posterior;
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
