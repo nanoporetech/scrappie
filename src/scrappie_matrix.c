@@ -386,7 +386,7 @@ void row_normalise_inplace(scrappie_matrix C) {
         return;
     }
     const int i = C->nrq * 4 - C->nr;
-    const __m128 mask = _mm_castsi128_ps(0xffffffff * _mm_set_epi32(i >= 1, i >= 2, i >= 3, 0));
+    const __m128 mask = _mm_cmpgt_ps(_mm_set_ps(i >= 1, i >= 2, i >= 3, 0), _mm_set1_ps(0.0f));
     for (int col = 0; col < C->nc; col++) {
         const size_t offset = col * C->nrq;
         __m128 sum = C->data.v[offset];
