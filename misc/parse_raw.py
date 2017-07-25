@@ -62,23 +62,23 @@ sys.stdout.write("""#pragma once
 """ First LSTM layer
 """
 
-filterW =  network.layers[0].W.get_value()
+filterW =  network.sublayers[0].W.get_value()
 nfilter, _ , winlen = filterW.shape
 cformatM(sys.stdout, 'conv_raw_W', filterW.reshape(-1, 1), nr = winlen * 4 - 3, nc=nfilter)
-cformatV(sys.stdout, 'conv_raw_b', network.layers[0].b.get_value().reshape(-1))
-sys.stdout.write("const int conv_raw_stride = {};\n".format(network.layers[0].stride))
+cformatV(sys.stdout, 'conv_raw_b', network.sublayers[0].b.get_value().reshape(-1))
+sys.stdout.write("const int conv_raw_stride = {};\n".format(network.sublayers[0].stride))
 sys.stdout.write("""const size_t _conv_nfilter = {};
 const size_t _conv_winlen = {};
 """.format(nfilter, winlen))
 
-bigru1 = network.layers[1]
-gru = bigru1.layers[0]
+bigru1 = network.sublayers[1]
+gru = bigru1.sublayers[0]
 cformatM(sys.stdout, 'gruF1_raw_iW', gru.iW.get_value())
 cformatM(sys.stdout, 'gruF1_raw_sW', gru.sW.get_value())
 cformatM(sys.stdout, 'gruF1_raw_sW2', gru.sW2.get_value())
 cformatV(sys.stdout, 'gruF1_raw_b', gru.b.get_value().reshape(-1))
 
-gru = bigru1.layers[1].layer
+gru = bigru1.sublayers[1].sublayers[0]
 cformatM(sys.stdout, 'gruB1_raw_iW', gru.iW.get_value())
 cformatM(sys.stdout, 'gruB1_raw_sW', gru.sW.get_value())
 cformatM(sys.stdout, 'gruB1_raw_sW2', gru.sW2.get_value())
@@ -87,23 +87,23 @@ cformatV(sys.stdout, 'gruB1_raw_b', gru.b.get_value().reshape(-1))
 
 """ First feed forward layer
 """
-assert(network.layers[2].insize % 2 == 0)
-size = network.layers[2].insize // 2
-cformatM(sys.stdout, 'FF1_raw_Wf', network.layers[2].W.get_value()[:, : size])
-cformatM(sys.stdout, 'FF1_raw_Wb', network.layers[2].W.get_value()[:, size : 2 * size])
-cformatV(sys.stdout, 'FF1_raw_b', network.layers[2].b.get_value())
+assert(network.sublayers[2].insize % 2 == 0)
+size = network.sublayers[2].insize // 2
+cformatM(sys.stdout, 'FF1_raw_Wf', network.sublayers[2].W.get_value()[:, : size])
+cformatM(sys.stdout, 'FF1_raw_Wb', network.sublayers[2].W.get_value()[:, size : 2 * size])
+cformatV(sys.stdout, 'FF1_raw_b', network.sublayers[2].b.get_value())
 
 
 """ Second GRU layer
 """
-bigru1 = network.layers[3]
-gru = bigru1.layers[0]
+bigru1 = network.sublayers[3]
+gru = bigru1.sublayers[0]
 cformatM(sys.stdout, 'gruF2_raw_iW', gru.iW.get_value())
 cformatM(sys.stdout, 'gruF2_raw_sW', gru.sW.get_value())
 cformatM(sys.stdout, 'gruF2_raw_sW2', gru.sW2.get_value())
 cformatV(sys.stdout, 'gruF2_raw_b', gru.b.get_value().reshape(-1))
 
-gru = bigru1.layers[1].layer
+gru = bigru1.sublayers[1].sublayers[0]
 cformatM(sys.stdout, 'gruB2_raw_iW', gru.iW.get_value())
 cformatM(sys.stdout, 'gruB2_raw_sW', gru.sW.get_value())
 cformatM(sys.stdout, 'gruB2_raw_sW2', gru.sW2.get_value())
@@ -112,18 +112,18 @@ cformatV(sys.stdout, 'gruB2_raw_b', gru.b.get_value().reshape(-1))
 
 """ Second feed forward layer
 """
-size = network.layers[4].insize // 2
-assert(network.layers[4].insize % 2 == 0)
-cformatM(sys.stdout, 'FF2_raw_Wf', network.layers[4].W.get_value()[:, : size])
-cformatM(sys.stdout, 'FF2_raw_Wb', network.layers[4].W.get_value()[:, size : 2 * size])
-cformatV(sys.stdout, 'FF2_raw_b', network.layers[4].b.get_value())
+size = network.sublayers[4].insize // 2
+assert(network.sublayers[4].insize % 2 == 0)
+cformatM(sys.stdout, 'FF2_raw_Wf', network.sublayers[4].W.get_value()[:, : size])
+cformatM(sys.stdout, 'FF2_raw_Wb', network.sublayers[4].W.get_value()[:, size : 2 * size])
+cformatV(sys.stdout, 'FF2_raw_b', network.sublayers[4].b.get_value())
 
 
 """ Softmax layer
 """
-nstate = network.layers[5].W.get_value().shape[0]
+nstate = network.sublayers[5].W.get_value().shape[0]
 shuffle = np.append(np.arange(nstate - 1) + 1, 0)
-cformatM(sys.stdout, 'FF3_raw_W', network.layers[5].W.get_value()[shuffle])
-cformatV(sys.stdout, 'FF3_raw_b', network.layers[5].b.get_value()[shuffle])
+cformatM(sys.stdout, 'FF3_raw_W', network.sublayers[5].W.get_value()[shuffle])
+cformatV(sys.stdout, 'FF3_raw_b', network.sublayers[5].b.get_value()[shuffle])
 
 sys.stdout.write('#endif /* NANONET_RAW_MODEL_H */')
