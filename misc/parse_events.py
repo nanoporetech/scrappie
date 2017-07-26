@@ -52,6 +52,7 @@ def reshape_lstmV(mat):
 
 with open(model_file, 'rb') as fh:
     network = pickle.load(fh, encoding='latin1')
+assert network.version == 1, "Sloika model must be version 1.  Perhaps you need to run model_update.py"
 
 sys.stdout.write("""#pragma once
 #ifndef NANONET_EVENTS_MODEL_H
