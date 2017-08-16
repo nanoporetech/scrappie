@@ -1,5 +1,5 @@
 #define BANANA 1
-#include "scrappie_matrix_util.h"
+#include "scrappie_util.h"
 
 #include <assert.h>
 #include <stdio.h>
