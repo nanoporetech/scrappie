@@ -55,9 +55,6 @@ static struct argp_option options[] = {
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
     {"dump", 4, "filename", 0, "Dump annotated events to HDF5 file"},
-    {"albacore", 8, 0, 0, "Assume fast5 have been called using Albacore"},
-    {"no-albacore", 9, 0, OPTION_ALIAS,
-     "Assume fast5 have been called using Albacore"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
     {"hdf5-compression", 12, "level", 0,
@@ -87,7 +84,6 @@ struct arguments {
     int varseg_chunk;
     float varseg_thresh;
     char *dump;
-    bool albacore;
     int compression_level;
     int compression_chunk_size;
     char **files;
@@ -107,7 +103,6 @@ static struct arguments args = {
     .varseg_chunk = 100,
     .varseg_thresh = 0.0,
     .dump = NULL,
-    .albacore = false,
     .compression_level = 1,
     .compression_chunk_size = 200,
     .files = NULL
@@ -170,12 +165,6 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         break;
     case 6:
         args.dwell_correction = false;
-        break;
-    case 8:
-        args.albacore = true;
-        break;
-    case 9:
-        args.albacore = false;
         break;
     case 10:
     case 11:
