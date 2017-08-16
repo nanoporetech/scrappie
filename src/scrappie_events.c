@@ -230,7 +230,7 @@ static struct _bs calculate_post(char *filename) {
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, (struct _bs){0};);
 
-    event_table et = detect_events(rt);
+    event_table et = detect_events(rt, event_detection_defaults);
     if (NULL == et.event) {
         free(rt.raw);
         return _bs_null;

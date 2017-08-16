@@ -265,12 +265,7 @@ event_table create_events(size_t const *peaks, double const *sums,
     return et;
 }
 
-event_table detect_events(raw_table const rt) {
-    size_t const window1_length = 3;
-    size_t const window2_length = 6;
-    float const threshold1 = 1.4;
-    float const threshold2 = 1.1;
-    float const peak_height = 0.2;     // TODO(semen): pass on the cmd line
+event_table detect_events(raw_table const rt, detector_param const edparam) {
 
     event_table et = { 0 };
     RETURN_NULL_IF(NULL == rt.raw, et);
@@ -279,16 +274,16 @@ event_table detect_events(raw_table const rt) {
     double *sumsqs = calloc(rt.n + 1, sizeof(double));
 
     compute_sum_sumsq(rt.raw, sums, sumsqs, rt.n);
-    float *tstat1 = compute_tstat(sums, sumsqs, rt.n, window1_length);
-    float *tstat2 = compute_tstat(sums, sumsqs, rt.n, window2_length);
+    float *tstat1 = compute_tstat(sums, sumsqs, rt.n, edparam.window_length1);
+    float *tstat2 = compute_tstat(sums, sumsqs, rt.n, edparam.window_length2);
 
     Detector short_detector = {
         .DEF_PEAK_POS = -1,
         .DEF_PEAK_VAL = FLT_MAX,
         .signal = tstat1,
         .signal_length = rt.n,
-        .threshold = threshold1,
-        .window_length = window1_length,
+        .threshold = edparam.threshold1,
+        .window_length = edparam.window_length1,
         .masked_to = 0,
         .peak_pos = -1,
         .peak_value = FLT_MAX,
@@ -300,8 +295,8 @@ event_table detect_events(raw_table const rt) {
         .DEF_PEAK_VAL = FLT_MAX,
         .signal = tstat2,
         .signal_length = rt.n,
-        .threshold = threshold2,
-        .window_length = window2_length,
+        .threshold = edparam.threshold2,
+        .window_length = edparam.window_length2,
         .masked_to = 0,
         .peak_pos = -1,
         .peak_value = FLT_MAX,
@@ -310,7 +305,7 @@ event_table detect_events(raw_table const rt) {
 
     size_t *peaks =
         short_long_peak_detector(&short_detector, &long_detector,
-                                 peak_height);
+                                 edparam.peak_height);
 
     et = create_events(peaks, sums, sumsqs, rt.n);
 
