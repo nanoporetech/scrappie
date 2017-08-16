@@ -295,7 +295,7 @@ scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc) {
     return M;
 }
 
-scrappie_imatrix copy_scrappie_imatrix(scrappie_imatrix const M){
+scrappie_imatrix copy_scrappie_imatrix(const_scrappie_imatrix M){
     RETURN_NULL_IF(NULL == M, NULL);
     scrappie_imatrix C = make_scrappie_imatrix(M->nr, M->nc);
     RETURN_NULL_IF(NULL == C, NULL);

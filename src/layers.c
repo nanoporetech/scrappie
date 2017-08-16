@@ -360,8 +360,8 @@ scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
     sCol2 = *ostate;
     xCol.nc = sCol1.nc = sCol2.nc = 1;
     xCol.data.v = X->data.v + (X->nc - 1) * X->nrq;
-    sCol1.data.v = ostate->data.v + (ostate->nc - 1) * ostate->nrq;
-    sCol2.data.v = ostate->data.v;
+    sCol1.data.v = ostate->data.v;
+    sCol2.data.v = ostate->data.v + (ostate->nc - 1) * ostate->nrq;
     gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     for (int i = 1; i < bsize; i++) {
         const int index = bsize - i - 1;

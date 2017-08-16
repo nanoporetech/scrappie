@@ -26,6 +26,7 @@ typedef struct {
 typedef _Mat *scrappie_matrix;
 typedef _iMat *scrappie_imatrix;
 typedef _Mat const *const_scrappie_matrix;
+typedef _iMat const *const_scrappie_imatrix;
 
 scrappie_matrix make_scrappie_matrix(int nr, int nc);
 scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc);
@@ -46,7 +47,7 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
 
 scrappie_imatrix make_scrappie_imatrix(int nr, int nc);
 scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc);
-scrappie_imatrix copy_scrappie_imatrix(scrappie_imatrix const mat);
+scrappie_imatrix copy_scrappie_imatrix(const_scrappie_imatrix mat);
 scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat);
 void zero_scrappie_imatrix(scrappie_imatrix M);
 

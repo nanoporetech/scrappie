@@ -30,7 +30,7 @@ static inline __m128i __attribute__((__gnu_inline__, __always_inline__)) _mm_mul
 }
 #endif
 
-float viterbi_backtrace(float const *score, int n, scrappie_imatrix const traceback, int * seq){
+float viterbi_backtrace(float const *score, int n, const_scrappie_imatrix traceback, int * seq){
     RETURN_NULL_IF(NULL == score, NAN);
     RETURN_NULL_IF(NULL == seq, NAN);
 
