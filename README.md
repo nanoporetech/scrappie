@@ -70,7 +70,6 @@ Scrappie basecaller -- basecall via events
 
   -#, --threads=nreads       Number of reads to call in parallel
   -a, --analysis=number      Analysis to read events from
-      --albacore, --no-albacore   Assume fast5 have been called using Albacore
       --dump=filename        Dump annotated events to HDF5 file
       --dwell, --no-dwell    Perform dwell correction of homopolymer lengths
       --hdf5-chunk=size      Chunk size for HDF5 output
@@ -141,10 +140,6 @@ When the output is set to FASTA (default) then some metadata is stored in the de
 
 
 ## Gotya's and notes
-* Scrappie does not call events and relies on this information already being present in the fast5 files.  In particular:
-  * Event calls are taken from (where `XXX` is the number set by the `--analysis` flag)
-    * `--no-albacore` (default) --> `/Analyses/EventDetection_XXX/Reads/Read_???/Events`
-    * `--albacore` --> `/Analyses/Basecall_1D_XXX/BaseCalled_template/Events`
 * Model is hard-coded.  Generate new header files using 
   * Events: `parse_events.py model.pkl > src/nanonet_events.h`
   * Raw: `parse_raw.py model.pkl > src/nanonet_raw.h`
