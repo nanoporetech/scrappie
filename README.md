@@ -69,7 +69,6 @@ Usage: events [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall via events
 
   -#, --threads=nreads       Number of reads to call in parallel
-  -a, --analysis=number      Analysis to read events from
       --dump=filename        Dump annotated events to HDF5 file
       --dwell, --no-dwell    Perform dwell correction of homopolymer lengths
       --hdf5-chunk=size      Chunk size for HDF5 output
@@ -79,6 +78,7 @@ Scrappie basecaller -- basecall via events
       --licence, --license   Print licensing information
   -m, --min_prob=probability Minimum bound on probability of match
   -o, --outformat=format     Format to output reads (FASTA or SAM)
+  -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=chunk:percentile
                              Chunk size and percentile for variance based
@@ -96,6 +96,7 @@ Scrappie basecaller -- basecall via events
 > scrappie help raw
 Usage: raw [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall from raw signal
+
   -#, --threads=nreads       Number of reads to call in parallel
       --hdf5-chunk=size      Chunk size for HDF5 output
       --hdf5-compression=level   Gzip compression level for HDF5 output (0:off,
@@ -106,6 +107,7 @@ Scrappie basecaller -- basecall from raw signal
       --model=name           Raw model to use: "raw_r94", "rgr_r94",
                              "rgrgr_r95"
   -o, --outformat=format     Format to output reads (FASTA or SAM)
+  -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=chunk:percentile
                              Chunk size and percentile for variance based

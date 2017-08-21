@@ -40,6 +40,7 @@ static struct argp_option options[] = {
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     {"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
     {"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
+    {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
@@ -65,6 +66,7 @@ struct arguments {
     int limit;
     float min_prob;
     enum format outformat;
+    char * prefix;
     float skip_pen;
     float stay_pen;
     bool use_slip;
@@ -83,6 +85,7 @@ static struct arguments args = {
     .limit = 0,
     .min_prob = 1e-5,
     .outformat = FORMAT_FASTA,
+    .prefix = "",
     .skip_pen = 0.0,
     .stay_pen = 0.0,
     .use_slip = false,
@@ -117,6 +120,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         } else {
             errx(EXIT_FAILURE, "Unrecognised format");
         }
+        break;
+    case 'p':
+        args.prefix = arg;
         break;
     case 's':
         args.skip_pen = atof(arg);
@@ -240,19 +246,19 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     score, rt, basecall, basecall_len, pos, nblock};
 }
 
-static int fprintf_fasta(FILE * fp, const char *readname,
+static int fprintf_fasta(FILE * fp, const char *readname, const char * prefix,
                          const struct _raw_basecall_info res) {
     return fprintf(fp,
-                   ">%s  { \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n%s\n",
-                   readname, -res.score / res.nblock, res.nblock,
+                   ">%s%s  { \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n%s\n",
+                   prefix, readname, -res.score / res.nblock, res.nblock,
                    res.basecall_length,
                    (float)res.nblock / (float)res.basecall_length,
                    res.rt.n, res.rt.start, res.rt.end, res.basecall);
 }
 
-static int fprintf_sam(FILE * fp, const char *readname,
+static int fprintf_sam(FILE * fp, const char *readname, const char * prefix,
                        const struct _raw_basecall_info res) {
-    return fprintf(fp, "%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", readname,
+    return fprintf(fp, "%s%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", prefix, readname,
                    res.basecall);
 }
 
@@ -323,10 +329,10 @@ int main_raw(int argc, char * argv[]){
             {
                 switch(args.outformat){
                 case FORMAT_FASTA:
-                    fprintf_fasta(stdout, strip_filename_extension(basename(filename)), res);
+                    fprintf_fasta(stdout, strip_filename_extension(basename(filename)), args.prefix, res);
                     break;
                 case FORMAT_SAM:
-                    fprintf_sam(stdout, strip_filename_extension(basename(filename)), res);
+                    fprintf_sam(stdout, strip_filename_extension(basename(filename)), args.prefix, res);
                     break;
                 default:
                     errx(EXIT_FAILURE, "Unrecognised output format");
