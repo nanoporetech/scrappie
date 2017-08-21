@@ -1,6 +1,6 @@
 #  Yaml CI config for Gitlab See. http://docs.gitlab.com/ce/ci/yaml/README.html
 #  Machine image on which to build, test etc
-image: git.oxfordnanolabs.local:4567/algorithm/scrappie_docker:14.04-latest
+image: ${IMAGE_HOST}/algorithm/scrappie_docker:14.04-latest
 
 variables:
   REPO_DEVELOPMENT: "trusty-unstable"
@@ -47,7 +47,7 @@ upload-development:
   script:
     - echo "$SSH_PRIVATE_KEY" > .privkey
     - chmod 600 .privkey
-    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb ${REPO_HOST}:/var/www/apt/$REPO/
   variables:
     REPO: $REPO_DEVELOPMENT
   only:
@@ -58,7 +58,7 @@ upload-staging:
   script:
     - echo "$SSH_PRIVATE_KEY" > .privkey
     - chmod 600 .privkey
-    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb ${REPO_HOST}:/var/www/apt/$REPO/
   variables:
     REPO: $REPO_STAGING
   only:
@@ -69,7 +69,7 @@ upload-prod:
   script:
     - echo "$SSH_PRIVATE_KEY" > .privkey
     - chmod 600 .privkey
-    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb hudson@deb-repo.oxfordnanolabs.local:/var/www/apt/$REPO/
+    - scp -o StrictHostKeyChecking=no -i .privkey ${BUILD_DIR}/*.deb ${REPO_HOST}:/var/www/apt/$REPO/
   variables:
     REPO: $REPO_PRODUCTION
   only:
