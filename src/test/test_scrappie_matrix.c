@@ -1,106 +1,66 @@
-#include "scrappie_matrix_util.h"
-
+#define BANANA 1
 #include <CUnit/Basic.h>
-#include <err.h>
-#include <stdio.h>
+#include <stdbool.h>
 
+#include <scrappie_matrix.h>
+#include <test_common.h>
 
-static const char testfile[] = "test_matrix.crp";
-
-FILE * infile = NULL;
-FILE * outfile = NULL;
-scrappie_matrix mat = NULL;
-
-
-/**  Initialise scrappie matrix test
+/**  Initialise test
  *
- *   Opens a test file for reading and a temporary file for writing.
- *   Creates a random scrappie matrix
- *
- *  @returns 0 on success, non-zero on failure
+ *   @returns 0 on success, non-zero on failure
  **/
-int init_test_scrappie_matrix(void){
-	infile = fopen(testfile, "r");
-	if(NULL == infile){
-		warnx("Failed to open %s to read matrix from.\n", testfile);
-	}
-
-	//outfile = tmpfile();
-	outfile = tmpfile();
-	if(NULL == outfile){
-		warnx("Failed to open temporary file to write to.\n");
-	}
-
-	mat = random_scrappie_matrix(5, 9, -1.0, 1.0);
-	if(NULL == mat){
-		warnx("Failed to create random scrappie matrix.\n");
-	}
-
-	return (NULL != infile && NULL != outfile && NULL != mat) ? 0 : -1;
+int init_test_scrappie_matrix(void) {
+    return 0;
 }
 
-/**  Clean up after scrappie matrix test
+/**  Clean up after test
  *
- *   Closes file handles
- *
- *  @returns 0 on success, non-zero on failure
+ *   @returns 0 on success, non-zero on failure
  **/
-int clean_test_scrappie_matrix(void){
-	int ret = fclose(infile);
-	ret |= fclose(outfile);
-	(void) free_scrappie_matrix(mat);
-	return ret;
+int clean_test_scrappie_matrix(void) {
+    return 0;
 }
 
-void test_read_scrappie_matrix(void){
-	scrappie_matrix mat = read_scrappie_matrix(infile);
-	CU_ASSERT(NULL != mat);
-	CU_ASSERT(validate_scrappie_matrix(mat, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
-	mat = free_scrappie_matrix(mat);
+void test_rownormalise_scrappie_matrix_helper(int nr) {
+    scrappie_matrix mat = make_scrappie_matrix(nr, 1);
+    const int stride = mat->nrq * 4;
+    for(int i=0 ; i < stride ; i++){
+        mat->data.f[i] = 1.0f;
+    }
+    row_normalise_inplace(mat);
+
+    const float expected = 1.0f / nr;
+    for(int i=0 ; i < nr ; i++){
+        CU_ASSERT_DOUBLE_EQUAL(mat->data.f[i], expected, 1e-5);
+    }
+    mat = free_scrappie_matrix(mat);
 }
 
-void test_write_scrappie_matrix(void){
-	const int nelt = mat->nc * mat->nr;
-	int ret = write_scrappie_matrix(outfile, mat);
-	CU_ASSERT(ret == nelt);
+void test_rownormalise_nr08scrappie_matrix(void){
+    test_rownormalise_scrappie_matrix_helper(8);
+}
+void test_rownormalise_nr09scrappie_matrix(void){
+    test_rownormalise_scrappie_matrix_helper(9);
+}
+void test_rownormalise_nr10scrappie_matrix(void){
+    test_rownormalise_scrappie_matrix_helper(10);
+}
+void test_rownormalise_nr11scrappie_matrix(void){
+    test_rownormalise_scrappie_matrix_helper(11);
 }
 
-void test_roundtrip_scrappie_matrix(void){
-	rewind(outfile);
-	scrappie_matrix mat_in = read_scrappie_matrix(outfile);
-	CU_ASSERT(NULL != mat_in);
-	CU_ASSERT(equality_scrappie_matrix(mat_in, mat, 0.0));
-	mat = free_scrappie_matrix(mat_in);
-}
+static test_with_description tests[] = {
+    {"Row normalisation edge case nr  8", test_rownormalise_nr08scrappie_matrix},
+    {"Row normalisation edge case nr  9", test_rownormalise_nr09scrappie_matrix},
+    {"Row normalisation edge case nr 10", test_rownormalise_nr10scrappie_matrix},
+    {"Row normalisation edge case nr 11", test_rownormalise_nr11scrappie_matrix},
+    {0}};
 
-
-int main(void){
-	CU_pSuite pSuite = NULL;
-
-	// Initialise CUnit
-	if (CUE_SUCCESS != CU_initialize_registry()){
-		return CU_get_error();
-	}
-
-	// Add test to suite
-	pSuite = CU_add_suite("Scrappie matrix IO tests", init_test_scrappie_matrix,
-			      clean_test_scrappie_matrix);
-	if (NULL == pSuite){
-		CU_cleanup_registry();
-		return CU_get_error();
-	}
-
-	// Add tests to the suite
-	if ((NULL == CU_add_test(pSuite, "Reading scrappie_matrix from file", test_read_scrappie_matrix)) ||
-	    (NULL == CU_add_test(pSuite, "Writing scrappie_matrix to file", test_write_scrappie_matrix)) ||
-	    (NULL == CU_add_test(pSuite, "Round-trip scrappie_matrix to / from file", test_roundtrip_scrappie_matrix))){
-		CU_cleanup_registry();
-		return CU_get_error();
-	}
-
-	// Run all tests using the CUnit Basic interface
-	CU_basic_set_mode(CU_BRM_VERBOSE);
-	CU_basic_run_tests();
-	CU_cleanup_registry();
-	return CU_get_error();
+/**   Register tests with CUnit
+ *
+ *    @returns 0 on success, non-zero on failure
+ **/
+int register_test_matrix(void) {
+    return scrappie_register_test_suite("Functions on scrappie matrices", init_test_scrappie_matrix, clean_test_scrappie_matrix, tests);
+    return 0;
 }

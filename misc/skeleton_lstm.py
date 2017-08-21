@@ -3,8 +3,8 @@ import numpy as np
 from sloika import features
 from untangled import fast5
 
-modelfile = '/mnt/data/human/training/lstm_obese/model_final.pkl'
-fn = '/home/OXFORDNANOLABS/tmassingham/git/crappie/data/MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand.fast5'
+modelfile = 'model_final.pkl'
+fn = 'reads/MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand.fast5'
 
 with open(modelfile, 'r') as fh:
 	network = cPickle.load(fh)

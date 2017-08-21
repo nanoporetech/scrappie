@@ -1,22 +1,31 @@
+#pragma once
 #ifndef SCRAPPIE_STRUCTURES_H
-#define SCRAPPIE_STRUCTURES_H
+#    define SCRAPPIE_STRUCTURES_H
+
+#    include <inttypes.h>
+#    include <stddef.h>
 
 typedef struct {
-        double start;
-        float length;
-        float mean, stdv;
-        int pos, state;
+    uint64_t start;
+    float length;
+    float mean;
+    float stdv;
+    int pos;
+    int state;
 } event_t;
 
 typedef struct {
-        unsigned int n, start, end;
-        event_t * event;
+    size_t n;
+    size_t start;
+    size_t end;
+    event_t *event;
 } event_table;
 
 typedef struct {
-        unsigned int n, start, end;
-        float * raw;
+    size_t n;
+    size_t start;
+    size_t end;
+    float *raw;
 } raw_table;
 
-
-#endif /* SCRAPPIE_DATA_H */
+#endif                          /* SCRAPPIE_DATA_H */
