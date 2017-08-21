@@ -3,8 +3,8 @@ import numpy as np
 from sloika import features
 from untangled import fast5
 
-modelfile = '/mnt/data/human/training/gru_obese/model_final.pkl'
-fn = '/home/OXFORDNANOLABS/tmassingham/git/crappie/data/MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand.fast5'
+modelfile = 'model_final.pkl'
+fn = 'reads/MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand.fast5'
 
 with open(modelfile, 'r') as fh:
 	network = cPickle.load(fh)
@@ -47,7 +47,7 @@ size = sWf.shape[1]
 state = np.zeros(size)
 outF = np.zeros((len(feature3), size))
 for i, f in enumerate(feature3):
- 	vI = np.tensordot(f, iWf, axes=(0,1)) + bf
+        vI = np.tensordot(f, iWf, axes=(0,1)) + bf
         vS = np.tensordot(state, sWf, axes=(0,1))
         vT = vI[:2 * size] + vS
         vT = vT.reshape((2, -1))
