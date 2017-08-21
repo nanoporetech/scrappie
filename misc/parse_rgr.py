@@ -53,7 +53,7 @@ def cformatV(fh, name, X):
 
 with open(model_file, 'rb') as fh:
     network = pickle.load(fh, encoding='latin1')
-assert network.version == 1, "Sloika model must be version 1.  Perhaps you need to run model_update.py"
+assert network.version == 1, "Sloika model must be version 1.  Perhaps you need to run Sloika's model_upgrade.py"
 
 sys.stdout.write("""#pragma once
 #ifndef NANONET_RGR_MODEL_H
