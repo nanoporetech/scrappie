@@ -40,7 +40,6 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Scrappie basecaller -- basecall via events";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-    {"analysis", 'a', "number", 0, "Analysis to read events from"},
     {"dwell", 5, 0, 0, "Perform dwell correction of homopolymer lengths"},
     {"no-dwell", 6, 0, OPTION_ALIAS,
      "Don't perform dwell correction of homopolymer lengths"},
@@ -49,6 +48,7 @@ static struct argp_option options[] = {
     {"min_prob", 'm', "probability", 0,
      "Minimum bound on probability of match"},
     {"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
+    {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of events to trim, as start:end"},
@@ -71,10 +71,10 @@ static struct argp_option options[] = {
 enum format { FORMAT_FASTA, FORMAT_SAM };
 
 struct arguments {
-    int analysis;
     bool dwell_correction;
     int limit;
     float min_prob;
+    char * prefix;
     enum format outformat;
     float skip_pen;
     float stay_pen;
@@ -90,10 +90,10 @@ struct arguments {
 };
 
 static struct arguments args = {
-    .analysis = -1,
     .dwell_correction = true,
     .limit = 0,
     .min_prob = 1e-5,
+    .prefix = "",
     .outformat = FORMAT_FASTA,
     .skip_pen = 0.0,
     .stay_pen = 0.0,
@@ -111,10 +111,6 @@ static struct arguments args = {
 static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     switch (key) {
         int ret = 0;
-    case 'a':
-        args.analysis = atoi(arg);
-        assert(args.analysis >= -1 && args.analysis < 1000);
-        break;
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
@@ -122,6 +118,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     case 'm':
         args.min_prob = atof(arg);
         assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
+        break;
+    case 'p':
+        args.prefix = arg;
         break;
     case 'o':
         if (0 == strcasecmp("FASTA", arg)) {
@@ -282,16 +281,16 @@ static struct _bs calculate_post(char *filename) {
     score, nev, basecall, et};
 }
 
-static int fprintf_fasta(FILE * fp, const char *readname, const struct _bs res) {
+static int fprintf_fasta(FILE * fp, const char *readname, const char * prefix, const struct _bs res) {
     const int nbase = strlen(res.bases);
     return fprintf(fp,
-                   ">%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n",
-                   readname, -res.score / res.nev, res.nev, nbase,
+                   ">%s%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n",
+                   prefix, readname, -res.score / res.nev, res.nev, nbase,
                    (float)res.nev / (float)nbase, res.bases);
 }
 
-static int fprintf_sam(FILE * fp, const char *readname, const struct _bs res) {
-    return fprintf(fp, "%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", readname,
+static int fprintf_sam(FILE * fp, const char *readname, const char * prefix, const struct _bs res) {
+    return fprintf(fp, "%s%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", prefix, readname,
                    res.bases);
 }
 
@@ -364,12 +363,12 @@ int main_events(int argc, char *argv[]) {
                 case FORMAT_FASTA:
                     fprintf_fasta(stdout,
                                   strip_filename_extension(basename(filename)),
-                                  res);
+                                  args.prefix, res);
                     break;
                 case FORMAT_SAM:
                     fprintf_sam(stdout,
                                 strip_filename_extension(basename(filename)),
-                                res);
+                                args.prefix, res);
                     break;
                 default:
                     errx(EXIT_FAILURE, "Unrecognised output format");
