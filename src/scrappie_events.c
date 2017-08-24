@@ -339,6 +339,9 @@ int main_events(int argc, char *argv[]) {
             int globret = glob(globpath, GLOB_NOSORT, NULL, &globbuf);
             free(globpath);
             if (0 != globret) {
+                if(GLOB_NOMATCH == globret){
+                    warnx("File or directory \"%s\" does not exist or no fast5 files found.", args.files[fn]);
+                }
                 globfree(&globbuf);
                 continue;
             }
