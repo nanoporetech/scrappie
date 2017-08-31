@@ -365,12 +365,12 @@ int main_events(int argc, char *argv[]) {
                 switch (args.outformat) {
                 case FORMAT_FASTA:
                     fprintf_fasta(stdout,
-                                  strip_filename_extension(basename(filename)),
+                                  basename(filename),
                                   args.prefix, res);
                     break;
                 case FORMAT_SAM:
                     fprintf_sam(stdout,
-                                strip_filename_extension(basename(filename)),
+                                basename(filename),
                                 args.prefix, res);
                     break;
                 default:
