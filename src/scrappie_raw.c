@@ -332,10 +332,10 @@ int main_raw(int argc, char * argv[]){
             {
                 switch(args.outformat){
                 case FORMAT_FASTA:
-                    fprintf_fasta(stdout, strip_filename_extension(basename(filename)), args.prefix, res);
+                    fprintf_fasta(stdout, basename(filename), args.prefix, res);
                     break;
                 case FORMAT_SAM:
-                    fprintf_sam(stdout, strip_filename_extension(basename(filename)), args.prefix, res);
+                    fprintf_sam(stdout, basename(filename), args.prefix, res);
                     break;
                 default:
                     errx(EXIT_FAILURE, "Unrecognised output format");
