@@ -43,6 +43,7 @@ static struct argp_option options[] = {
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
+    {"local", 6, "penalty", 0, "Penalty for local basecalling"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -69,6 +70,7 @@ struct arguments {
     char * prefix;
     float skip_pen;
     float stay_pen;
+    float local_pen;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -83,16 +85,17 @@ struct arguments {
 
 static struct arguments args = {
     .limit = 0,
-    .min_prob = 1e-5,
+    .min_prob = 1e-5f,
     .outformat = FORMAT_FASTA,
     .prefix = "",
-    .skip_pen = 0.0,
-    .stay_pen = 0.0,
+    .skip_pen = 0.0f,
+    .stay_pen = 0.0f,
+    .local_pen = 2.0f,
     .use_slip = false,
     .trim_start = 200,
     .trim_end = 10,
     .varseg_chunk = 100,
-    .varseg_thresh = 0.0,
+    .varseg_thresh = 0.0f,
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
@@ -168,6 +171,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
             errx(EXIT_FAILURE, "Invalid model name \"%s\"", arg);
         }
         break;
+    case 6:
+        args.local_pen = atof(arg);
+        assert(isfinite(args.local_pen));
+        break;
     case 10:
     case 11:
         ret = fputs(scrappie_licence_text, stdout);
@@ -231,13 +238,13 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     const int nblock = post->nc;
     const int nstate = post->nr;
 
-    int *history_state = calloc(nblock, sizeof(int));
+    int *history_state = calloc(nblock + 1, sizeof(int));
     float score =
-        decode_transducer(post, args.stay_pen, args.skip_pen, history_state, args.use_slip);
+        decode_transducer(post, args.stay_pen, args.skip_pen, args.local_pen, history_state, args.use_slip);
 
     post = free_scrappie_matrix(post);
-    int *pos = calloc(nblock, sizeof(int));
-    char *basecall = overlapper(history_state, nblock, nstate - 1, pos);
+    int *pos = calloc(nblock + 1, sizeof(int));
+    char *basecall = overlapper(history_state, nblock + 1, nstate - 1, pos);
     const size_t basecall_len = strlen(basecall);
 
     free(history_state);

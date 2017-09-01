@@ -105,7 +105,7 @@ void test_normalise_signal(void) {
     free(sigarr);
 }
 
-void test_decode_equivalent_helper(float stay_pen, float skip_pen){
+void test_decode_equivalent_helper(float stay_pen, float skip_pen, float local_pen){
     const float min_prob = 1e-5;
     scrappie_matrix post = read_scrappie_matrix(posteriorfile);
     CU_ASSERT_PTR_NOT_NULL_FATAL(post);
@@ -113,12 +113,12 @@ void test_decode_equivalent_helper(float stay_pen, float skip_pen){
     robustlog_activation_inplace(post, min_prob);
     const size_t nblock = post->nc;
 
-    int * path_vectorised = calloc(nblock, sizeof(int));
-    int * path_original = calloc(nblock, sizeof(int));
+    int * path_vectorised = calloc(nblock + 1, sizeof(int));
+    int * path_original = calloc(nblock + 1, sizeof(int));
     CU_ASSERT_PTR_NOT_NULL_FATAL(path_vectorised);
     CU_ASSERT_PTR_NOT_NULL_FATAL(path_original);
-    float score_vectorised = decode_transducer(post, stay_pen, skip_pen, path_vectorised, false);
-    float score_original = sloika_viterbi(post, stay_pen, skip_pen, path_original);
+    float score_vectorised = decode_transducer(post, stay_pen, skip_pen, local_pen, path_vectorised, false);
+    float score_original = sloika_viterbi(post, stay_pen, skip_pen, local_pen, path_original);
 
     CU_ASSERT_DOUBLE_EQUAL(score_original, score_vectorised, 1e-5);
     CU_ASSERT_TRUE(equality_arrayi(path_original, path_vectorised, nblock));
@@ -130,15 +130,15 @@ void test_decode_equivalent_helper(float stay_pen, float skip_pen){
 
 
 void test_decode_equivalent(void) {
-    test_decode_equivalent_helper(0.0f, 0.0f);
+    test_decode_equivalent_helper(0.0f, 0.0f, 2.0f);
 }
 
 void test_decode_with_staypen_equivalent(void) {
-    test_decode_equivalent_helper(2.0f, 0.0f);
+    test_decode_equivalent_helper(2.0f, 0.0f, 2.0f);
 }
 
 void test_decode_with_skippen_equivalent(void) {
-    test_decode_equivalent_helper(0.0f, 2.0f);
+    test_decode_equivalent_helper(0.0f, 2.0f, 2.0f);
 }
 
 void test_decode_equivalent_to_sloika(void) {
@@ -153,17 +153,18 @@ void test_decode_equivalent_to_sloika(void) {
     robustlog_activation_inplace(post, min_prob);
     const size_t nblock = post->nc;
 
-    int * path_original = calloc(nblock, sizeof(int));
+    int * path_original = calloc(nblock + 1, sizeof(int));
     CU_ASSERT_PTR_NOT_NULL_FATAL(path_original);
-    float score_original = sloika_viterbi(post, 0.0f, 0.0f, path_original);
+    float score_original = sloika_viterbi(post, 0.0f, 0.0f, 100.0f, path_original);
 
-    int * path_sloika = calloc(nblock, sizeof(int));
+    int * path_sloika = calloc(nblock + 1, sizeof(int));
     CU_ASSERT_PTR_NOT_NULL_FATAL(path_sloika);
     for(int i=0 ; i < nblock ; i++){
         path_sloika[i] = (int)path->data.f[i * path->nrq * 4];
     }
     CU_ASSERT_DOUBLE_EQUAL(score_original, score_expected, 1e-4);
-    CU_ASSERT_TRUE(equality_arrayi(path_original, path_sloika, nblock));
+    // Offset of 1 due to new decoding adding start state on beginning
+    CU_ASSERT_TRUE(equality_arrayi(path_original + 1, path_sloika, nblock));
 
     free(path_sloika);
     free(path_original);
