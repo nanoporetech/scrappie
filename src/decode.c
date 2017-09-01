@@ -5,6 +5,7 @@
 #include "util.h"
 
 #define NBASE 4
+#define BIG_FLOAT 1.e30f
 
 #ifndef __SSE2__
 #    error "Compilation of function decode_transducer requires a processor that supports at least SSE2"
@@ -51,15 +52,52 @@ float viterbi_backtrace(float const *score, int n, const_scrappie_imatrix traceb
     return logscore;
 }
 
-float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float skip_pen, int *seq,
-                        bool use_slip) {
+float viterbi_local_backtrace(float const *score, int n, const_scrappie_imatrix traceback, int * seq){
+    RETURN_NULL_IF(NULL == score, NAN);
+    RETURN_NULL_IF(NULL == seq, NAN);
+
+    const size_t nblock = traceback->nc;
+
+    int last_state = argmaxf(score, n + 2);
+    float logscore = score[last_state];
+    seq[nblock] = last_state;
+    for(int i=0 ; i < nblock ; i++){
+        const int ri = nblock - 1 - i;
+        const int state = traceback->data.f[ri * traceback->nrq * 4 + last_state];
+        if(state >= 0){
+            last_state = state;
+        }
+        seq[ri] = state;
+    }
+
+    //  Transcode start to stay
+    for(int i=0 ; i < nblock ; i++){
+        if(seq[i] == n){
+            seq[i] = -1;
+        } else {
+            break;
+        }
+    }
+    //  Transcode end to stay
+    for(int i=nblock ; i >= 0 ; i--){
+        if(seq[i] == n + 1){
+            seq[i] = -1;
+        } else {
+            break;
+        }
+    }
+
+    return logscore;
+}
+
+float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen, int *seq,
+                        bool allow_slip) {
     float logscore = NAN;
     RETURN_NULL_IF(NULL == logpost, logscore);
     RETURN_NULL_IF(NULL == seq, logscore);
 
     const int nblock = logpost->nc;
     const int nstate = logpost->nr;
-    const int ldp = logpost->nrq * 4;
     const int nhistory = nstate - 1;
     assert((nhistory % 4) == 0);
     const int32_t nhistoryq = nhistory / 4;
@@ -70,29 +108,32 @@ float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float ski
     assert((nhistoryqq % 4) == 0);
     const int32_t nhistoryqqq = nhistoryqq / 4;
     const __m128i nhistoryqqqv = _mm_set1_epi32(nhistoryqqq);
-    if (use_slip) {
+    if (allow_slip) {
         assert((nhistoryqqq % 4) == 0);
     }
     //  Forwards memory + traceback
-    scrappie_matrix score = make_scrappie_matrix(nhistory, 1);
-    scrappie_matrix prev_score = make_scrappie_matrix(nhistory, 1);
+    scrappie_matrix score = make_scrappie_matrix(nhistory + 2, 1);
+    scrappie_matrix prev_score = make_scrappie_matrix(nhistory + 2, 1);
     scrappie_matrix tmp = make_scrappie_matrix(nhistory, 1);
-    scrappie_imatrix itmp = make_scrappie_imatrix(nhistory, nblock);
-    scrappie_imatrix traceback = make_scrappie_imatrix(nhistory, nblock);
+    scrappie_imatrix itmp = make_scrappie_imatrix(nhistory, 1);
+    scrappie_imatrix traceback = make_scrappie_imatrix(nhistory + 2, nblock);
     if(NULL == score || NULL == prev_score || NULL == tmp || NULL == itmp || NULL == traceback){
         goto cleanup;
     }
 
     //  Initialise
     for (int i = 0; i < nhistoryq; i++) {
-        score->data.v[i] = logpost->data.v[i];
+        score->data.v[i] = _mm_set1_ps(-BIG_FLOAT);
     }
+    score->data.f[nhistory] = 0.0f;
+    score->data.f[nhistory + 1] = -BIG_FLOAT;
 
     //  Forwards Viterbi iteration
-    for (int blk = 1; blk < nblock; blk++) {
-        const size_t offsetTq = blk * nhistoryq;
-        const size_t offsetP = blk * ldp;
+    for (int blk = 0; blk < nblock; blk++) {
+        const size_t offsetTq = blk * traceback->nrq;
+        const size_t offsetT = offsetTq * 4;
         const size_t offsetPq = blk * logpost->nrq;
+        const size_t offsetP = offsetPq * 4;
         // Swap score and previous score
         {
             scrappie_matrix tmptr = score;
@@ -199,7 +240,7 @@ float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float ski
         }
 
         // Slip
-        if (use_slip) {
+        if (allow_slip) {
             const int32_t nhistoryqqqq = nhistoryqqq / 4;
             const __m128 slip_penv = _mm_set1_ps(2.0 * skip_pen);
             for (int i = 0; i < nhistoryqqqq; i++) {
@@ -250,10 +291,36 @@ float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float ski
                 }
             }
         }
+
+        // Remain in start state (stay or local penalty)
+        score->data.f[nhistory] = prev_score->data.f[nhistory]
+                                + fmaxf(-local_pen, logpost->data.f[offsetP + nhistory] - stay_pen);
+        traceback->data.f[offsetT + nhistory] = nhistory;
+        // Exit start state
+        for(int hst=0 ; hst < nhistory ; hst++){
+            const float scoref = prev_score->data.f[nhistory] + logpost->data.f[offsetP + hst];
+            if(scoref > score->data.f[hst]){
+                score->data.f[hst] = scoref;
+                traceback->data.f[offsetT + hst] = nhistory;
+            }
+        }
+
+        // Remain in end state (stay or local penalty)
+        score->data.f[nhistory + 1] = prev_score->data.f[nhistory + 1]
+                                    + fmax(-local_pen, logpost->data.f[offsetP + nhistory] - stay_pen);
+        traceback->data.f[offsetT + nhistory + 1] = nhistory + 1;
+        // Enter end state
+        for(int hst=0 ; hst < nhistory ; hst++){
+            const float scoref = prev_score->data.f[hst] - local_pen;
+            if(scoref > score->data.f[nhistory + 1]){
+                score->data.f[nhistory + 1] = scoref;
+                traceback->data.f[offsetT + nhistory + 1] = hst;
+            }
+        }
     }
 
     //  Viterbi traceback
-    logscore = viterbi_backtrace(score->data.f, nhistory, traceback, seq);
+    logscore = viterbi_local_backtrace(score->data.f, nhistory, traceback, seq);
 
     assert(validate_ivector(seq, nblock, -1, nhistory - 1, __FILE__, __LINE__));
 
@@ -582,7 +649,7 @@ void colmaxf(float * x, int nr, int nc, int * idx){
     }
 }
 
-float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen, int *seq){
+float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen, int *seq){
     float logscore = NAN;
     RETURN_NULL_IF(NULL == logpost, logscore);
     RETURN_NULL_IF(NULL == seq, logscore);
@@ -598,17 +665,20 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
     const int step_rem = nhst / nstep;
     const int skip_rem = nhst / nskip;
 
-    float * cscore = calloc(nhst, sizeof(float));
-    float * pscore = calloc(nhst, sizeof(float));
+    float * cscore = calloc(nhst + 2, sizeof(float));
+    float * pscore = calloc(nhst + 2, sizeof(float));
     int * step_idx = calloc(step_rem, sizeof(int));
     int * skip_idx = calloc(skip_rem, sizeof(int));
-    scrappie_imatrix traceback = make_scrappie_imatrix(nhst, nblock);
+    scrappie_imatrix traceback = make_scrappie_imatrix(nhst + 2, nblock);
     if(NULL != cscore && NULL != pscore && NULL != step_idx && NULL != skip_idx && NULL != traceback){
-        // Initialise
-        memcpy(cscore, logpost->data.f, nhst * sizeof(float));
+        // Initialise -- must begin in start state
+        for(size_t i=0 ; i < (nhst + 2) ; i++){
+            cscore[i] = -BIG_FLOAT;
+        }
+        cscore[nhst] = 0.0f;
 
         //  Forwards Viterbi
-        for(int i=1 ; i < nblock ; i++){
+        for(int i=0 ; i < nblock ; i++){
             const size_t lpoffset = i * logpost->nrq * 4;
             const size_t toffset = i * traceback->nrq * 4;
             {  // Swap vectors
@@ -646,13 +716,39 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
             for(int hst=0 ; hst < nhst ; hst++){
                 const float score = pscore[hst] + logpost->data.f[lpoffset + nhst] - stay_pen;
                 if(score > cscore[hst]){
+                    // Arbitrary assumption here!  Should be >= ?
                     cscore[hst] = score;
                     traceback->data.f[toffset + hst] = -1;
                 }
             }
+
+            // Remain in start state -- local penalty or stay
+            cscore[nhst] = pscore[nhst] + fmaxf(-local_pen, logpost->data.f[lpoffset + nhst] - stay_pen);
+            traceback->data.f[toffset + nhst] = nhst;
+            // Exit start state
+            for(int hst=0 ; hst < nhst ; hst++){
+                const float score = pscore[nhst] + logpost->data.f[lpoffset + hst];
+                if(score > cscore[hst]){
+                    cscore[hst] = score;
+                    traceback->data.f[toffset + hst] = nhst;
+                }
+            }
+
+            // Remain in end state -- local penalty or stay
+            cscore[nhst + 1] = pscore[nhst + 1] + fmaxf(-local_pen, logpost->data.f[lpoffset + nhst] - stay_pen);
+            traceback->data.f[toffset + nhst + 1] = nhst + 1;
+            // Enter end state
+            for(int hst=0 ; hst < nhst ; hst++){
+                const float score = pscore[hst] - local_pen;
+                if(score > cscore[nhst + 1]){
+                    cscore[nhst + 1] = score;
+                    traceback->data.f[toffset + nhst + 1] = hst;
+                }
+            }
+
         }
 
-        logscore = viterbi_backtrace(cscore, nhst, traceback, seq);
+        logscore = viterbi_local_backtrace(cscore, nhst, traceback, seq);
     }
 
     free_scrappie_imatrix(traceback);

@@ -76,6 +76,7 @@ Scrappie basecaller -- basecall via events
                              1: quickest, 9: best)
   -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
       --licence, --license   Print licensing information
+      --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
   -o, --outformat=format     Format to output reads (FASTA or SAM)
   -p, --prefix=string        Prefix to append to name of each read
@@ -103,6 +104,7 @@ Scrappie basecaller -- basecall from raw signal
                              1: quickest, 9: best)
   -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
       --licence, --license   Print licensing information
+      --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
       --model=name           Raw model to use: "raw_r94", "rgr_r94",
                              "rgrgr_r95"
@@ -135,10 +137,18 @@ scrappie raw -o sam reads | samtools view -SC - > output.cram
 When the output is set to FASTA (default) then some metadata is stored in the description
   * The sequence ID is the name of the file that was basecalled.
   * The *description* element of the FASTA header is a JSON string containing the following elements:
-    * `normalised_score` Normalised score (total score / number of events or blocks).
-    * `nevents` Number of events
-    * `sequence_length` Length of sequence called
-    * `events_per_base` Number of events per base called
+    *  Events 
+      * `normalised_score` Normalised score (total score / number of events or blocks).
+      * `nevents` Number of events processed.
+      * `sequence_length` Length of sequence called.
+      * `events_per_base` Number of events per base called.
+    *  Raw
+      * `normalised_score` Normalised score (total score / number of events or blocks).
+      * `nblock` Number of blocks processed.
+      * `sequence_length` Length of sequence called.
+      * `blocks_per_base` Mean number of blocks per base.
+      * `nsample` Number of samples in read.
+      * `trim` Interval of samples used (lower inclusive, upper exclusive).
 
 
 ## Gotya's and notes
