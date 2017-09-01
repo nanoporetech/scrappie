@@ -1,8 +1,9 @@
 #include "layers.h"
-#include "nanonet_events.h"
-#include "nanonet_raw.h"
-#include "nanonet_rgr.h"
-#include "nanonet_rgrgr.h"
+#include "models/nanonet_events.h"
+#include "models/raw_20170901_r94_450bps_0b70da4.h"
+#include "models/rgr_20170901_r94_450bps_9739958.h"
+#include "models/rgrgr-tanh_20170901_r95_450bps_1bc78bf.h"
+#include "models/rgrgr-elu_20170901_r94_450bps_6ceea26.h"
 #include "networks.h"
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
@@ -11,7 +12,8 @@
 // Forward declarations of raw posterior probability functions
 scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, bool return_log);
 scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob, bool return_log);
-scrappie_matrix nanonet_rgrgr_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, bool return_log);
 
 
 enum raw_model_type get_raw_model(const char * modelstr){
@@ -21,8 +23,11 @@ enum raw_model_type get_raw_model(const char * modelstr){
     if(0 == strcmp(modelstr, "rgr_r94")){
         return SCRAPPIE_MODEL_RGR;
     }
+    if(0 == strcmp(modelstr, "rgrgr_r94")){
+        return SCRAPPIE_MODEL_RGRGR_R94;
+    }
     if(0 == strcmp(modelstr, "rgrgr_r95")){
-        return SCRAPPIE_MODEL_RGRGR;
+        return SCRAPPIE_MODEL_RGRGR_R95;
     }
     return SCRAPPIE_MODEL_INVALID;
 }
@@ -33,7 +38,9 @@ const char * raw_model_string(const enum raw_model_type model){
         return "raw_r94";
     case SCRAPPIE_MODEL_RGR:
         return "rgr_r94";
-    case SCRAPPIE_MODEL_RGRGR:
+    case SCRAPPIE_MODEL_RGRGR_R94:
+        return "rgrgr_r94";
+    case SCRAPPIE_MODEL_RGRGR_R95:
         return "rgrgr_r95";
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
@@ -51,8 +58,10 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model){
         return nanonet_raw_posterior;
     case SCRAPPIE_MODEL_RGR:
         return nanonet_rgr_posterior;
-    case SCRAPPIE_MODEL_RGRGR:
-        return nanonet_rgrgr_posterior;
+    case SCRAPPIE_MODEL_RGRGR_R94:
+        return nanonet_rgrgr_r94_posterior;
+    case SCRAPPIE_MODEL_RGRGR_R95:
+        return nanonet_rgrgr_r95_posterior;
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
     default:
@@ -68,7 +77,7 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model){
 scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
                                   bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
-    RETURN_NULL_IF(events.n == 0, NULL);
+    RETURN_NULL_IF(0 == events.n, NULL);
     RETURN_NULL_IF(NULL == events.event, NULL);
 
     const int WINLEN = 3;
@@ -117,7 +126,7 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
 scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
                                       bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
-    RETURN_NULL_IF(signal.n == 0, NULL);
+    RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
@@ -169,7 +178,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
 scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
                                       bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
-    RETURN_NULL_IF(signal.n == 0, NULL);
+    RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
@@ -203,44 +212,91 @@ scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
     return post;
 }
 
-scrappie_matrix nanonet_rgrgr_posterior(const raw_table signal, float min_prob,
+scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob,
                                       bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
-    RETURN_NULL_IF(signal.n == 0, NULL);
+    RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
     scrappie_matrix conv =
-        Convolution(raw_mat, conv_rgrgr_W, conv_rgrgr_b, conv_rgrgr_stride, NULL);
+        Convolution(raw_mat, conv_rgrgr_r94_W, conv_rgrgr_r94_b, conv_rgrgr_r94_stride, NULL);
     elu_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
     //  First GRU layer
-    scrappie_matrix gruB1in = feedforward_linear(conv, gruB1_rgrgr_iW, gruB1_rgrgr_b, NULL);
+    scrappie_matrix gruB1in = feedforward_linear(conv, gruB1_rgrgr_r94_iW, gruB1_rgrgr_r94_b, NULL);
     conv = free_scrappie_matrix(conv);
-    scrappie_matrix gruB1 = gru_backward(gruB1in, gruB1_rgrgr_sW, gruB1_rgrgr_sW2, NULL);
+    scrappie_matrix gruB1 = gru_backward(gruB1in, gruB1_rgrgr_r94_sW, gruB1_rgrgr_r94_sW2, NULL);
     gruB1in = free_scrappie_matrix(gruB1in);
     //  Second GRU layer
-    scrappie_matrix gruF2in = feedforward_linear(gruB1, gruF2_rgrgr_iW, gruF2_rgrgr_b, NULL);
+    scrappie_matrix gruF2in = feedforward_linear(gruB1, gruF2_rgrgr_r94_iW, gruF2_rgrgr_r94_b, NULL);
     gruB1 = free_scrappie_matrix(gruB1);
-    scrappie_matrix gruF2 = gru_forward(gruF2in, gruF2_rgrgr_sW, gruF2_rgrgr_sW2, NULL);
+    scrappie_matrix gruF2 = gru_forward(gruF2in, gruF2_rgrgr_r94_sW, gruF2_rgrgr_r94_sW2, NULL);
     gruF2in = free_scrappie_matrix(gruF2in);
     //  Third GRU layer
-    scrappie_matrix gruB3in = feedforward_linear(gruF2, gruB3_rgrgr_iW, gruB3_rgrgr_b, NULL);
+    scrappie_matrix gruB3in = feedforward_linear(gruF2, gruB3_rgrgr_r94_iW, gruB3_rgrgr_r94_b, NULL);
     gruF2 = free_scrappie_matrix(gruF2);
-    scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_rgrgr_sW, gruB3_rgrgr_sW2, NULL);
+    scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_rgrgr_r94_sW, gruB3_rgrgr_r94_sW2, NULL);
     gruB3in = free_scrappie_matrix(gruB3in);
     //  Fourth GRU layer
-    scrappie_matrix gruF4in = feedforward_linear(gruB3, gruF4_rgrgr_iW, gruF4_rgrgr_b, NULL);
+    scrappie_matrix gruF4in = feedforward_linear(gruB3, gruF4_rgrgr_r94_iW, gruF4_rgrgr_r94_b, NULL);
     gruB3 = free_scrappie_matrix(gruB3);
-    scrappie_matrix gruF4 = gru_forward(gruF4in, gruF4_rgrgr_sW, gruF4_rgrgr_sW2, NULL);
+    scrappie_matrix gruF4 = gru_forward(gruF4in, gruF4_rgrgr_r94_sW, gruF4_rgrgr_r94_sW2, NULL);
     gruF4in = free_scrappie_matrix(gruF4in);
     //  Fifth GRU layer
-    scrappie_matrix gruB5in = feedforward_linear(gruF4, gruB5_rgrgr_iW, gruB5_rgrgr_b, NULL);
+    scrappie_matrix gruB5in = feedforward_linear(gruF4, gruB5_rgrgr_r94_iW, gruB5_rgrgr_r94_b, NULL);
     gruF4 = free_scrappie_matrix(gruF4);
-    scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rgrgr_sW, gruB5_rgrgr_sW2, NULL);
+    scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rgrgr_r94_sW, gruB5_rgrgr_r94_sW2, NULL);
     gruB5in = free_scrappie_matrix(gruB5in);
 
-    scrappie_matrix post = softmax(gruB5, FF_rgrgr_W, FF_rgrgr_b, NULL);
+    scrappie_matrix post = softmax(gruB5, FF_rgrgr_r94_W, FF_rgrgr_r94_b, NULL);
+    gruB5 = free_scrappie_matrix(gruB5);
+
+    if (return_log) {
+        robustlog_activation_inplace(post, min_prob);
+    }
+
+    return post;
+}
+
+scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob,
+                                      bool return_log) {
+    assert(min_prob >= 0.0 && min_prob <= 1.0);
+    RETURN_NULL_IF(0 == signal.n, NULL);
+    RETURN_NULL_IF(NULL == signal.raw, NULL);
+
+    scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
+    scrappie_matrix conv =
+        Convolution(raw_mat, conv_rgrgr_r95_W, conv_rgrgr_r95_b, conv_rgrgr_r95_stride, NULL);
+    tanh_activation_inplace(conv);
+    raw_mat = free_scrappie_matrix(raw_mat);
+    //  First GRU layer
+    scrappie_matrix gruB1in = feedforward_linear(conv, gruB1_rgrgr_r95_iW, gruB1_rgrgr_r95_b, NULL);
+    conv = free_scrappie_matrix(conv);
+    scrappie_matrix gruB1 = gru_backward(gruB1in, gruB1_rgrgr_r95_sW, gruB1_rgrgr_r95_sW2, NULL);
+    gruB1in = free_scrappie_matrix(gruB1in);
+    //  Second GRU layer
+    scrappie_matrix gruF2in = feedforward_linear(gruB1, gruF2_rgrgr_r95_iW, gruF2_rgrgr_r95_b, NULL);
+    gruB1 = free_scrappie_matrix(gruB1);
+    scrappie_matrix gruF2 = gru_forward(gruF2in, gruF2_rgrgr_r95_sW, gruF2_rgrgr_r95_sW2, NULL);
+    gruF2in = free_scrappie_matrix(gruF2in);
+    //  Third GRU layer
+    scrappie_matrix gruB3in = feedforward_linear(gruF2, gruB3_rgrgr_r95_iW, gruB3_rgrgr_r95_b, NULL);
+    gruF2 = free_scrappie_matrix(gruF2);
+    scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_rgrgr_r95_sW, gruB3_rgrgr_r95_sW2, NULL);
+    gruB3in = free_scrappie_matrix(gruB3in);
+    //  Fourth GRU layer
+    scrappie_matrix gruF4in = feedforward_linear(gruB3, gruF4_rgrgr_r95_iW, gruF4_rgrgr_r95_b, NULL);
+    gruB3 = free_scrappie_matrix(gruB3);
+    scrappie_matrix gruF4 = gru_forward(gruF4in, gruF4_rgrgr_r95_sW, gruF4_rgrgr_r95_sW2, NULL);
+    gruF4in = free_scrappie_matrix(gruF4in);
+    //  Fifth GRU layer
+    scrappie_matrix gruB5in = feedforward_linear(gruF4, gruB5_rgrgr_r95_iW, gruB5_rgrgr_r95_b, NULL);
+    gruF4 = free_scrappie_matrix(gruF4);
+    scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rgrgr_r95_sW, gruB5_rgrgr_r95_sW2, NULL);
+    gruB5in = free_scrappie_matrix(gruB5in);
+
+    scrappie_matrix post = softmax(gruB5, FF_rgrgr_r95_W, FF_rgrgr_r95_b, NULL);
     gruB5 = free_scrappie_matrix(gruB5);
 
     if (return_log) {

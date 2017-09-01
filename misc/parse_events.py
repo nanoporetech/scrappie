@@ -57,7 +57,7 @@ assert network.version == 1, "Sloika model must be version 1.  Perhaps you need 
 sys.stdout.write("""#pragma once
 #ifndef NANONET_EVENTS_MODEL_H
 #define NANONET_EVENTS_MODEL_H
-#include "util.h"
+#include "../util.h"
 """)
 
 """ First LSTM layer

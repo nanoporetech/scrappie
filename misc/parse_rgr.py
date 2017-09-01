@@ -59,7 +59,7 @@ sys.stdout.write("""#pragma once
 #ifndef NANONET_RGR_MODEL_H
 #define NANONET_RGR_MODEL_H
 #include <assert.h>
-#include "util.h"
+#include "../util.h"
 """)
 
 """ Convolution layer
