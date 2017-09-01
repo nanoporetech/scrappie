@@ -46,7 +46,7 @@ static struct argp_option options[] = {
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-    {"model", 5, "name", 0, "Raw model to use: \"raw_r94\", \"rgr_r94\", \"rgrgr_r95\""},
+    {"model", 5, "name", 0, "Raw model to use: \"raw_r94\", \"rgr_r94\", \"rgrgr_r94\", \"rgrgr_r95\""},
     // Currently disabled
     //{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},
@@ -96,7 +96,7 @@ static struct arguments args = {
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
-    .model_type = SCRAPPIE_MODEL_RGR,
+    .model_type = SCRAPPIE_MODEL_RGRGR_R94,
     .files = NULL
 };
 

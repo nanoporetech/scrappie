@@ -57,7 +57,7 @@ sys.stdout.write("""#pragma once
 #ifndef NANONET_RAW_MODEL_H
 #define NANONET_RAW_MODEL_H
 #include <assert.h>
-#include "util.h"
+#include "../util.h"
 """)
 
 """ First LSTM layer
