@@ -36,17 +36,20 @@ float viterbi_backtrace(float const *score, int n, const_scrappie_imatrix traceb
     RETURN_NULL_IF(NULL == seq, NAN);
 
     const size_t nblock = traceback->nc;
+    for(size_t i=0 ; i<nblock ; i++){
+        // Initialise entries to stay
+        seq[i] = -1;
+    }
 
     int last_state = argmaxf(score, n);
     float logscore = score[last_state];
-    seq[nblock - 1] = last_state;
-    for(int i=1 ; i < nblock ; i++){
-        const int ri = nblock - i;
+    for(int i=0 ; i < nblock ; i++){
+        const int ri = nblock - i - 1;
         const int state = traceback->data.f[ri * traceback->nrq * 4 + last_state];
         if(state >= 0){
+            seq[ri] = last_state;
             last_state = state;
         }
-        seq[ri - 1] = state;
     }
 
     return logscore;
@@ -57,18 +60,22 @@ float viterbi_local_backtrace(float const *score, int n, const_scrappie_imatrix 
     RETURN_NULL_IF(NULL == seq, NAN);
 
     const size_t nblock = traceback->nc;
+    for(size_t i=0 ; i<=nblock ; i++){
+        // Initialise entries to stay
+        seq[i] = -1;
+    }
 
     int last_state = argmaxf(score, n + 2);
     float logscore = score[last_state];
-    seq[nblock] = last_state;
     for(int i=0 ; i < nblock ; i++){
-        const int ri = nblock - 1 - i;
+        const int ri = nblock - i - 1;
         const int state = traceback->data.f[ri * traceback->nrq * 4 + last_state];
         if(state >= 0){
+            seq[ri + 1] = last_state;
             last_state = state;
         }
-        seq[ri] = state;
     }
+    seq[0] = last_state;
 
     //  Transcode start to stay
     for(int i=0 ; i < nblock ; i++){
