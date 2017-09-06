@@ -11,7 +11,7 @@
 #    error "Compilation of function decode_transducer requires a processor that supports at least SSE2"
 #endif
 
-#ifndef __SSE4_1
+#ifndef __SSE4_1__
 /**  Multiply two vectors of 32 bit integers together
  *
  *   Emulates the SSE4.1 instruction _mm_mullo_epi32 on hardware that only supports
