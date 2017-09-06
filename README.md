@@ -13,7 +13,7 @@ For a complete release history, see [RELEASES.md]
 
 ## Dependencies
 * A good BLAS library + development headers including cblas.h.
-* The HDF5 library and development headers.
+* The HDF5 library and development headers (with multi-threading support).
 
 On Debian based systems, the following packages are sufficient (tested Ubuntu 14.04 and 16.04)
 * libcunit1
@@ -45,7 +45,7 @@ mkdir build && cd build && cmake .. && make
 
 ## Running
 ```bash
-#  Set some enviromental variables.  
+#  Set some enviromental variables.
 # Allow scrappie to use as many threads as the system will support
 export OMP_NUM_THREADS=`nproc`
 # Use openblas in single-threaded mode
@@ -58,6 +58,8 @@ scrappie raw reads ... > basecalls.fa
 scrappie raw reads/read1.fast5 reads/read2.fast5 > basecalls.fa
 # Or using a strand list (skipping first line)
 tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie raw > basecalls.fa
+#  Using Scrappie in single-threaded mode
+find path/to/reads/ -name \*.fast5 | xargs -P ${OMP_NUM_THREADS} scrappie raw --threads 1 > basecalls.fa
 ```
 
 ## Commandline options
@@ -137,7 +139,7 @@ scrappie raw -o sam reads | samtools view -SC - > output.cram
 When the output is set to FASTA (default) then some metadata is stored in the description
   * The sequence ID is the name of the file that was basecalled.
   * The *description* element of the FASTA header is a JSON string containing the following elements:
-    *  Events 
+    *  Events
       * `normalised_score` Normalised score (total score / number of events or blocks).
       * `nevents` Number of events processed.
       * `sequence_length` Length of sequence called.
@@ -152,8 +154,9 @@ When the output is set to FASTA (default) then some metadata is stored in the de
 
 
 ## Gotya's and notes
-* Model is hard-coded.  Generate new header files using 
+* Model is hard-coded.  Generate new header files using
   * Events: `parse_events.py model.pkl > src/nanonet_events.h`
   * Raw: `parse_raw.py model.pkl > src/nanonet_raw.h`
 * The normalised score (- total score / number of events) correlates well with read accuracy.
 * Reads with unusual rate metrics (number of events or blocks / bases called) may be unreliable.
+* Scrappie requires HDF5 library compiled with multi-threading support, see [HDF5 concurrent access](https://support.hdfgroup.org/HDF5/hdf5-quest.html#gconc).  If only single-threaded HDF5 library is available then single-threaded Scrappie can be built and parallelized with xargs -- see [Running](#Running) for details.
