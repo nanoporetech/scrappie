@@ -59,7 +59,7 @@ scrappie raw reads/read1.fast5 reads/read2.fast5 > basecalls.fa
 # Or using a strand list (skipping first line)
 tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie raw > basecalls.fa
 #  Using Scrappie in single-threaded mode
-find path/to/reads/ -name \*.fast5 | xargs -P ${OMP_NUM_THREADS} scrappie raw --threads 1 > basecalls.fa
+find path/to/reads/ -name \*.fast5 | parallel -P ${OMP_NUM_THREADS} scrappie raw --threads 1 > basecalls.fa
 ```
 
 ## Commandline options
@@ -73,6 +73,7 @@ Scrappie basecaller -- basecall via events
   -#, --threads=nreads       Number of reads to call in parallel
       --dump=filename        Dump annotated events to HDF5 file
       --dwell, --no-dwell    Perform dwell correction of homopolymer lengths
+  -f, --format=format        Format to output reads (FASTA or SAM)
       --hdf5-chunk=size      Chunk size for HDF5 output
       --hdf5-compression=level   Gzip compression level for HDF5 output (0:off,
                              1: quickest, 9: best)
@@ -80,7 +81,7 @@ Scrappie basecaller -- basecall via events
       --licence, --license   Print licensing information
       --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
-  -o, --outformat=format     Format to output reads (FASTA or SAM)
+  -o, --output=filename      Write to file rather than stdout
   -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=chunk:percentile
@@ -101,6 +102,7 @@ Usage: raw [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall from raw signal
 
   -#, --threads=nreads       Number of reads to call in parallel
+  -f, --format=format        Format to output reads (FASTA or SAM)
       --hdf5-chunk=size      Chunk size for HDF5 output
       --hdf5-compression=level   Gzip compression level for HDF5 output (0:off,
                              1: quickest, 9: best)
@@ -109,8 +111,8 @@ Scrappie basecaller -- basecall from raw signal
       --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
       --model=name           Raw model to use: "raw_r94", "rgr_r94",
-                             "rgrgr_r95"
-  -o, --outformat=format     Format to output reads (FASTA or SAM)
+                             "rgrgr_r94", "rgrgr_r95"
+  -o, --output=filename      Write to file rather than stdout
   -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base
       --segmentation=chunk:percentile
@@ -126,13 +128,13 @@ Scrappie basecaller -- basecall from raw signal
 
 ## Output formats
 Scrappie current supports two ouput formats, FASTA and SAM.  The default format is currently FASTA;
-SAM format output is enabled using the `--outformat SAM` commandline argument.
+SAM format output is enabled using the `--format SAM` commandline argument.
 
 Scrappie can emit SAM "alignment" lines containing the sequences but no quality information.  No other fields, include a SAM header are emitted.  A CRAM or BAM file can be obtained using `samtools` (tested with version 1.4.1) as follows:
 
 ```bash
-scrappie raw -o sam reads | samtools view -Sb - > output.bam
-scrappie raw -o sam reads | samtools view -SC - > output.cram
+scrappie raw -f sam reads | samtools view -Sb - > output.bam
+scrappie raw -f sam reads | samtools view -SC - > output.cram
 ```
 
 ### FASTA
