@@ -43,11 +43,12 @@ static struct argp_option options[] = {
     {"dwell", 5, 0, 0, "Perform dwell correction of homopolymer lengths"},
     {"no-dwell", 6, 0, OPTION_ALIAS,
      "Don't perform dwell correction of homopolymer lengths"},
+    {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0,
      "Maximum number of reads to call (0 is unlimited)"},
     {"min_prob", 'm', "probability", 0,
      "Minimum bound on probability of match"},
-    {"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
+    {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
@@ -73,10 +74,11 @@ enum format { FORMAT_FASTA, FORMAT_SAM };
 
 struct arguments {
     bool dwell_correction;
+    enum format outformat;
     int limit;
     float min_prob;
+    FILE * output;
     char * prefix;
-    enum format outformat;
     float skip_pen;
     float stay_pen;
     float local_pen;
@@ -95,6 +97,7 @@ static struct arguments args = {
     .dwell_correction = true,
     .limit = 0,
     .min_prob = 1e-5f,
+    .output = NULL,
     .prefix = "",
     .outformat = FORMAT_FASTA,
     .skip_pen = 0.0f,
@@ -114,6 +117,15 @@ static struct arguments args = {
 static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     switch (key) {
         int ret = 0;
+    case 'f':
+        if (0 == strcasecmp("FASTA", arg)) {
+            args.outformat = FORMAT_FASTA;
+        } else if (0 == strcasecmp("SAM", arg)) {
+            args.outformat = FORMAT_SAM;
+        } else {
+            errx(EXIT_FAILURE, "Unrecognised format");
+        }
+        break;
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
@@ -122,17 +134,14 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         args.min_prob = atof(arg);
         assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
         break;
+    case 'o':
+        args.output = fopen(arg, "w");
+        if(NULL == args.output){
+            errx(EXIT_FAILURE, "Failed to open \"%s\" for output.", arg);
+        }
+        break;
     case 'p':
         args.prefix = arg;
-        break;
-    case 'o':
-        if (0 == strcasecmp("FASTA", arg)) {
-            args.outformat = FORMAT_FASTA;
-        } else if (0 == strcasecmp("SAM", arg)) {
-            args.outformat = FORMAT_SAM;
-        } else {
-            errx(EXIT_FAILURE, "Unrecognised format");
-        }
         break;
     case 's':
         args.skip_pen = atof(arg);
@@ -306,6 +315,9 @@ int main_events(int argc, char *argv[]) {
     omp_set_nested(1);
 #endif
     argp_parse(&argp, argc, argv, 0, 0, NULL);
+    if(NULL == args.output){
+        args.output = stdout;
+    }
 
     hid_t hdf5out = -1;
     if (NULL != args.dump) {
@@ -371,12 +383,12 @@ int main_events(int argc, char *argv[]) {
             {
                 switch (args.outformat) {
                 case FORMAT_FASTA:
-                    fprintf_fasta(stdout,
+                    fprintf_fasta(args.output,
                                   basename(filename),
                                   args.prefix, res);
                     break;
                 case FORMAT_SAM:
-                    fprintf_sam(stdout,
+                    fprintf_sam(args.output,
                                 basename(filename),
                                 args.prefix, res);
                     break;
@@ -399,5 +411,10 @@ int main_events(int argc, char *argv[]) {
     if (hdf5out >= 0) {
         H5Fclose(hdf5out);
     }
+
+    if(stdout != args.output){
+        fclose(args.output);
+    }
+
     return EXIT_SUCCESS;
 }

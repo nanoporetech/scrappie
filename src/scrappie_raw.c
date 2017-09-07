@@ -37,9 +37,10 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Scrappie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
+    {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     {"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
-    {"outformat", 'o', "format", 0, "Format to output reads (FASTA or SAM)"},
+    {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
@@ -64,9 +65,10 @@ static struct argp_option options[] = {
 enum format { FORMAT_FASTA, FORMAT_SAM };
 
 struct arguments {
+    enum format outformat;
     int limit;
     float min_prob;
-    enum format outformat;
+    FILE * output;
     char * prefix;
     float skip_pen;
     float stay_pen;
@@ -86,6 +88,7 @@ struct arguments {
 static struct arguments args = {
     .limit = 0,
     .min_prob = 1e-5f,
+    .output = NULL,
     .outformat = FORMAT_FASTA,
     .prefix = "",
     .skip_pen = 0.0f,
@@ -107,6 +110,15 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     switch(key){
         int ret = 0;
         char * next_tok = NULL;
+    case 'f':
+        if(0 == strcasecmp("FASTA", arg)){
+            args.outformat = FORMAT_FASTA;
+        } else if(0 == strcasecmp("SAM", arg)){
+            args.outformat = FORMAT_SAM;
+        } else {
+            errx(EXIT_FAILURE, "Unrecognised format");
+        }
+        break;
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
@@ -116,12 +128,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         assert(isfinite(args.min_prob) && args.min_prob >= 0.0);
         break;
     case 'o':
-        if(0 == strcasecmp("FASTA", arg)){
-            args.outformat = FORMAT_FASTA;
-        } else if(0 == strcasecmp("SAM", arg)){
-            args.outformat = FORMAT_SAM;
-        } else {
-            errx(EXIT_FAILURE, "Unrecognised format");
+        args.output = fopen(arg, "w");
+        if(NULL == args.output){
+            errx(EXIT_FAILURE, "Failed to open \"%s\" for output.", arg);
         }
         break;
     case 'p':
@@ -274,6 +283,9 @@ int main_raw(int argc, char * argv[]){
         omp_set_nested(1);
     #endif
     argp_parse(&argp, argc, argv, 0, 0, NULL);
+    if(NULL == args.output){
+        args.output = stdout;
+    }
 
     hid_t hdf5out = -1;
     if(NULL != args.dump){
@@ -339,10 +351,10 @@ int main_raw(int argc, char * argv[]){
             {
                 switch(args.outformat){
                 case FORMAT_FASTA:
-                    fprintf_fasta(stdout, basename(filename), args.prefix, res);
+                    fprintf_fasta(args.output, basename(filename), args.prefix, res);
                     break;
                 case FORMAT_SAM:
-                    fprintf_sam(stdout, basename(filename), args.prefix, res);
+                    fprintf_sam(args.output, basename(filename), args.prefix, res);
                     break;
                 default:
                     errx(EXIT_FAILURE, "Unrecognised output format");
@@ -363,5 +375,10 @@ int main_raw(int argc, char * argv[]){
     if(hdf5out >= 0){
         H5Fclose(hdf5out);
     }
+
+    if(stdout != args.output){
+        fclose(args.output);
+    }
+
     return EXIT_SUCCESS;
 }
