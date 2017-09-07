@@ -1,11 +1,6 @@
 // Too many calls to quantile lead to high failure rate for `scrappie raw`
 #define BANANA 1
 #include <assert.h>
-#ifdef __APPLE__
-#    include <Accelerate/Accelerate.h>
-#else
-#    include <cblas.h>
-#endif
 #include <err.h>
 #include <math.h>
 #include "scrappie_stdlib.h"
