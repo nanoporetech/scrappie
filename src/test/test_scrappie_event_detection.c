@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <event_detection.h>
 #include <scrappie_structures.h>
 #include "test_common.h"
 #include <util.h>
@@ -149,6 +150,40 @@ void test_correct_stdv(void){
     }
 }
 
+void shift_scale_helper(float shift, float scale){
+    float data[] = {
+        1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+        2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f,
+        3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f,
+        2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f,
+        1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+    raw_table rt = {
+        .n = 50,
+        .start = 0,
+        .end = 50,
+        .raw = data
+    };
+
+    event_table ev1 = detect_events(rt, event_detection_defaults);
+
+    for(size_t i=0 ; i < rt.n ; i++){
+        rt.raw[i] = rt.raw[i] * scale + shift;
+    }
+    event_table ev2 = detect_events(rt, event_detection_defaults);
+
+    CU_ASSERT_EQUAL(ev1.n, ev2.n);
+    for(size_t ev=0 ; ev < ev1.n ; ev++){
+        CU_ASSERT_EQUAL(ev1.event[ev].length, ev1.event[ev].length);
+        CU_ASSERT_DOUBLE_EQUAL(ev1.event[ev].mean * scale + shift, ev2.event[ev].mean, 1e-5);
+    }
+}
+
+void test_shift_scale(void){
+    shift_scale_helper(0.25, 0.5);
+}
+
+
 
 static test_with_description tests[] = {
     {"Cumulative sum and sums", test_cumulative_sums},
@@ -158,6 +193,7 @@ static test_with_description tests[] = {
     {"Correct event length", test_correct_lengths},
     {"Correct event means", test_correct_means},
     {"Correct event stdv", test_correct_stdv},
+    {"Event detection is shift-scale invariant", test_shift_scale},
     {0}};
 
 
