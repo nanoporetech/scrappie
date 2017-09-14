@@ -97,6 +97,29 @@ float viterbi_local_backtrace(float const *score, int n, const_scrappie_imatrix 
     return logscore;
 }
 
+float argmax_decoder(const_scrappie_matrix logpost, int *seq) {
+    RETURN_NULL_IF(NULL == logpost, NAN);
+    RETURN_NULL_IF(NULL == seq, NAN);
+
+    const int nblock = logpost->nc;
+    const int nstate = logpost->nr;
+    assert(nstate > 0);
+    const int stride = logpost->nrq * 4;
+    assert(stride > 0);
+    int offset;
+
+    float logscore = 0;
+    int imax;
+    for (int blk = 0; blk < nblock; blk++) {
+        offset = blk * stride;
+        imax = argmaxf(logpost->data.f + offset, nstate);
+        logscore += logpost->data.f[offset + imax];
+        seq[blk] = (imax == nstate - 1) ? -1 : imax;
+    }
+
+    return logscore;
+}
+
 float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen, int *seq,
                         bool allow_slip) {
     float logscore = NAN;
@@ -385,6 +408,44 @@ bool iskmerhomopolymer(int kmer, int klen) {
 }
 
 const char base_lookup[4] = { 'A', 'C', 'G', 'T' };
+
+
+// This method assumes a model which outputs single bases
+char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos) {
+    RETURN_NULL_IF(NULL == seq, NULL);
+    RETURN_NULL_IF(NULL == pos, NULL);
+
+    //  Determine length of final sequence
+    int length = 0;
+    if (seq[0] >= 0) { length += 1; }
+    for (int blk = 1; blk < n; blk++) {
+        if (seq[blk] >= 0 && seq[blk - 1] != seq[blk]) {
+            length += 1;
+        }
+    }
+
+    // Initialise basespace sequence with terminating null
+    char *bases = calloc(length + 1, sizeof(char));
+    RETURN_NULL_IF(NULL == bases, NULL);
+
+    int loc = -1;
+    int prev = -2;
+
+    for (int blk = 0; blk < n; blk++) {
+        int this = seq[blk];
+        if (this >= 0 && this != prev) {
+            bases[loc] = base_lookup[this];
+            prev = this;
+            loc += 1;
+        }
+        if (NULL != pos) {
+            pos[blk] = loc;
+        }
+     }
+
+    return bases;
+}
+
 char *overlapper(const int *seq, int n, int nkmer, int *pos) {
     RETURN_NULL_IF(NULL == seq, NULL);
     RETURN_NULL_IF(NULL == pos, NULL);
@@ -410,6 +471,8 @@ char *overlapper(const int *seq, int n, int nkmer, int *pos) {
 
     // Initialise basespace sequence with terminating null
     char *bases = calloc(length + 1, sizeof(char));
+    RETURN_NULL_IF(NULL == bases, NULL);
+
     // Fill with first kmer
     for (int kmer = seq[st], k = 1; k <= kmer_len; k++) {
         int b = kmer & 3;

@@ -20,4 +20,8 @@ char *dwell_corrected_overlapper(const int *seq, const int *dwell, int n,
 
 float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
                      float local_pen, int *seq);
+
+float argmax_decoder(const_scrappie_matrix logpost, int *seq);
+char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos);
+
 #endif                          /* DECODE_H */
