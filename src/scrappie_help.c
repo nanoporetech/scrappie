@@ -75,6 +75,6 @@ int main_licence(int argc, char *argv[]) {
 }
 
 int main_version(int argc, char *argv[]) {
-    int ret = fputs(argp_program_version, stdout);
+    int ret = puts(argp_program_version);
     return (EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
