@@ -2,6 +2,8 @@ language: c
 sudo: enabled
 dist: trusty
 
+git:
+    submodules: false
 
 before_install:
     - set OMP_NUM_THREADS=2
