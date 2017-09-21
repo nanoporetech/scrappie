@@ -23,6 +23,10 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
 * 1.1 series: Improved basecalling from raw signal
+    * *release-1.1.1*
+        * Improved rgrgr models
+        * Ability to write output to named file
+        * Rename argument '--outformat' to '--format'
     * *release-1.1.0*
         * Implementation of raw data 'pirate' networks (rGr and rgrgr).
         * Stand-alone event detection.
