@@ -64,7 +64,7 @@ find path/to/reads/ -name \*.fast5 | parallel -P ${OMP_NUM_THREADS} scrappie raw
 
 ## Commandline options
 The commandline options accepted by Scrappie depend on whether it is being used to call
-via events or from raw signal.
+via events or from raw signal, or predicting the squiggle from the sequence.
 ```
 > scrappie help events
 Usage: events [OPTION...] fast5 [fast5 ...]
@@ -126,8 +126,24 @@ Scrappie basecaller -- basecall from raw signal
   -V, --version              Print program version
 ```
 
+```
+> scrappie help squiggle
+Usage: squiggle [OPTION...] fasta [fasta ...]
+Scrappie squiggler
+
+  -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
+      --licence, --license   Print licensing information
+  -o, --output=filename      Write to file rather than stdout
+  -p, --prefix=string        Prefix to append to name of each read
+      --rescale, --no-rescale   Rescale network output
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
+  -V, --version              Print program version
+```
+
+
 ## Output formats
-Scrappie current supports two ouput formats, FASTA and SAM.  The default format is currently FASTA;
+Scrappie basecalling current supports two ouput formats, FASTA and SAM.  The default format is currently FASTA;
 SAM format output is enabled using the `--format SAM` commandline argument.
 
 Scrappie can emit SAM "alignment" lines containing the sequences but no quality information.  No other fields, include a SAM header are emitted.  A CRAM or BAM file can be obtained using `samtools` (tested with version 1.4.1) as follows:
@@ -154,6 +170,23 @@ When the output is set to FASTA (default) then some metadata is stored in the de
       * `nsample` Number of samples in read.
       * `trim` Interval of samples used (lower inclusive, upper exclusive).
 
+### Squiggle format
+When Scrappie is used to predict squiggles, it outputs a tab-separated file with the following columns:
+  * Position along reference
+  * Base from reference at position
+  * Normalised current
+  * Standard deviation of normalised current
+  * Dwell (samples)
+
+Where the squiggles from more than one sequence is requested, the entries
+are separated by a line containing a hash symbol '#' followed by the sequence name.
+
+By default, the output of the squiggle prediction network is scaled into natural
+coordinates.  The untransformed values are accessible by using the `--no-rescale`
+argument.  When this is given, the 'standard deviation' and 'dwell' columns change as follows:
+  * Standard deviation -> log Standard deviation
+  * Dwell -> -log Dwell
+
 
 ## Gotya's and notes
 * Model is hard-coded.  Generate new header files using
@@ -162,3 +195,4 @@ When the output is set to FASTA (default) then some metadata is stored in the de
 * The normalised score (- total score / number of events) correlates well with read accuracy.
 * Reads with unusual rate metrics (number of events or blocks / bases called) may be unreliable.
 * Scrappie requires HDF5 library compiled with multi-threading support, see [HDF5 concurrent access](https://support.hdfgroup.org/HDF5/hdf5-quest.html#gconc).  If only single-threaded HDF5 library is available then single-threaded Scrappie can be built and parallelized with xargs -- see [Running](#Running) for details.
+* The squiggle prediction is based on Laplace distributed errors.

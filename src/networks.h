@@ -2,6 +2,7 @@
 #ifndef NETWORKS_H
 #    define NETWORKS_H
 #    include <stdbool.h>
+#    include "scrappie_matrix.h"
 #    include "scrappie_structures.h"
 
 enum raw_model_type {
@@ -21,5 +22,8 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model);
 //  Events posterior.  Other models via factory function
 scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
                                   bool return_log);
+
+//  Squiggle functions
+scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units);
 
 #endif    /* NETWORKS_H */

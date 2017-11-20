@@ -57,7 +57,7 @@ static struct argp_option options[] = {
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
 #if defined(_OPENMP)
-    {"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
+    {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
     {0}
 };
