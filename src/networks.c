@@ -315,6 +315,7 @@ scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_unit
     scrappie_matrix seq_embedding = embedding(sequence, n, embed_squiggle_dna_W, NULL);
     scrappie_matrix conv1 = convolution(seq_embedding, conv1_squiggle_dna_W, conv1_squiggle_dna_b,
                                         conv1_squiggle_dna_stride, NULL);
+    seq_embedding = free_scrappie_matrix(seq_embedding);
     tanh_activation_inplace(conv1);
 
     // Convolution 2, wrapped in residual layer
