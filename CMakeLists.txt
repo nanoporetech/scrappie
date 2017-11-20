@@ -15,8 +15,8 @@ set (CPACK_PACKAGE_VENDOR "Oxford Nanopore Technologies")
 set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
 set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.md")
 set (CPACK_PACKAGE_VERSION_MAJOR 1)
-set (CPACK_PACKAGE_VERSION_MINOR 1)
-set (CPACK_PACKAGE_VERSION_PATCH 1)
+set (CPACK_PACKAGE_VERSION_MINOR 2)
+set (CPACK_PACKAGE_VERSION_PATCH 0)
 
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
@@ -71,7 +71,7 @@ add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/laye
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
-add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
+add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_squiggle.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
 
 if (BUILD_SHARED_LIB)
 	if (APPLE)
@@ -95,7 +95,7 @@ endif ()
 ##
 set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -O3 -march=native -std=c11 -DUSE_SSE2 -DNDEBUG")
 set (CMAKE_C_FLAGS_CHAOS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2 -DNDEBUG -DCHAOSMONKEY=${CHAOSMONKEY}")
-set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Wall -DABORT_ON_NULL -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2")
+set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Werror -Wall -DABORT_ON_NULL -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)
@@ -129,7 +129,7 @@ install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTIN
 
 
 enable_testing()
-add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_decoding.c src/test/test_scrappie_elu.c src/test/test_scrappie_event_detection.c src/test/test_scrappie_matrix.c src/test/test_scrappie_signal.c src/test/test_util.c)
+add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_decoding.c src/test/test_scrappie_elu.c src/test/test_scrappie_event_detection.c src/test/test_scrappie_matrix.c src/test/test_scrappie_signal.c src/test/test_scrappie_squiggle.c src/test/test_util.c)
 target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 
@@ -147,6 +147,7 @@ add_test(test_licence scrappie license)
 add_test(test_help scrappie help)
 add_test(test_help_events scrappie help events)
 add_test(test_help_raw scrappie help raw)
+add_test(test_help_squiggle scrappie help squiggle)
 add_test(test_version scrappie version)
 
 add_custom_target(test-verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)

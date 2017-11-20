@@ -19,6 +19,9 @@ enum scrappie_mode get_scrappie_mode(const char *modestr) {
     if (0 == strcmp(modestr, "version")) {
         return SCRAPPIE_MODE_VERSION;
     }
+    if (0 == strcmp(modestr, "squiggle")){
+        return SCRAPPIE_MODE_SQUIGGLE;
+    }
 
     return SCRAPPIE_MODE_INVALID;
 }
@@ -35,6 +38,8 @@ const char *scrappie_mode_string(const enum scrappie_mode mode) {
         return "licence";
     case SCRAPPIE_MODE_VERSION:
         return "version";
+    case SCRAPPIE_MODE_SQUIGGLE:
+        return "squiggle";
     case SCRAPPIE_MODE_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie mode\n");
     default:
@@ -56,6 +61,8 @@ const char *scrappie_mode_description(const enum scrappie_mode mode) {
         return "Print licensing information.";
     case SCRAPPIE_MODE_VERSION:
         return "Print version information.";
+    case SCRAPPIE_MODE_SQUIGGLE:
+        return "Create approximate squiggle for sequence";
     case SCRAPPIE_MODE_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie mode\n");
     default:

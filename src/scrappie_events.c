@@ -63,7 +63,7 @@ static struct argp_option options[] = {
      "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
 #if defined(_OPENMP)
-    {"threads", '#', "nreads", 0, "Number of reads to call in parallel"},
+    {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
     {"segmentation", 14, "chunk:percentile", 0,
      "Chunk size and percentile for variance based segmentation"},

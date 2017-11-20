@@ -11,6 +11,11 @@ The vectorised math functions `src/sse_mathfun.h` are from
 http://gruntthepeon.free.fr/ssemath/ and the original version of this file is
 under the 'zlib' licence.  See the top of `src/sse_mathfun.h` for details.
 
+The Fasta / Fastq input library 'src/kseq.h' is from
+https://github.com/attractivechaos/klib/blob/master/kseq.h and the original
+version of the file is under the 'MIT' licence.  See the top of `src/kseq.h`
+for details.
+
 
 
 This project began life as a proof (bet) that a base caller could be written from scratch in a low level language in under 8 hours.  Some of the poor and just plain odd design decisions, along with the lack of documentation, are a result of its inception. In keeping with ONT's fish naming policy, the project was originally called Crappie (genus *Pomoxis*).
@@ -22,6 +27,9 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
+* 1.2 series: Sequence-to-squiggle
+    * *release-1.2.0*
+        * Ability to predict expected squiggle from sequence
 * 1.1 series: Improved basecalling from raw signal
     * *release-1.1.1*
         * Improved rgrgr models

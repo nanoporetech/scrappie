@@ -370,7 +370,7 @@ void compare_convolution_to_baseline(const_scrappie_matrix input,
                                      const_scrappie_matrix filter,
                                      const_scrappie_matrix bias, Vec input_base,
                                      Vec filter_base) {
-    scrappie_matrix res_odd = Convolution(mat_odd, filter, bias, 1, NULL);
+    scrappie_matrix res_odd = convolution(mat_odd, filter, bias, 1, NULL);
     Vec res_odd_base = simple_convolution(input_base, filter_base);
     CU_ASSERT_PTR_NOT_NULL_FATAL(res_odd);
     CU_ASSERT_PTR_NOT_NULL_FATAL(res_odd_base.elt);

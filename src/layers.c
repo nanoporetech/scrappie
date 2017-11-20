@@ -93,6 +93,29 @@ void robustlog_activation_inplace(scrappie_matrix C, float min_prob) {
     }
 }
 
+
+scrappie_matrix embedding(int const * index, size_t n, const_scrappie_matrix E, scrappie_matrix C){
+    RETURN_NULL_IF(NULL == index, NULL);
+
+    const size_t nr = E->nr;
+    const size_t nrq = E->nrq;
+    const size_t nc = n;
+    C = remake_scrappie_matrix(C, nr, nc);
+    RETURN_NULL_IF(NULL == C, NULL);
+
+    for(size_t c=0 ; c < nc ; c++){
+        assert(index[c] >= 0 && index[c] < E->nc);
+        const size_t offsetC = c * nrq;
+        const size_t offsetE = index[c] * nrq;
+        for(size_t r=0 ; r < nrq ; r++){
+            C->data.v[offsetC + r] = E->data.v[offsetE + r];
+        }
+    }
+
+    return C;
+}
+
+
 scrappie_matrix window(const_scrappie_matrix input, int w, int stride) {
     RETURN_NULL_IF(NULL == input, NULL);
     assert(w > 0);
@@ -132,7 +155,7 @@ scrappie_matrix window(const_scrappie_matrix input, int w, int stride) {
  *  a multiple of the SSE vector size (4).  The filter matrix must have been
  *  expanded accordingly.
  **/
-scrappie_matrix Convolution(const_scrappie_matrix X, const_scrappie_matrix W,
+scrappie_matrix convolution(const_scrappie_matrix X, const_scrappie_matrix W,
                             const_scrappie_matrix b, int stride,
                             scrappie_matrix C) {
     RETURN_NULL_IF(NULL == X, NULL);
@@ -250,6 +273,29 @@ scrappie_matrix feedforward_exp(const_scrappie_matrix X,
 
     assert(validate_scrappie_matrix
            (C, 0.0, NAN, 1.0, true, __FILE__, __LINE__));
+    return C;
+}
+
+scrappie_matrix residual(const_scrappie_matrix X, const_scrappie_matrix fX, scrappie_matrix C) {
+    RETURN_NULL_IF(NULL == X, NULL);
+    RETURN_NULL_IF(NULL == fX, NULL);
+    const size_t nr = X->nr;
+    const size_t nrq = X->nrq;
+    const size_t nc = X->nc;
+    assert(nr == fX->nr);
+    assert(nrq == fX->nrq);
+    assert(nc == fX->nc);
+
+    C = remake_scrappie_matrix(C, nr, nc);
+    RETURN_NULL_IF(NULL == C, NULL);
+
+    for(size_t c=0 ; c < nc ; c++){
+        const size_t offset = c * nrq;
+        for(size_t r=0 ; r < nrq ; r++){
+            C->data.v[offset + r] = X->data.v[offset + r] + fX->data.v[offset + r];
+        }
+    }
+
     return C;
 }
 

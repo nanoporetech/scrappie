@@ -8,6 +8,8 @@
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
 
+#include "models/squiggle_dna_test.h"
+
 
 // Forward declarations of raw posterior probability functions
 scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, bool return_log);
@@ -130,7 +132,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
-    scrappie_matrix conv = Convolution(raw_mat, conv_raw_W, conv_raw_b, conv_raw_stride, NULL);
+    scrappie_matrix conv = convolution(raw_mat, conv_raw_W, conv_raw_b, conv_raw_stride, NULL);
     tanh_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
 
@@ -183,7 +185,7 @@ scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
     scrappie_matrix conv =
-        Convolution(raw_mat, conv_rgr_W, conv_rgr_b, conv_rgr_stride, NULL);
+        convolution(raw_mat, conv_rgr_W, conv_rgr_b, conv_rgr_stride, NULL);
     elu_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
     //  First GRU layer
@@ -220,7 +222,7 @@ scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_pr
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
     scrappie_matrix conv =
-        Convolution(raw_mat, conv_rgrgr_r94_W, conv_rgrgr_r94_b, conv_rgrgr_r94_stride, NULL);
+        convolution(raw_mat, conv_rgrgr_r94_W, conv_rgrgr_r94_b, conv_rgrgr_r94_stride, NULL);
     elu_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
     //  First GRU layer
@@ -267,7 +269,7 @@ scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_pr
 
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
     scrappie_matrix conv =
-        Convolution(raw_mat, conv_rgrgr_r95_W, conv_rgrgr_r95_b, conv_rgrgr_r95_stride, NULL);
+        convolution(raw_mat, conv_rgrgr_r95_W, conv_rgrgr_r95_b, conv_rgrgr_r95_stride, NULL);
     tanh_activation_inplace(conv);
     raw_mat = free_scrappie_matrix(raw_mat);
     //  First GRU layer
@@ -304,4 +306,64 @@ scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_pr
     }
 
     return post;
+}
+
+
+scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units){
+    RETURN_NULL_IF(NULL == sequence, NULL);
+
+    scrappie_matrix seq_embedding = embedding(sequence, n, embed_squiggle_dna_W, NULL);
+    scrappie_matrix conv1 = convolution(seq_embedding, conv1_squiggle_dna_W, conv1_squiggle_dna_b,
+                                        conv1_squiggle_dna_stride, NULL);
+    tanh_activation_inplace(conv1);
+
+    // Convolution 2, wrapped in residual layer
+    scrappie_matrix conv2 = convolution(conv1, conv2_squiggle_dna_W, conv2_squiggle_dna_b,
+                                        conv2_squiggle_dna_stride, NULL);
+    tanh_activation_inplace(conv2);
+    scrappie_matrix res2 = residual(conv1, conv2, NULL);
+    conv1 = free_scrappie_matrix(conv1);
+    conv2 = free_scrappie_matrix(conv2);
+
+    // Convolution 3, wrapped in residual layer
+    scrappie_matrix conv3 = convolution(res2, conv3_squiggle_dna_W, conv3_squiggle_dna_b,
+                                        conv3_squiggle_dna_stride, NULL);
+    tanh_activation_inplace(conv3);
+    scrappie_matrix res3 = residual(res2, conv3, NULL);
+    res2 = free_scrappie_matrix(res2);
+    conv3 = free_scrappie_matrix(conv3);
+
+    // Convolution 4, wrapped in residual layer
+    scrappie_matrix conv4 = convolution(res3, conv4_squiggle_dna_W, conv4_squiggle_dna_b,
+                                        conv4_squiggle_dna_stride, NULL);
+    tanh_activation_inplace(conv4);
+    scrappie_matrix res4 = residual(res3, conv4, NULL);
+    res3 = free_scrappie_matrix(res3);
+    conv4 = free_scrappie_matrix(conv4);
+
+    // Convolution 4, wrapped in residual layer
+    scrappie_matrix conv5 = convolution(res4, conv5_squiggle_dna_W, conv5_squiggle_dna_b,
+                                        conv5_squiggle_dna_stride, NULL);
+    tanh_activation_inplace(conv5);
+    scrappie_matrix res5 = residual(res4, conv5, NULL);
+    res4 = free_scrappie_matrix(res4);
+    conv5 = free_scrappie_matrix(conv5);
+
+    scrappie_matrix conv6 = convolution(res5, conv6_squiggle_dna_W, conv6_squiggle_dna_b,
+                                        conv6_squiggle_dna_stride, NULL);
+    res5 = free_scrappie_matrix(res5);
+
+    RETURN_NULL_IF(NULL == conv6, NULL);
+
+    if(transform_units){
+        for(size_t c=0 ; c < conv6->nc ; c++){
+            size_t offset = c * conv6->nrq * 4;
+            //  Convert logsd to sd
+            conv6->data.f[offset + 1] = expf(conv6->data.f[offset + 1]);
+            //  Convert transformed dwell into expected samples
+            conv6->data.f[offset + 2] = expf(-conv6->data.f[offset + 2]);
+        }
+    }
+
+    return conv6;
 }

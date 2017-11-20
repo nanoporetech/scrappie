@@ -21,7 +21,7 @@ int main(int argc, char * argv[]){
     scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
     write_scrappie_matrix("input.crp", raw_mat);
     scrappie_matrix conv =
-        Convolution(raw_mat, conv_rgr_W, conv_rgr_b, conv_rgr_stride, NULL);
+        convolution(raw_mat, conv_rgr_W, conv_rgr_b, conv_rgr_stride, NULL);
     elu_activation_inplace(conv);
     write_scrappie_matrix("convolution.crp", conv);
 
