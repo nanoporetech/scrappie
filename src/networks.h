@@ -10,6 +10,7 @@ enum raw_model_type {
     SCRAPPIE_MODEL_RGR,
     SCRAPPIE_MODEL_RGRGR_R94,
     SCRAPPIE_MODEL_RGRGR_R95,
+    SCRAPPIE_MODEL_RNNRF_R94,
     SCRAPPIE_MODEL_INVALID};
 
 typedef scrappie_matrix (*posterior_function_ptr)(const raw_table, float, bool);

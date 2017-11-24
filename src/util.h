@@ -97,6 +97,11 @@ static inline float fast_eluf(float x){
     return (x >= 0.0f) ? x : (fast_expf(x) - 1.0);
 }
 
+static inline float logsumexpf(float x, float y){
+        return fmaxf(x, y) + log1pf(expf(-fabsf(x-y)));
+}
+
+
 /**
  *   Vectorised functions
  **/

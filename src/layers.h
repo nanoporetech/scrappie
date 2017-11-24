@@ -27,6 +27,7 @@ scrappie_matrix feedforward_exp(const_scrappie_matrix X,
                                 const_scrappie_matrix b, scrappie_matrix C);
 scrappie_matrix residual(const_scrappie_matrix X, const_scrappie_matrix fX,
                          scrappie_matrix C);
+void residual_inplace(const_scrappie_matrix X, scrappie_matrix fX);
 scrappie_matrix softmax(const_scrappie_matrix X, const_scrappie_matrix W,
                         const_scrappie_matrix b, scrappie_matrix C);
 
@@ -52,4 +53,9 @@ void lstm_step(const_scrappie_matrix x, const_scrappie_matrix out_prev,
                const_scrappie_matrix sW,
                const_scrappie_matrix peep, scrappie_matrix xF,
                scrappie_matrix state, scrappie_matrix output);
+
+
+scrappie_matrix globalnorm(const_scrappie_matrix X, const_scrappie_matrix W,
+                           const_scrappie_matrix b, scrappie_matrix C);
+float crf_partition_function(const_scrappie_matrix C);
 #endif                          /* LAYERS_H */

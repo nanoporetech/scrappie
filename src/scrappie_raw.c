@@ -245,18 +245,25 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
         return (struct _raw_basecall_info){0};
     }
     const int nblock = post->nc;
-    const int nstate = post->nr;
+    int * path = calloc(nblock + 1, sizeof(int));
+    int * pos = calloc(nblock + 1, sizeof(int));
 
-    int *history_state = calloc(nblock + 1, sizeof(int));
-    float score =
-        decode_transducer(post, args.stay_pen, args.skip_pen, args.local_pen, history_state, args.use_slip);
+    float score = NAN;
+    char * basecall = NULL;
+    if(SCRAPPIE_MODEL_RNNRF_R94 != model){
+        const int nstate = post->nr;
 
+        score = decode_transducer(post, args.stay_pen, args.skip_pen, args.local_pen, path, args.use_slip);
+        basecall = overlapper(path, nblock + 1, nstate - 1, pos);
+    } else{
+
+        score = decode_crf(post, path);
+        basecall = crfpath_to_basecall(path, nblock, pos);
+    }
+
+    free(path);
     post = free_scrappie_matrix(post);
-    int *pos = calloc(nblock + 1, sizeof(int));
-    char *basecall = overlapper(history_state, nblock + 1, nstate - 1, pos);
     const size_t basecall_len = strlen(basecall);
-
-    free(history_state);
 
     return (struct _raw_basecall_info) {
     score, rt, basecall, basecall_len, pos, nblock};

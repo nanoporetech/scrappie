@@ -4,6 +4,7 @@
 #include "models/rgr_20170901_r94_4kHz_450bps_9739958.h"
 #include "models/rgrgr-elu_20170914_r94_4kHz_450bps_162c18e.h"
 #include "models/rgrgr-tanh_20170914_r95_6kHz_450bps_dd7382a.h"
+#include "models/rnnrf-elu_20171121_r94_4kHz_450bps_0237280.h"
 #include "networks.h"
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
@@ -16,6 +17,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, bo
 scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob, bool return_log);
 scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);
 scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, bool return_log);
 
 
 enum raw_model_type get_raw_model(const char * modelstr){
@@ -31,6 +33,9 @@ enum raw_model_type get_raw_model(const char * modelstr){
     if(0 == strcmp(modelstr, "rgrgr_r95")){
         return SCRAPPIE_MODEL_RGRGR_R95;
     }
+    if(0 == strcmp(modelstr, "rnnrf_r94")){
+        return SCRAPPIE_MODEL_RNNRF_R94;
+    }
     return SCRAPPIE_MODEL_INVALID;
 }
 
@@ -44,6 +49,8 @@ const char * raw_model_string(const enum raw_model_type model){
         return "rgrgr_r94";
     case SCRAPPIE_MODEL_RGRGR_R95:
         return "rgrgr_r95";
+    case SCRAPPIE_MODEL_RNNRF_R94:
+        return "rnnrf_r94";
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
     default:
@@ -64,6 +71,8 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model){
         return nanonet_rgrgr_r94_posterior;
     case SCRAPPIE_MODEL_RGRGR_R95:
         return nanonet_rgrgr_r95_posterior;
+    case SCRAPPIE_MODEL_RNNRF_R94:
+        return nanonet_rnnrf_r94_transitions;
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
     default:
@@ -322,37 +331,33 @@ scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_unit
     scrappie_matrix conv2 = convolution(conv1, conv2_squiggle_dna_W, conv2_squiggle_dna_b,
                                         conv2_squiggle_dna_stride, NULL);
     tanh_activation_inplace(conv2);
-    scrappie_matrix res2 = residual(conv1, conv2, NULL);
+    residual_inplace(conv1, conv2);
     conv1 = free_scrappie_matrix(conv1);
-    conv2 = free_scrappie_matrix(conv2);
 
     // Convolution 3, wrapped in residual layer
-    scrappie_matrix conv3 = convolution(res2, conv3_squiggle_dna_W, conv3_squiggle_dna_b,
+    scrappie_matrix conv3 = convolution(conv2, conv3_squiggle_dna_W, conv3_squiggle_dna_b,
                                         conv3_squiggle_dna_stride, NULL);
     tanh_activation_inplace(conv3);
-    scrappie_matrix res3 = residual(res2, conv3, NULL);
-    res2 = free_scrappie_matrix(res2);
+    residual_inplace(conv2, conv3);
+    conv2 = free_scrappie_matrix(conv2);
+
+    // Convolution 4, wrapped in residual layer
+    scrappie_matrix conv4 = convolution(conv3, conv4_squiggle_dna_W, conv4_squiggle_dna_b,
+                                        conv4_squiggle_dna_stride, NULL);
+    tanh_activation_inplace(conv4);
+    residual_inplace(conv3, conv4);
     conv3 = free_scrappie_matrix(conv3);
 
     // Convolution 4, wrapped in residual layer
-    scrappie_matrix conv4 = convolution(res3, conv4_squiggle_dna_W, conv4_squiggle_dna_b,
-                                        conv4_squiggle_dna_stride, NULL);
-    tanh_activation_inplace(conv4);
-    scrappie_matrix res4 = residual(res3, conv4, NULL);
-    res3 = free_scrappie_matrix(res3);
-    conv4 = free_scrappie_matrix(conv4);
-
-    // Convolution 4, wrapped in residual layer
-    scrappie_matrix conv5 = convolution(res4, conv5_squiggle_dna_W, conv5_squiggle_dna_b,
+    scrappie_matrix conv5 = convolution(conv4, conv5_squiggle_dna_W, conv5_squiggle_dna_b,
                                         conv5_squiggle_dna_stride, NULL);
     tanh_activation_inplace(conv5);
-    scrappie_matrix res5 = residual(res4, conv5, NULL);
-    res4 = free_scrappie_matrix(res4);
-    conv5 = free_scrappie_matrix(conv5);
+    residual_inplace(conv4, conv5);
+    conv4 = free_scrappie_matrix(conv4);
 
-    scrappie_matrix conv6 = convolution(res5, conv6_squiggle_dna_W, conv6_squiggle_dna_b,
+    scrappie_matrix conv6 = convolution(conv5, conv6_squiggle_dna_W, conv6_squiggle_dna_b,
                                         conv6_squiggle_dna_stride, NULL);
-    res5 = free_scrappie_matrix(res5);
+    conv5 = free_scrappie_matrix(conv5);
 
     RETURN_NULL_IF(NULL == conv6, NULL);
 
@@ -367,4 +372,54 @@ scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_unit
     }
 
     return conv6;
+}
+
+
+scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob,
+                                              bool return_log) {
+    assert(return_log);  // Returning non-log transformed not supported
+    assert(min_prob >= 0.0 && min_prob <= 1.0);
+    RETURN_NULL_IF(0 == signal.n, NULL);
+    RETURN_NULL_IF(NULL == signal.raw, NULL);
+
+    scrappie_matrix raw_mat = nanonet_features_from_raw(signal);
+    scrappie_matrix conv =
+        convolution(raw_mat, conv_rnnrf_r94_W, conv_rnnrf_r94_b, conv_rnnrf_r94_stride, NULL);
+    elu_activation_inplace(conv);
+    raw_mat = free_scrappie_matrix(raw_mat);
+    //  First GRU layer
+    scrappie_matrix gruB1in = feedforward_linear(conv, gruB1_rnnrf_r94_iW, gruB1_rnnrf_r94_b, NULL);
+    scrappie_matrix gruB1 = gru_backward(gruB1in, gruB1_rnnrf_r94_sW, gruB1_rnnrf_r94_sW2, NULL);
+    residual_inplace(conv, gruB1);
+    conv = free_scrappie_matrix(conv);
+    gruB1in = free_scrappie_matrix(gruB1in);
+    //  Second GRU layer
+    scrappie_matrix gruF2in = feedforward_linear(gruB1, gruF2_rnnrf_r94_iW, gruF2_rnnrf_r94_b, NULL);
+    scrappie_matrix gruF2 = gru_forward(gruF2in, gruF2_rnnrf_r94_sW, gruF2_rnnrf_r94_sW2, NULL);
+    residual_inplace(gruB1, gruF2);
+    gruB1 = free_scrappie_matrix(gruB1);
+    gruF2in = free_scrappie_matrix(gruF2in);
+    //  Third GRU layer
+    scrappie_matrix gruB3in = feedforward_linear(gruF2, gruB3_rnnrf_r94_iW, gruB3_rnnrf_r94_b, NULL);
+    scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_rnnrf_r94_sW, gruB3_rnnrf_r94_sW2, NULL);
+    residual_inplace(gruF2, gruB3);
+    gruF2 = free_scrappie_matrix(gruF2);
+    gruB3in = free_scrappie_matrix(gruB3in);
+    //  Fourth GRU layer
+    scrappie_matrix gruF4in = feedforward_linear(gruB3, gruF4_rnnrf_r94_iW, gruF4_rnnrf_r94_b, NULL);
+    scrappie_matrix gruF4 = gru_forward(gruF4in, gruF4_rnnrf_r94_sW, gruF4_rnnrf_r94_sW2, NULL);
+    residual_inplace(gruB3, gruF4);
+    gruB3 = free_scrappie_matrix(gruB3);
+    gruF4in = free_scrappie_matrix(gruF4in);
+    //  Fifth GRU layer
+    scrappie_matrix gruB5in = feedforward_linear(gruF4, gruB5_rnnrf_r94_iW, gruB5_rnnrf_r94_b, NULL);
+    scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rnnrf_r94_sW, gruB5_rnnrf_r94_sW2, NULL);
+    residual_inplace(gruF4, gruB5);
+    gruF4 = free_scrappie_matrix(gruF4);
+    gruB5in = free_scrappie_matrix(gruB5in);
+
+    scrappie_matrix trans = globalnorm(gruB5, FF_rnnrf_r94_W, FF_rnnrf_r94_b, NULL);
+    gruB5 = free_scrappie_matrix(gruB5);
+
+    return trans;
 }
