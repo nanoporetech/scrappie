@@ -879,6 +879,7 @@ float decode_crf(const_scrappie_matrix trans, int * path){
         path[blk - 1] = tb->data.f[offset + path[blk]];
     }
 
+    tb = free_scrappie_imatrix(tb);
     free(mem);
 
     return score;
