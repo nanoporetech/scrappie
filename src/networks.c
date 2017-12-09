@@ -4,7 +4,7 @@
 #include "models/rgr_20170901_r94_4kHz_450bps_9739958.h"
 #include "models/rgrgr-elu_20170914_r94_4kHz_450bps_162c18e.h"
 #include "models/rgrgr-tanh_20170914_r95_6kHz_450bps_dd7382a.h"
-#include "models/rnnrf-elu_20171121_r94_4kHz_450bps_0237280.h"
+#include "models/rnnrf-elu_20171121_r94_4kHz_450bps_c2b6803.h"
 #include "networks.h"
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
