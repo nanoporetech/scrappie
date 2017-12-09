@@ -11,8 +11,6 @@ parser.add_argument('--id', default='' , help='Identifier for model names')
 parser.add_argument('model', help='Pickle to read model from')
 
 
-model_file = sys.argv[1]
-
 trim_trailing_zeros = re.compile('0+p')
 
 def small_hex(f):
