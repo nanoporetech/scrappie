@@ -299,6 +299,24 @@ scrappie_matrix residual(const_scrappie_matrix X, const_scrappie_matrix fX, scra
     return C;
 }
 
+void residual_inplace(const_scrappie_matrix X, scrappie_matrix fX) {
+    RETURN_NULL_IF(NULL == X, );
+    RETURN_NULL_IF(NULL == fX, );
+    const size_t nr = X->nr;
+    const size_t nrq = X->nrq;
+    const size_t nc = X->nc;
+    assert(nr == fX->nr);
+    assert(nrq == fX->nrq);
+    assert(nc == fX->nc);
+
+    for(size_t c=0 ; c < nc ; c++){
+        const size_t offset = c * nrq;
+        for(size_t r=0 ; r < nrq ; r++){
+            fX->data.v[offset + r] += X->data.v[offset + r];
+        }
+    }
+}
+
 scrappie_matrix softmax(const_scrappie_matrix X, const_scrappie_matrix W,
                         const_scrappie_matrix b, scrappie_matrix C) {
     C = feedforward_exp(X, W, b, C);
@@ -640,4 +658,61 @@ void lstm_step(const_scrappie_matrix xAffine, const_scrappie_matrix out_prev,
                                                                        i])
             * TANHFV(state->data.v[i]);
     }
+}
+
+
+float crf_partition_function(const_scrappie_matrix C){
+    RETURN_NULL_IF(NULL == C, NAN);
+
+    const size_t nstate = roundf(sqrtf((float)C->nr));
+    assert(nstate * nstate == C->nr);
+    float * mem = calloc(2 * nstate, sizeof(float));
+    RETURN_NULL_IF(NULL==mem, NAN);
+
+    float * curr = mem;
+    float * prev = mem + nstate;
+
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->nrq * 4;
+        //  Swap
+        {
+            float * tmp = curr;
+            curr = prev;
+            prev = tmp;
+        }
+        for(size_t st1=0 ; st1 < nstate ; st1++){
+            const size_t offsetS = offset + st1 * nstate;
+            curr[st1] = C->data.f[offsetS + 0] + prev[0];
+            for(size_t st2=1 ; st2 < nstate ; st2++){
+                curr[st1] = logsumexpf(curr[st1],  C->data.f[offsetS + st2] + prev[st2]);
+            }
+        }
+    }
+
+    float logZ = curr[0];
+    for(size_t st=1 ; st < nstate ; st++){
+        logZ = logsumexpf(logZ, curr[st]);
+    }
+
+    free(mem);
+
+    return logZ;
+}
+
+
+scrappie_matrix globalnorm(const_scrappie_matrix X, const_scrappie_matrix W,
+                           const_scrappie_matrix b, scrappie_matrix C) {
+    C = affine_map(X, W, b, C);
+    RETURN_NULL_IF(NULL == C, NULL);
+
+    float logZ = crf_partition_function(C) / (float)C->nc;
+
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->nrq * 4;
+        for(size_t r=0 ; r < C->nr ; r++){
+            C->data.f[offset + r] -= logZ;
+        }
+    }
+
+    return C;
 }

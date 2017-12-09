@@ -27,6 +27,9 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
+* 1.3 series: Recurrent Neural Network - Random Field models
+    * * release-1.3.0*
+        * Initial support for RNN-RF models for raw data calling (R9.4 only).
 * 1.2 series: Sequence-to-squiggle
     * *release-1.2.0*
         * Ability to predict expected squiggle from sequence

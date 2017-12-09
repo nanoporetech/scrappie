@@ -111,7 +111,7 @@ Scrappie basecaller -- basecall from raw signal
       --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
       --model=name           Raw model to use: "raw_r94", "rgr_r94",
-                             "rgrgr_r94", "rgrgr_r95"
+                             "rgrgr_r94", "rgrgr_r95", "rnnrf_r94"
   -o, --output=filename      Write to file rather than stdout
   -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base

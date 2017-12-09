@@ -24,4 +24,7 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
 float argmax_decoder(const_scrappie_matrix logpost, int *seq);
 char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos);
 
+float decode_crf(const_scrappie_matrix trans, int * path);
+char * crfpath_to_basecall(int const * path, size_t npos, int * pos);
+
 #endif                          /* DECODE_H */
