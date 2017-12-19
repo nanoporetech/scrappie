@@ -24,6 +24,13 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model);
 scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
                                   bool return_log);
 
+//  Raw posterior -- for preference, use get_posterior_function
+scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, bool return_log);
+scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, bool return_log);
+
 //  Squiggle functions
 scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units);
 

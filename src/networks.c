@@ -11,15 +11,6 @@
 
 #include "models/squiggle_dna_test.h"
 
-
-// Forward declarations of raw posterior probability functions
-scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, bool return_log);
-scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob, bool return_log);
-scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);
-scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, bool return_log);
-scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, bool return_log);
-
-
 enum raw_model_type get_raw_model(const char * modelstr){
     if(0 == strcmp(modelstr, "raw_r94")){
         return SCRAPPIE_MODEL_RAW;
