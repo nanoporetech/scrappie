@@ -45,7 +45,7 @@ float viterbi_backtrace(float const *score, int n, const_scrappie_imatrix traceb
     float logscore = score[last_state];
     for(int i=0 ; i < nblock ; i++){
         const int ri = nblock - i - 1;
-        const int state = traceback->data.f[ri * traceback->nrq * 4 + last_state];
+        const int state = traceback->data.f[ri * traceback->stride + last_state];
         if(state >= 0){
             seq[ri] = last_state;
             last_state = state;
@@ -69,7 +69,7 @@ float viterbi_local_backtrace(float const *score, int n, const_scrappie_imatrix 
     float logscore = score[last_state];
     for(int i=0 ; i < nblock ; i++){
         const int ri = nblock - i - 1;
-        const int state = traceback->data.f[ri * traceback->nrq * 4 + last_state];
+        const int state = traceback->data.f[ri * traceback->stride + last_state];
         if(state >= 0){
             seq[ri + 1] = last_state;
             last_state = state;
@@ -104,7 +104,7 @@ float argmax_decoder(const_scrappie_matrix logpost, int *seq) {
     const int nblock = logpost->nc;
     const int nstate = logpost->nr;
     assert(nstate > 0);
-    const int stride = logpost->nrq * 4;
+    const int stride = logpost->stride;
     assert(stride > 0);
     int offset;
 
@@ -749,8 +749,8 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
 
         //  Forwards Viterbi
         for(int i=0 ; i < nblock ; i++){
-            const size_t lpoffset = i * logpost->nrq * 4;
-            const size_t toffset = i * traceback->nrq * 4;
+            const size_t lpoffset = i * logpost->stride;
+            const size_t toffset = i * traceback->stride;
             {  // Swap vectors
                 float * tmp = pscore;
                 pscore = cscore;
@@ -849,8 +849,8 @@ float decode_crf(const_scrappie_matrix trans, int * path){
 
     //  Forwards Viterbi pass
     for(size_t blk=0 ; blk < nblk ; blk++){
-        const size_t offset = blk * trans->nrq * 4;
-        const size_t tboffset = blk * tb->nrq * 4;
+        const size_t offset = blk * trans->stride;
+        const size_t tboffset = blk * tb->stride;
         {   // Swap
             float * tmp = curr;
             curr = prev;
@@ -875,7 +875,7 @@ float decode_crf(const_scrappie_matrix trans, int * path){
     const float score = valmaxf(curr, nstate);
     path[nblk] = argmaxf(curr, nstate);
     for(size_t blk=nblk ; blk > 0 ; blk--){
-        const size_t offset = (blk - 1) * tb->nrq * 4;
+        const size_t offset = (blk - 1) * tb->stride;
         path[blk - 1] = tb->data.f[offset + path[blk]];
     }
 
@@ -935,11 +935,11 @@ scrappie_matrix posterior_crf(const_scrappie_matrix trans){
         post->data.f[st] = 0.0f;
     }
     for(size_t blk=0 ; blk < nblk ; blk++){
-        const size_t offset = blk * trans->nrq * 4;
-        const size_t offset_post = blk * post->nrq * 4;
+        const size_t offset = blk * trans->stride;
+        const size_t offset_post = blk * post->stride;
 
         const float * prev = post->data.f + offset_post;
-        float * curr = post->data.f + offset_post + post->nrq * 4;
+        float * curr = post->data.f + offset_post + post->stride;
 
         for(size_t st1=0 ; st1 < nstate ; st1++){
             const size_t offsetS = offset + st1 * nstate;
@@ -961,15 +961,15 @@ scrappie_matrix posterior_crf(const_scrappie_matrix trans){
     // Normalisation of last block
     float tot = 0.0f;
     for(size_t st=0 ; st < nstate ; st++){
-        tot = logsumexpf(tot, post->data.f[nblk * post->nrq * 4 + st]);
+        tot = logsumexpf(tot, post->data.f[nblk * post->stride + st]);
     }
     for(size_t st=0 ; st < nstate ; st++){
-        post->data.f[nblk * post->nrq * 4 + st] = expf(post->data.f[nblk * post->nrq * 4 + st] - tot);
+        post->data.f[nblk * post->stride + st] = expf(post->data.f[nblk * post->stride + st] - tot);
     }
     for(size_t blk=nblk ; blk > 0 ; blk--){
         const size_t blkm1 = blk - 1;
-        const size_t offset = blkm1 * trans->nrq * 4;
-        const size_t offset_post = blkm1 * post->nrq * 4;
+        const size_t offset = blkm1 * trans->stride;
+        const size_t offset_post = blkm1 * post->stride;
 
         {   // Swap
             float * tmp = curr;

@@ -19,6 +19,7 @@ scrappie_matrix make_scrappie_matrix(int nr, int nc) {
     mat->nr = nr;
     mat->nrq = nrq;
     mat->nc = nc;
+    mat->stride = nrq * 4;
 
     {
         // Check for overflow to please Coverity scanner
@@ -63,7 +64,7 @@ void zero_scrappie_matrix(scrappie_matrix M) {
     if (NULL == M) {
         return;
     }
-    memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(float));
+    memset(M->data.f, 0, M->stride * M->nc * sizeof(float));
 }
 
 scrappie_matrix mat_from_array(const float *x, int nr, int nc) {
@@ -71,7 +72,7 @@ scrappie_matrix mat_from_array(const float *x, int nr, int nc) {
     RETURN_NULL_IF(NULL == res, NULL);
 
     for (int col = 0; col < nc; col++) {
-        memcpy(res->data.f + col * res->nrq * 4, x + col * nr,
+        memcpy(res->data.f + col * res->stride, x + col * nr,
                nr * sizeof(float));
     }
     return res;
@@ -86,7 +87,7 @@ float * array_from_scrappie_matrix(const_scrappie_matrix mat){
 
     for(size_t c=0 ; c < mat->nc ; c++){
         const size_t offset_out = c * mat->nr;
-        const size_t offset_in = c * mat->nrq * 4;
+        const size_t offset_in = c * mat->stride;
         for(size_t r=0 ; r < mat->nr ; r++){
             res[offset_out + r] = mat->data.f[offset_in + r];
         }
@@ -118,7 +119,7 @@ void fprint_scrappie_matrix(FILE * fh, const char *header,
         fputc('\n', fh);
     }
     for (int c = 0; c < nc; c++) {
-        const size_t offset = c * mat->nrq * 4;
+        const size_t offset = c * mat->stride;
         fprintf(fh, "%4d : % 12e", c, mat->data.f[offset]);
         for (int r = 1; r < nr; r++) {
             fprintf(fh, "  % 12e", mat->data.f[offset + r]);
@@ -149,11 +150,11 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
     assert(NULL != mat->data.f);
     assert(mat->nc > 0);
     assert(mat->nr > 0);
-    assert(mat->nrq > 0 && (4 * mat->nrq) >= mat->nr);
+    assert(mat->nrq > 0 && mat->stride >= mat->nr);
 
     const int nc = mat->nc;
     const int nr = mat->nr;
-    const int ld = mat->nrq * 4;
+    const int ld = mat->stride;
 
     //  Masked values correct
     if (!isnan(maskval)) {
@@ -276,6 +277,8 @@ scrappie_imatrix make_scrappie_imatrix(int nr, int nc) {
     mat->nr = nr;
     mat->nrq = nrq;
     mat->nc = nc;
+    mat->stride = nrq * 4;
+
     mat->data.v = aligned_alloc(16, nrq * nc * sizeof(__m128i));
     if (NULL == mat->data.v) {
         warnx("Error allocating memory in %s.\n", __func__);
@@ -315,7 +318,7 @@ void zero_scrappie_imatrix(scrappie_imatrix M) {
     if (NULL == M) {
         return;
     }
-    memset(M->data.f, 0, M->nrq * 4 * M->nc * sizeof(int));
+    memset(M->data.f, 0, M->stride * M->nc * sizeof(int));
 }
 
 scrappie_matrix affine_map(const_scrappie_matrix X, const_scrappie_matrix W,
@@ -342,8 +345,8 @@ scrappie_matrix affine_map(const_scrappie_matrix X, const_scrappie_matrix W,
 
     /* Affine transform */
     cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, W->nc, X->nc, W->nr,
-                1.0, W->data.f, W->nrq * 4, X->data.f, X->nrq * 4, 1.0,
-                C->data.f, C->nrq * 4);
+                1.0, W->data.f, W->stride, X->data.f, X->stride, 1.0,
+                C->data.f, C->stride);
 
     return C;
 }
@@ -371,12 +374,12 @@ scrappie_matrix affine_map2(const_scrappie_matrix Xf, const_scrappie_matrix Xb,
 
     /* Affine transform -- forwards */
     cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, Wf->nc, Xf->nc, Wf->nr,
-                1.0, Wf->data.f, Wf->nrq * 4, Xf->data.f, Xf->nrq * 4, 1.0,
-                C->data.f, C->nrq * 4);
+                1.0, Wf->data.f, Wf->stride, Xf->data.f, Xf->stride, 1.0,
+                C->data.f, C->stride);
     /* Affine transform -- backwards */
     cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, Wb->nc, Xb->nc, Wb->nr,
-                1.0, Wb->data.f, Wb->nrq * 4, Xb->data.f, Xb->nrq * 4, 1.0,
-                C->data.f, C->nrq * 4);
+                1.0, Wb->data.f, Wb->stride, Xb->data.f, Xb->stride, 1.0,
+                C->data.f, C->stride);
     return C;
 }
 
@@ -385,7 +388,7 @@ void row_normalise_inplace(scrappie_matrix C) {
         // Input NULL due to earlier failure.  Propagate
         return;
     }
-    const int i = C->nrq * 4 - C->nr;
+    const int i = C->stride - C->nr;
     const __m128 mask = _mm_cmpgt_ps(_mm_set_ps(i >= 1, i >= 2, i >= 3, 0), _mm_set1_ps(0.0f));
     for (int col = 0; col < C->nc; col++) {
         const size_t offset = col * C->nrq;
@@ -411,7 +414,7 @@ float max_scrappie_matrix(const_scrappie_matrix x) {
     }
     float amax = x->data.f[0];
     for (int col = 0; col < x->nc; col++) {
-        const size_t offset = col * x->nrq * 4;
+        const size_t offset = col * x->stride;
         for (int r = 0; r < x->nr; r++) {
             if (amax < x->data.f[offset + r]) {
                 amax = x->data.f[offset + r];
@@ -428,7 +431,7 @@ float min_scrappie_matrix(const_scrappie_matrix x) {
     }
     float amin = x->data.f[0];
     for (int col = 0; col < x->nc; col++) {
-        const size_t offset = col * x->nrq * 4;
+        const size_t offset = col * x->stride;
         for (int r = 0; r < x->nr; r++) {
             if (amin < x->data.f[offset + r]) {
                 amin = x->data.f[offset + r];
@@ -447,7 +450,7 @@ int argmax_scrappie_matrix(const_scrappie_matrix x) {
     int imax = 0;
 
     for (int col = 0; col < x->nc; col++) {
-        const size_t offset = col * x->nrq * 4;
+        const size_t offset = col * x->stride;
         for (int r = 0; r < x->nr; r++) {
             if (amax < x->data.f[offset + r]) {
                 amax = x->data.f[offset + r];
@@ -467,7 +470,7 @@ int argmin_scrappie_matrix(const_scrappie_matrix x) {
     int imin = 0;
 
     for (int col = 0; col < x->nc; col++) {
-        const size_t offset = col * x->nrq * 4;
+        const size_t offset = col * x->stride;
         for (int r = 0; r < x->nr; r++) {
             if (amin < x->data.f[offset + r]) {
                 amin = x->data.f[offset + r];

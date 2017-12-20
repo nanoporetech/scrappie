@@ -23,7 +23,7 @@ int clean_test_scrappie_matrix(void) {
 
 void test_rownormalise_scrappie_matrix_helper(int nr) {
     scrappie_matrix mat = make_scrappie_matrix(nr, 1);
-    const int stride = mat->nrq * 4;
+    const int stride = mat->stride;
     for(int i=0 ; i < stride ; i++){
         mat->data.f[i] = 1.0f;
     }

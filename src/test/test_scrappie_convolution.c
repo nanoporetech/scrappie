@@ -388,11 +388,11 @@ void test_scrappie_convolution_f1s1(void) {
     float _filter[] = { 1.0, 0.0, 0.0, 0.0 };
     float _bias[4] = { 0.0 };
     _Mat filter = {
-        .nr = 1,.nrq = 1,.nc = 1,
+        .nr = 1, .nrq = 1, .nc = 1, .stride=4,
         .data.f = _filter
     };
     _Mat bias = {
-        .nr = 1,.nrq = 1,.nc = 1,
+        .nr = 1, .nrq = 1, .nc = 1, .stride=4,
         .data.f = _bias
     };
 
