@@ -909,3 +909,97 @@ char * crfpath_to_basecall(int const * path, size_t npos, int * pos){
 
     return basecall;
 }
+
+
+/**  Posterior over states at each block
+ *
+ *  @param trans.  Constant scrappie matrix containing the (25) energies
+ *  for each block.  (order ACGT-, from state in minor, to state major).
+ *
+ *  @returns scrappie matrix containing the posterior for nblk + 1
+ **/
+scrappie_matrix posterior_crf(const_scrappie_matrix trans){
+    RETURN_NULL_IF(NULL == trans, NULL);
+
+    const size_t nstate = roundf(sqrtf((float)trans->nr));
+    assert(nstate * nstate == trans->nr);
+    const size_t nblk = trans->nc;
+
+    scrappie_matrix post = make_scrappie_matrix(nstate, nblk + 1);
+    RETURN_NULL_IF(NULL == post, NULL);
+
+
+    //  Forwards pass
+    for(size_t st=0 ; st < nstate ; st++){
+        // Initialisation
+        post->data.f[st] = 0.0f;
+    }
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        const size_t offset = blk * trans->nrq * 4;
+        const size_t offset_post = blk * post->nrq * 4;
+
+        const float * prev = post->data.f + offset_post;
+        float * curr = post->data.f + offset_post + post->nrq * 4;
+
+        for(size_t st1=0 ; st1 < nstate ; st1++){
+            const size_t offsetS = offset + st1 * nstate;
+            curr[st1] = trans->data.f[offsetS + 0] + prev[0];
+            for(size_t st2=1 ; st2 < nstate ; st2++){
+                curr[st1] = logsumexpf(curr[st1], trans->data.f[offsetS + st2] + prev[st2]);
+            }
+        }
+    }
+
+    // Backwards pass
+    float * tmpmem = malloc(2 * nstate * sizeof(float));
+    float * prev = tmpmem;
+    float * curr = tmpmem + nstate;
+    for(size_t st=0 ; st < nstate ; st++){
+        // Initialisation
+        curr[st] = 0.0f;
+    }
+    // Normalisation of last block
+    float tot = 0.0f;
+    for(size_t st=0 ; st < nstate ; st++){
+        tot = logsumexpf(tot, post->data.f[nblk * post->nrq * 4 + st]);
+    }
+    for(size_t st=0 ; st < nstate ; st++){
+        post->data.f[nblk * post->nrq * 4 + st] = expf(post->data.f[nblk * post->nrq * 4 + st] - tot);
+    }
+    for(size_t blk=nblk ; blk > 0 ; blk--){
+        const size_t blkm1 = blk - 1;
+        const size_t offset = blkm1 * trans->nrq * 4;
+        const size_t offset_post = blkm1 * post->nrq * 4;
+
+        {   // Swap
+            float * tmp = curr;
+            curr = prev;
+            prev = tmp;
+        }
+
+        for(size_t st=0 ; st < nstate ; st++){
+            curr[st] = trans->data.f[offset + st] + prev[0];
+        }
+        for(size_t st1=1 ; st1 < nstate ; st1++){
+            const size_t offsetS = offset + st1 * nstate;
+            for(size_t st2=0 ; st2 < nstate ; st2++){
+                curr[st2] = logsumexpf(curr[st2], trans->data.f[offsetS + st2] + prev[st1]);
+            }
+        }
+
+        // Normalisation
+        float tot = 0.0f;
+        for(size_t st=0 ; st < nstate ; st++){
+            post->data.f[offset_post + st] += curr[st];
+            tot = logsumexpf(tot, post->data.f[offset_post + st]);
+        }
+        for(size_t st=0 ; st < nstate ; st++){
+            post->data.f[offset_post + st] = expf(post->data.f[offset_post + st] - tot);
+        }
+    }
+
+    free(tmpmem);
+
+
+    return post;
+}
