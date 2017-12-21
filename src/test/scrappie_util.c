@@ -28,7 +28,7 @@ int write_scrappie_matrix_to_handle(FILE * fh, const_scrappie_matrix mat) {
 
     int nelt = 0;
     for (int c = 0; c < mat->nc; ++c) {
-        const int offset = c * 4 * mat->nrq;
+        const int offset = c * mat->stride;
         int ret = fprintf(fh, "%a", mat->data.f[offset + 0]);
         if (ret > 0) {
             nelt += 1;
@@ -94,7 +94,7 @@ scrappie_matrix read_scrappie_matrix_from_handle(FILE * fh) {
 
     int nelt = 0;
     for (int c = 0; c < nc; ++c) {
-        const int offset = c * 4 * mat->nrq;
+        const int offset = c * mat->stride;
         ret = fscanf(fh, "%a", &mat->data.f[offset]);
         if (ret > 0) {
             nelt += 1;
@@ -162,7 +162,7 @@ scrappie_matrix random_scrappie_matrix(int nr, int nc, float lower, float upper)
     RETURN_NULL_IF(NULL == mat, NULL);
 
     for (int c = 0; c < mat->nc; ++c) {
-        const int offset = c * 4 * mat->nrq;
+        const int offset = c * mat->stride;
         for (int r = 0; r < mat->nr; ++r) {
             mat->data.f[offset + r] = scrappie_random_uniform(lower, upper);
         }

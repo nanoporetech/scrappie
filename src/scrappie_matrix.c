@@ -102,7 +102,7 @@ void fprint_scrappie_matrix(FILE * fh, const char *header,
                             bool include_padding) {
     assert(NULL != fh);
     assert(NULL != mat);
-    const int rlim = include_padding ? (4 * mat->nrq) : mat->nr;
+    const int rlim = include_padding ? mat->stride : mat->nr;
 
     if (nr <= 0 || nr > rlim) {
         nr = rlim;
@@ -150,7 +150,8 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
     assert(NULL != mat->data.f);
     assert(mat->nc > 0);
     assert(mat->nr > 0);
-    assert(mat->nrq > 0 && mat->stride >= mat->nr);
+    assert(mat->stride > 0 && mat->stride >= mat->nr);
+    assert(mat->nrq * 4 == mat->stride);
 
     const int nc = mat->nc;
     const int nr = mat->nr;
@@ -254,7 +255,7 @@ bool equality_scrappie_matrix(const_scrappie_matrix mat1,
     assert(mat1->nrq == mat2->nrq);
 
     for (int c = 0; c < mat1->nc; ++c) {
-        const int offset = c * 4 * mat1->nrq;
+        const int offset = c * mat1->stride;
         for (int r = 0; r < mat1->nr; ++r) {
             if (fabsf(mat1->data.f[offset + r] - mat2->data.f[offset + r]) >
                 tol) {
