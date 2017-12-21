@@ -26,7 +26,7 @@ def cformatM(fh, name, X):
     fh.write('float {}[] = {}\n'.format('__' + name, '{'))
     fh.write('\t' + ',\n\t'.join(lines))
     fh.write('};\n')
-    fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', X.shape[1], nrq, X.shape[0], '__' + name, '}'))
+    fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.stride = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', X.shape[1], nrq, X.shape[0], nrq * 4, '__' + name, '}'))
     fh.write('const scrappie_matrix {} = &{};\n\n'.format(name, '_' + name))
 
 
@@ -37,7 +37,7 @@ def cformatV(fh, name, X):
     fh.write('float {}[] = {}\n'.format( '__' + name, '{'))
     fh.write('\t' + lines)
     fh.write('};\n')
-    fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', X.shape[0], nrq, 1, '__' + name, '}'))
+    fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.stride = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', X.shape[0], nrq, 1, nrq * 4, '__' + name, '}'))
     fh.write('const scrappie_matrix {} = &{};\n\n'.format(name, '_' + name))
 
 

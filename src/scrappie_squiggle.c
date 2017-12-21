@@ -174,7 +174,7 @@ int main_squiggle(int argc, char *argv[]) {
             if(NULL != squiggle){
                 fprintf(args.output, "#%s\n", seq->name.s);
                 for(size_t i=0 ; i < squiggle->nc ; i++){
-                    const size_t offset = i * squiggle->nrq * 4;
+                    const size_t offset = i * squiggle->stride;
                     fprintf(args.output, "%zu\t%c\t%3.6f\t%3.6f\t%3.6f\n", i, seq->seq.s[i],
                             squiggle->data.f[offset + 0],
                             squiggle->data.f[offset + 1],

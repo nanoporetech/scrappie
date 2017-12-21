@@ -354,7 +354,7 @@ scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_unit
 
     if(transform_units){
         for(size_t c=0 ; c < conv6->nc ; c++){
-            size_t offset = c * conv6->nrq * 4;
+            size_t offset = c * conv6->stride;
             //  Convert logsd to sd
             conv6->data.f[offset + 1] = expf(conv6->data.f[offset + 1]);
             //  Convert transformed dwell into expected samples

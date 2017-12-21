@@ -35,7 +35,7 @@ extern "C" {
 
 /*  Matrix definitions from scrappie_matrix.h  */
     typedef struct {
-        unsigned int nr, nrq, nc;
+        unsigned int nr, nrq, nc, stride;
         union {
             __m128 *v;
             float *f;

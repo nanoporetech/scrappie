@@ -8,7 +8,7 @@
 #    include <stdio.h>
 
 typedef struct {
-    unsigned int nr, nrq, nc;
+    unsigned int nr, nrq, nc, stride;
     union {
         __m128 *v;
         float *f;
@@ -16,7 +16,7 @@ typedef struct {
 } _Mat;
 
 typedef struct {
-    unsigned int nr, nrq, nc;
+    unsigned int nr, nrq, nc, stride;
     union {
         __m128i *v;
         int32_t *f;
