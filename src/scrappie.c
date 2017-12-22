@@ -37,6 +37,9 @@ int main(int argc, char *argv[]) {
     case SCRAPPIE_MODE_SQUIGGLE:
         ret = main_squiggle(argc - 1, argv + 1);
         break;
+    case SCRAPPIE_MODE_MAPPY:
+        ret = main_mappy(argc - 1, argv + 1);
+        break;
     default:
         ret = EXIT_FAILURE;
         warnx("Unrecognised subcommand %s\n", argv[1]);

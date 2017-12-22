@@ -1003,3 +1003,223 @@ scrappie_matrix posterior_crf(const_scrappie_matrix trans){
 
     return post;
 }
+
+
+
+static float LARGE_VAL = 1e30f;
+
+/**  Map a signal to signal to a predicted squiggle using variant of dynamic time-warping
+ *
+ *   Uses a local mapping so not all of signal may be mapped and not every position of the
+ *   predicted squiggle may be mapped to.
+ *
+ *   @param signal `raw_table` containing signal to map
+ *   @param params `scrappie_matrix` containing predicted squiggle
+ *   @param prob_back Probability of a backward movement.
+ *   @param localpen
+ *   @param minscore Minimum possible emission for
+ *   @param path [OUT] An array containing path.  Length equal to that of FULL signal
+ *   @param fwd [OUT]
+ *
+ *   @returns score
+ **/
+float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
+                             float prob_back, float localpen, float minscore,
+                             int32_t * path_padded){
+    RETURN_NULL_IF(NULL == signal.raw, NAN);
+    RETURN_NULL_IF(NULL == params, NAN);
+    RETURN_NULL_IF(NULL == path_padded, NAN);
+    assert(signal.start < signal.end);
+    assert(signal.end <= signal.n);
+    assert(prob_back >= 0.0f && prob_back <= 1.0f);
+
+    float final_score = NAN;
+
+    const float * rawsig = signal.raw + signal.start;
+    const size_t nsample = signal.end - signal.start;
+    const size_t ldp = params->stride;
+    const size_t npos = params->nc;
+    const size_t nfstate = npos + 2;
+    const size_t nstate = npos + nfstate;
+
+    const float move_back_pen = logf(prob_back);
+    const float stay_in_back_pen = logf(0.5f);
+    const float move_from_back_pen = logf(0.5f);
+
+    float * move_pen = calloc(nfstate, sizeof(float));
+    float * fwd = calloc(2 * nstate, sizeof(float));
+    float * scale = calloc(npos, sizeof(float));
+    float * stay_pen = calloc(nfstate, sizeof(float));
+    int32_t * traceback = calloc(nsample * nstate, sizeof(int32_t));
+    if(NULL == move_pen || NULL == fwd || NULL == scale ||
+       NULL == stay_pen || NULL == traceback){
+        goto clean;
+    }
+
+    for(size_t pos=0 ; pos < npos ; pos++){
+        //  Create array of scales
+        scale[pos] = expf(params->data.f[pos * ldp + 1]);
+    }
+    for(size_t i=0 ; i < signal.n ; i++){
+        path_padded[i] = -1;
+    }
+
+    //  Only deal with part of path that corresponds to trimmed signal
+    int32_t * path = path_padded + signal.start;
+
+
+    {
+        float mean_move_pen = 0.0f;
+        float mean_stay_pen = 0.0f;
+        for(size_t pos=0 ; pos < npos ; pos++){
+            const float mp = (1.0f - prob_back) * plogisticf(params->data.f[pos * ldp + 2]);
+            move_pen[pos + 1] = logf(mp);
+            stay_pen[pos + 1] = log1pf(-mp - prob_back);
+            mean_move_pen += move_pen[pos + 1];
+            mean_stay_pen += stay_pen[pos + 1];
+        }
+        mean_move_pen /= npos;
+        mean_stay_pen /= npos;
+
+        move_pen[0] = mean_move_pen;
+        move_pen[nfstate - 1] = mean_move_pen;
+        stay_pen[0] = mean_stay_pen;
+        stay_pen[nfstate - 1] = mean_stay_pen;
+    }
+
+    for(size_t st=0 ; st < nstate ; st++){
+        // States are start .. positions .. end
+        fwd[st] = -LARGE_VAL;
+    }
+    // Must begin in start state
+    fwd[0] = 0.0;
+
+
+    for(size_t sample=0 ; sample < nsample ; sample++){
+        const size_t fwd_prev_off = (sample % 2) * nstate;
+        const size_t fwd_curr_off = ((sample + 1) % 2) * nstate;
+        const size_t tr_off = sample * nstate;
+
+        for(size_t st=0 ; st < nfstate ; st++){
+            //  Stay in start, end or normal position
+            fwd[fwd_curr_off + st] = fwd[fwd_prev_off + st] + stay_pen[st];
+            traceback[tr_off + st] = st;
+        }
+        for(size_t st=0 ; st < npos ; st++){
+            //  Stay in back position
+            const size_t idx = nfstate + st;
+            fwd[fwd_curr_off + idx] = fwd[fwd_prev_off + idx] + stay_in_back_pen;
+            traceback[tr_off + idx] = idx;
+        }
+        for(size_t st=1 ; st < nfstate ; st++){
+            //  Move to next position
+            const float step_score = fwd[fwd_prev_off + st - 1] + move_pen[st - 1];
+            if(step_score > fwd[fwd_curr_off + st]){
+                fwd[fwd_curr_off + st] = step_score;
+                traceback[tr_off + st] = st - 1;
+            }
+        }
+        for(size_t destpos=1 ; destpos < npos ; destpos++){
+            const size_t destst = destpos + 1;
+            //  Move from start into sequence
+            const float score = fwd[fwd_prev_off] + move_pen[0] - localpen * destpos;
+            if(score > fwd[fwd_curr_off + destst]){
+                fwd[fwd_curr_off + destst] = score;
+                traceback[tr_off + destst] = 0;
+            }
+        }
+        for(size_t origpos=0 ; origpos < (npos - 1) ; origpos++){
+            const size_t destst = nfstate - 1;
+            const size_t origst = origpos + 1;
+            const size_t deltapos = npos - 1 - origpos;
+            //  Move from sequence into end
+            const float score = fwd[fwd_prev_off + origst] + move_pen[origst] - localpen * deltapos;
+            if(score > fwd[fwd_curr_off + destst]){
+                fwd[fwd_curr_off + destst] = score;
+                traceback[tr_off + destst] = origst;
+            }
+        }
+        for(size_t st=1 ; st < npos ; st++){
+            // Move to back
+            const float back_score = fwd[fwd_prev_off + st + 1] + move_back_pen;
+            if(back_score > fwd[fwd_curr_off + nfstate + st - 1]){
+                fwd[fwd_curr_off + nfstate + st - 1] = back_score;
+                traceback[tr_off + nfstate + st - 1] = st + 1;
+            }
+        }
+        for(size_t st=1 ; st < npos ; st++){
+            // Move from back
+            const float back_score = fwd[fwd_prev_off + nfstate + st - 1] + move_from_back_pen;
+            if(back_score > fwd[fwd_curr_off + st + 1]){
+                fwd[fwd_curr_off + st + 1] = back_score;
+                traceback[tr_off + st + 1] = nfstate + st - 1;
+            }
+        }
+
+
+        for(size_t pos=0 ; pos < npos ; pos++){
+            //  Add on score for samples
+            const float location = params->data.f[pos * ldp + 0];
+            const float logscale = params->data.f[pos * ldp + 1];
+            const float logscore = fmaxf(-minscore, loglaplace(rawsig[sample], location, scale[pos], logscale));
+            //  State to add to is offset by one because of start state
+            fwd[fwd_curr_off + pos + 1] += logscore;
+            fwd[fwd_curr_off + nfstate + pos] += logscore;
+        }
+
+        // Score for start and end states
+        fwd[fwd_curr_off + 0] -= localpen;
+        fwd[fwd_curr_off + nfstate - 1] -= localpen;
+
+    }
+
+    //  Score of best path and final states.  Could be either last position or end state
+    const size_t fwd_offset = (nsample % 2) * nstate;
+    final_score = fmaxf(fwd[fwd_offset + nfstate - 2], fwd[fwd_offset + nfstate - 1]);
+    if(fwd[fwd_offset + nfstate - 2] > fwd[fwd_offset + nfstate - 1]){
+        path[nsample - 1] = nfstate - 2;
+    } else {
+        path[nsample - 1] = nfstate - 1;
+    }
+
+    for(size_t sample=1 ; sample < nsample ; sample++){
+        const size_t rs = nsample - sample;
+        const size_t tr_off = rs * nstate;
+        path[rs - 1] = traceback[tr_off + path[rs]];
+    }
+
+    // Correct path so start and end states are encoded as -1, other states as positions
+    {
+        size_t sample_min = 0;
+        size_t sample_max = nsample;
+        for(; sample_min < nsample ; sample_min++){
+            if(0 != path[sample_min]){
+                break;
+            }
+            path[sample_min] = -1;
+        }
+        for(; sample_max > 0 ; sample_max--){
+            if(nfstate - 1 != path[sample_max - 1]){
+                break;
+            }
+            path[sample_max - 1] = -1;
+        }
+        for(size_t sample=sample_min ; sample < sample_max ; sample++){
+            assert(path[sample] > 0);
+            if(path[sample] >= nfstate){
+                path[sample] -= nfstate;
+            } else {
+                path[sample] -= 1;
+            }
+        }
+    }
+
+clean:
+    free(traceback);
+    free(stay_pen);
+    free(scale);
+    free(fwd);
+    free(move_pen);
+
+    return final_score;
+}

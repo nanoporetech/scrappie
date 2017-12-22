@@ -67,11 +67,11 @@ endif()
 ##
 #   Set up what is to be built
 ##
-add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/layers.c src/networks.c src/nnfeatures.c src/scrappie_common.c src/scrappie_matrix.c src/util.c)
+add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/layers.c src/networks.c src/nnfeatures.c src/scrappie_common.c src/scrappie_matrix.c src/scrappie_seq_helpers.c src/util.c)
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
-add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_squiggle.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
+add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_mappy.c src/scrappie_squiggle.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
 
 if (BUILD_SHARED_LIB)
 	if (APPLE)
@@ -134,6 +134,7 @@ target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 
 set (READSDIR ${PROJECT_SOURCE_DIR}/reads)
+set (TESTREAD "MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand")
 set (ENV{OPENBLAS_NUM_THREADS} 1)
 
 add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND scrappie_unittest)
@@ -143,6 +144,7 @@ add_test(test_rawrgr_call scrappie raw --model rgr_r94 ${USE_THREADS} ${READSDIR
 add_test(test_rawrgrgr_r94_call scrappie raw --model rgrgr_r94 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrgrgr_r95_call scrappie raw --model rgrgr_r95 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrnnrf_r94_call scrappie raw --model rnnrf_r94 ${USE_THREADS} ${READSDIR})
+add_test(test_mappy scrappie mappy ${READSDIR}/${TESTREAD}.fa ${READSDIR}/${TESTREAD}.fast5)
 add_test(test_squiggle scrappie squiggle ${READSDIR}/test_squiggle.fa)
 add_test(test_licence scrappie licence)
 add_test(test_licence scrappie license)

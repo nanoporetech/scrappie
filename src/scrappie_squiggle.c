@@ -9,6 +9,7 @@
 #include "networks.h"
 #include "scrappie_common.h"
 #include "scrappie_licence.h"
+#include "scrappie_seq_helpers.h"
 #include "scrappie_stdlib.h"
 
 KSEQ_INIT(int, read)
@@ -96,37 +97,7 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_arg, args_doc, doc };
 
 
-int base_to_int(char c, bool allow_lower){
-    c = allow_lower ? toupper(c) : c;
-    switch(c){
-        case 'A': return 0;
-        case 'C': return 1;
-        case 'G': return 2;
-        case 'T': return 3;
-        default:
-            warnx("Unrecognised base %d in read", c);
-    }
-    return -1;
-}
-
-
-int * encode_bases_to_integers(char const * seq, size_t n){
-    int * iseq = calloc(n, sizeof(int));
-    for(size_t i=0 ; i < n ; i++){
-        int ib = base_to_int(seq[i], true);
-        iseq[i] = ib;
-        if(-1 == ib){
-            free(iseq);
-            iseq = NULL;
-            break;
-        }
-    }
-
-    return iseq;
-}
-
-
-scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale){
+static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale){
     RETURN_NULL_IF(NULL == base_seq, NULL);
 
     int * sequence = encode_bases_to_integers(base_seq, n);
@@ -173,6 +144,7 @@ int main_squiggle(int argc, char *argv[]) {
             scrappie_matrix squiggle = sequence_to_squiggle(seq->seq.s, seq->seq.l, args.rescale);
             if(NULL != squiggle){
                 fprintf(args.output, "#%s\n", seq->name.s);
+                fprintf(args.output, "pos\tbase\tcurrent\tsd\tdwell\n");
                 for(size_t i=0 ; i < squiggle->nc ; i++){
                     const size_t offset = i * squiggle->stride;
                     fprintf(args.output, "%zu\t%c\t%3.6f\t%3.6f\t%3.6f\n", i, seq->seq.s[i],
