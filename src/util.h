@@ -38,6 +38,10 @@
 #        define ELUFV elufv
 #    endif
 
+
+/* From math.h */
+# define M_LN2          0.69314718055994530942  /* log_e 2 */
+
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__ ((__gnu_inline__, __always_inline__))
     _mm_setone_ps(void) {
@@ -62,6 +66,63 @@ static inline float logisticf(float x) {
 static inline float eluf(float x){
     return (x >= 0.0f) ? x : expm1f(x);
 }
+
+
+/**
+ *   Laplace distribution and derivatives
+ **/
+static inline float loglaplace(float x, float loc, float sc, float logsc){
+    return -fabsf(x - loc) / sc - logsc - M_LN2;
+}
+
+static inline float laplace(float x, float loc, float sc, float logsc){
+    return expf(loglaplace(x, loc, sc, logsc));
+}
+
+static inline float dloglaplace_loc(float x, float loc, float sc, float logsc){
+    return ((x > loc)  - (x < loc)) / sc;
+}
+
+static inline float dloglaplace_scale(float x, float loc, float sc, float logsc){
+    return (fabsf(x - loc) / sc - 1.0) / sc;
+}
+
+static inline float dloglaplace_logscale(float x, float loc, float sc, float logsc){
+    return fabsf(x - loc) / sc - 1.0;
+}
+
+static inline float dlaplace_loc(float x, float loc, float sc, float logsc){
+    return laplace(x, loc, sc, logsc) * dloglaplace_loc(x, loc, sc, logsc);
+}
+
+static inline float dlaplace_scale(float x, float loc, float sc, float logsc){
+    return laplace(x, loc, sc, logsc) * dloglaplace_scale(x, loc, sc, logsc);
+}
+
+static inline float dlaplace_logscale(float x, float loc, float sc, float logsc){
+    return laplace(x, loc, sc, logsc) * dloglaplace_logscale(x, loc, sc, logsc);
+}
+
+/**
+ *   Logistic distribution
+ **/
+static inline float plogisticf(float x){
+    return 0.5f * (1.0f + tanhf(x / 2.0f));
+}
+
+static inline float logplogisticf(float x){
+    return -log1pf(expf(-x));
+}
+
+static inline float qlogisticf(float p){
+    return 2.0f * atanhf(2.0f * p - 1.0f);
+}
+
+static inline float dlogisticf(float x){
+    const float p = plogisticf(x);
+    return p * (1.0f - p);
+}
+
 
 // Constants for fast exp approximation.  See Schraudolph (1999)
 #    define _A 12102203.161561485f

@@ -22,6 +22,9 @@ enum scrappie_mode get_scrappie_mode(const char *modestr) {
     if (0 == strcmp(modestr, "squiggle")){
         return SCRAPPIE_MODE_SQUIGGLE;
     }
+    if (0 == strcmp(modestr, "mappy")){
+        return SCRAPPIE_MODE_MAPPY;
+    }
 
     return SCRAPPIE_MODE_INVALID;
 }
@@ -40,6 +43,8 @@ const char *scrappie_mode_string(const enum scrappie_mode mode) {
         return "version";
     case SCRAPPIE_MODE_SQUIGGLE:
         return "squiggle";
+    case SCRAPPIE_MODE_MAPPY:
+        return "mappy";
     case SCRAPPIE_MODE_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie mode\n");
     default:
@@ -63,6 +68,8 @@ const char *scrappie_mode_description(const enum scrappie_mode mode) {
         return "Print version information.";
     case SCRAPPIE_MODE_SQUIGGLE:
         return "Create approximate squiggle for sequence";
+    case SCRAPPIE_MODE_MAPPY:
+        return "Map signal to approximate squiggle";
     case SCRAPPIE_MODE_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie mode\n");
     default:

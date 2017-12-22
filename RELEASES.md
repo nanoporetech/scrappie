@@ -30,6 +30,8 @@ The intention is that behaviour will be stable within a series, with only bug fi
 * 1.3 series: Recurrent Neural Network - Random Field models
     * * release-1.3.0*
         * Initial support for RNN-RF models for raw data calling (R9.4 only).
+    * * release-1.3.1*
+        * Scrappie-mappy, map signal to predicted squiggle
 * 1.2 series: Sequence-to-squiggle
     * *release-1.2.0*
         * Ability to predict expected squiggle from sequence

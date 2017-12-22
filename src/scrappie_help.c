@@ -65,6 +65,10 @@ int main_help(int argc, char *argv[]) {
         help_options[0] = argv[1];
         ret = main_squiggle(2, help_options);
         break;
+    case SCRAPPIE_MODE_MAPPY:
+        help_options[0] = argv[1];
+        ret = main_mappy(2, help_options);
+        break;
     default:
         ret = EXIT_FAILURE;
         warnx("Unrecognised subcommand %s\n", argv[1]);
