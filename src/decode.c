@@ -448,7 +448,6 @@ char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos) {
 
 char *overlapper(const int *seq, int n, int nkmer, int *pos) {
     RETURN_NULL_IF(NULL == seq, NULL);
-    RETURN_NULL_IF(NULL == pos, NULL);
     const int kmer_len = position_highest_bit(nkmer) / 2;
 
     //  Determine length of final sequence
@@ -480,6 +479,10 @@ char *overlapper(const int *seq, int n, int nkmer, int *pos) {
         bases[kmer_len - k] = base_lookup[b];
     }
 
+    if(NULL != pos){
+        // Initial pos array if required -- start at beginning
+        pos[0] = 0;
+    }
     for (int last_idx = kmer_len - 1, kprev = seq[st], k = st + 1; k < n; k++) {
         if (seq[k] < 0) {
             // Short-cut stays

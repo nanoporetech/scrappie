@@ -8,8 +8,8 @@ raw_table trim_and_segment_raw(raw_table rt, int trim_start, int trim_end, int v
     rt = trim_raw_by_mad(rt, varseg_chunk, varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, (raw_table){0});
 
-    rt.start += trim_start;
-    rt.end -= trim_end;
+    rt.start = (rt.n - rt.start) > trim_start ? rt.start + trim_start : rt.n;
+    rt.end = (rt.end > trim_end) ? rt.end - trim_end : 0;
 
     if (rt.start >= rt.end) {
         free(rt.raw);

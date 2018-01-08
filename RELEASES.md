@@ -28,18 +28,19 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
 * 1.3 series: Recurrent Neural Network - Random Field models
-    * * release-1.3.0*
+    * *release-1.3.1*
+        * Scrappie-mappy, map signal to predicted squiggle.
+        * Python interface mapping and basecalling.
+    * *release-1.3.0*
         * Initial support for RNN-RF models for raw data calling (R9.4 only).
-    * * release-1.3.1*
-        * Scrappie-mappy, map signal to predicted squiggle
 * 1.2 series: Sequence-to-squiggle
     * *release-1.2.0*
-        * Ability to predict expected squiggle from sequence
+        * Ability to predict expected squiggle from sequence.
 * 1.1 series: Improved basecalling from raw signal
     * *release-1.1.1*
-        * Improved rgrgr models
-        * Ability to write output to named file
-        * Rename argument '--outformat' to '--format'
+        * Improved rgrgr models.
+        * Ability to write output to named file.
+        * Rename argument '--outformat' to '--format'.
     * *release-1.1.0*
         * Implementation of raw data 'pirate' networks (rGr and rgrgr).
         * Stand-alone event detection.
@@ -48,15 +49,15 @@ The intention is that behaviour will be stable within a series, with only bug fi
         * Improvements to error reporting.
 * 1.0 series: Public release
     * *release-1.0.1*
-        * Integration with Travis-ci
-        * Rudimentaty unittests
+        * Integration with Travis-ci.
+        * Rudimentaty unittests.
     * *release-1.0.0*
         * Change licence to MPL.
 	* Increased number for assertions.
 	* A few stability and bug fixes.
 * 0.3 series: Basecalling from raw signal
-    * *release-0.3.2* Minor fixes to support use of OpenBLAS and HDF5 libraries in non-standard locations 
-    * *release-0.3.1* Expose options for segmenting raw signal
+    * *release-0.3.2* Minor fixes to support use of OpenBLAS and HDF5 libraries in non-standard locations.
+    * *release-0.3.1* Expose options for segmenting raw signal.
     * *release-0.3.0* Initial release implementing calling from raw signal.
 * 0.2 series: Post-hoc correction of homopolymer lengths from dwells.
     * *release-0.2.8*
