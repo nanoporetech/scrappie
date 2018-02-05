@@ -302,10 +302,10 @@ scrappie_matrix residual(const_scrappie_matrix X, const_scrappie_matrix fX, scra
 void residual_inplace(const_scrappie_matrix X, scrappie_matrix fX) {
     RETURN_NULL_IF(NULL == X, );
     RETURN_NULL_IF(NULL == fX, );
-    const size_t nr = X->nr;
+
     const size_t nrq = X->nrq;
     const size_t nc = X->nc;
-    assert(nr == fX->nr);
+    assert(X->nr == fX->nr);
     assert(nrq == fX->nrq);
     assert(nc == fX->nc);
 

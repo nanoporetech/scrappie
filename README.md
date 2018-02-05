@@ -23,6 +23,9 @@ On Debian based systems, the following packages are sufficient (tested Ubuntu 14
 * libopenblas-base
 * libopenblas-dev
 
+Docker files documenting the minimal installs for various flavours of Linux can be found in the docker/ directory.
+
+
 The Intel MKL may be used to provide the BLAS library.  The combination of the Intel `icc`
 compiler and linking against the MKL can result in significant performance improvements, a
 gain of 50% being observed on one machine.
