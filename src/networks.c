@@ -52,6 +52,28 @@ const char * raw_model_string(const enum raw_model_type model){
 }
 
 
+int get_raw_model_stride(const enum raw_model_type model){
+    switch(model){
+    case SCRAPPIE_MODEL_RAW:
+        return conv_raw_stride;
+    case SCRAPPIE_MODEL_RGR:
+        return conv_rgr_stride;
+    case SCRAPPIE_MODEL_RGRGR_R94:
+        return conv_rgrgr_r94_stride;
+    case SCRAPPIE_MODEL_RGRGR_R95:
+        return conv_rgrgr_r95_stride;
+    case SCRAPPIE_MODEL_RNNRF_R94:
+        return conv_rnnrf_r94_stride;
+    case SCRAPPIE_MODEL_INVALID:
+        errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
+    default:
+        errx(EXIT_FAILURE, "Scrappie enum failure -- report bug\n");
+    }
+
+    return -1;
+}
+
+
 posterior_function_ptr get_posterior_function(const enum raw_model_type model){
     switch(model){
     case SCRAPPIE_MODEL_RAW:

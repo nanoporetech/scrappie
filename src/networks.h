@@ -17,6 +17,7 @@ typedef scrappie_matrix (*posterior_function_ptr)(const raw_table, float, bool);
 
 enum raw_model_type get_raw_model(const char * modelstr);
 const char * raw_model_string(const enum raw_model_type model);
+int get_raw_model_stride(const enum raw_model_type model);
 posterior_function_ptr get_posterior_function(const enum raw_model_type model);
 
 
