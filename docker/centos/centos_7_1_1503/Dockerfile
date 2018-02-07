@@ -1,4 +1,4 @@
-FROM centos:7.2.1511
+FROM centos:7.1.1503
 MAINTAINER Tim Massingham <tim.massingham@nanoporetech.com>
 RUN yum install -y epel-release
 RUN yum install -y gcc git make cmake
@@ -11,5 +11,9 @@ RUN ln -s /usr/lib64/libopenblaso.so /usr/lib64/libblas.so
 RUN git clone --depth 1 http://github.com/nanoporetech/scrappie.git
 
 RUN cd scrappie && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
     make test
 

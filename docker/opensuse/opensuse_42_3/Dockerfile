@@ -11,4 +11,8 @@ RUN ln -s /usr/lib64/libblas.so.3 /usr/lib64/libblas.so
 RUN git clone --depth 1 http://github.com/nanoporetech/scrappie.git
 
 RUN cd scrappie && \
+    mkdir build && \
+    cd build && \ 
+    cmake .. && \
+    make && \
     make test

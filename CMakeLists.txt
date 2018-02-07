@@ -145,7 +145,7 @@ add_test(test_rawrgrgr_r94_call scrappie raw --model rgrgr_r94 ${USE_THREADS} ${
 add_test(test_rawrgrgr_r95_call scrappie raw --model rgrgr_r95 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrnnrf_r94_call scrappie raw --model rnnrf_r94 ${USE_THREADS} ${READSDIR})
 add_test(test_mappy scrappie mappy ${READSDIR}/${TESTREAD}.fa ${READSDIR}/${TESTREAD}.fast5)
-add_test(test_squiggle scrappie squiggle ${READSDIR}/test_squiggle.fa)
+add_test(test_squiggle scrappie squiggle ${READSDIR}/test_squiggles.fa)
 add_test(test_licence scrappie licence)
 add_test(test_licence scrappie license)
 add_test(test_help scrappie help)
