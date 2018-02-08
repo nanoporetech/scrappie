@@ -12,7 +12,7 @@ ffibuilder.set_source("libscrappy",
       #include "scrappie_seq_helpers.h"
 
       int get_raw_model_stride_from_string(const char * modelstr){
-        // Obtain the model string from its str name
+        // Obtain the model stride from its str name
         // avoid the intermediate errx from C signalling bad model
         // name with a return of -1.
         const enum raw_model_type modeltype = get_raw_model(modelstr);
