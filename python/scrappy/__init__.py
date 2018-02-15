@@ -219,6 +219,19 @@ _decoders_ = {
 }
 
 
+def get_model_stride(model):
+    """Obtain the stride length of a model from its name.
+
+    :param model: model name:
+
+    :returns: the model stride.
+    """
+    stride = lib.get_raw_model_stride_from_string(model.encode())
+    if stride == -1:
+        raise ValueError("Invalid scrappie model '{}'.")
+    return stride
+
+
 def free_matrix(matrix):
     """Free a `scrappie_matrix`.
 

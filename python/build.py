@@ -11,12 +11,18 @@ ffibuilder.set_source("libscrappy",
       #include "util.h"
       #include "scrappie_seq_helpers.h"
 
-      float * copy_array(float * in, size_t in_size){
-        size_t total = sizeof(float)*in_size;
-        float * out = malloc(sizeof(float)*in_size);
-        memcpy(in, out, total);
-        return out;
+      int get_raw_model_stride_from_string(const char * modelstr){
+        // Obtain the model stride from its str name
+        // avoid the intermediate errx from C signalling bad model
+        // name with a return of -1.
+        const enum raw_model_type modeltype = get_raw_model(modelstr);
+        if(modeltype == SCRAPPIE_MODEL_INVALID){
+          return -1;
+        } else {
+          return get_raw_model_stride(modeltype);
+        }
       }
+
     """,
     libraries=['blas'],
     include_dirs=[
@@ -32,6 +38,7 @@ ffibuilder.cdef("""
     size_t end;
     float *raw;
   } raw_table;
+
 
   void medmad_normalise_array(float *x, size_t n);
   raw_table trim_and_segment_raw(raw_table rt,
@@ -74,6 +81,7 @@ ffibuilder.cdef("""
 
   // Misc
   int * encode_bases_to_integers(char const * seq, size_t n);
+  int get_raw_model_stride_from_string(const char * modelstr);
  
 """)
 

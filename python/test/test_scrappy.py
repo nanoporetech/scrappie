@@ -43,6 +43,7 @@ class TestScrappy(unittest.TestCase):
             raise RuntimeError("Ensure scrappie is on PATH before running scrappy tests.")
         self.model = 'rgrgr_r94'
         self.expected_states = 1025
+        self.expected_stride = 5
 
         # get scrappie basecalls for two test files
         cmd = ['scrappie', 'raw', '--model', self.model]
@@ -136,3 +137,14 @@ class TestScrappy(unittest.TestCase):
         self.assertIsInstance(score, float, 'score is float.')
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
         self.assertEqual(len(self.one_signal), len(path), 'Length of path is length of signal.')
+
+
+    def test_050_model_stride(self):
+        stride = scrappy.get_model_stride(self.model)
+        self.assertIsInstance(stride, int, 'stride is int.')
+        self.assertEqual(stride, self.expected_stride, 'stride is as expected.')
+
+
+    def test_051_model_stride_unknown(self):
+        with self.assertRaises(ValueError):
+            stride = scrappy.get_model_stride('garbage_model')
