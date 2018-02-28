@@ -1,4 +1,3 @@
-#define _POSIX_SOURCE 1
 #include <math.h>
 #include <stdio.h>
 //#include <string.h>

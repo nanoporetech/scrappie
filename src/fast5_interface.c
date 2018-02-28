@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <err.h>
 #include <math.h>
+#include <stdio.h>
 #include "fast5_interface.h"
 #include "scrappie_stdlib.h"
 #include "util.h"

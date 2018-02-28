@@ -93,9 +93,9 @@ endif ()
 ##
 #  Check whether compiler supports openmp.
 ##
-set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -O3 -march=native -std=c11 -DUSE_SSE2 -DNDEBUG")
-set (CMAKE_C_FLAGS_CHAOS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2 -DNDEBUG -DCHAOSMONKEY=${CHAOSMONKEY}")
-set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Werror -Wall -DABORT_ON_NULL -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c11 -DUSE_SSE2")
+set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -O3 -march=native -std=c99 -DUSE_SSE2 -D__USE_MISC -D_POSIX_SOURCE -DNDEBUG")
+set (CMAKE_C_FLAGS_CHAOS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c99 -DUSE_SSE2 -D__USE_MISC -D_POSIX_SOURCE -DNDEBUG -DCHAOSMONKEY=${CHAOSMONKEY}")
+set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Werror -Wall -DABORT_ON_NULL -Wno-unused-function -fstack-protector-all -fgnu89-inline -g -march=native -std=c99 -DUSE_SSE2 -D__USE_MISC -D_POSIX_C_SOURCE")
 # Check for OpenMP support in compiler
 include (CheckCCompilerFlag)
 check_c_compiler_flag ("-fopenmp" HAS_OPENMP)

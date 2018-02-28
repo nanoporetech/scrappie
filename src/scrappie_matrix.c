@@ -32,8 +32,7 @@ scrappie_matrix make_scrappie_matrix(int nr, int nc) {
         }
     }
 
-    mat->data.v = aligned_alloc(16, nrq * nc * sizeof(__m128));
-    if (NULL == mat->data.v) {
+    if (0 != scrappie_memalign((void **)&mat->data.v, 16, nrq * nc * sizeof(__m128))) {
         warnx("Error allocating memory in %s.\n", __func__);
         free(mat);
         return NULL;
@@ -280,8 +279,7 @@ scrappie_imatrix make_scrappie_imatrix(int nr, int nc) {
     mat->nc = nc;
     mat->stride = nrq * 4;
 
-    mat->data.v = aligned_alloc(16, nrq * nc * sizeof(__m128i));
-    if (NULL == mat->data.v) {
+    if (0 != scrappie_memalign((void **)&mat->data.v, 16, nrq * nc * sizeof(__m128i))) {
         warnx("Error allocating memory in %s.\n", __func__);
         free(mat);
         return NULL;
