@@ -10,12 +10,12 @@
 #include "util.h"
 
 static const char rawsignalfile[] = "raw_signal.crp";
-static const char signalfile[] = "trimmed_signal.crp";
+static const char trimsignalfile[] = "trimmed_signal.crp";
 static const char normsignalfile[] = "normalised_signal.crp";
 
 
 static scrappie_matrix rawsignal = NULL;
-static scrappie_matrix signal = NULL;
+static scrappie_matrix trimsignal = NULL;
 static scrappie_matrix normsignal = NULL;
 static float * normsig_arr = NULL;
 
@@ -31,8 +31,8 @@ int init_test_signal(void) {
         return 1;
     }
 
-    signal = read_scrappie_matrix(signalfile);
-    if(NULL == signal){
+    trimsignal = read_scrappie_matrix(trimsignalfile);
+    if(NULL == trimsignal){
         return 1;
     }
 
@@ -52,7 +52,7 @@ int init_test_signal(void) {
 int clean_test_signal(void) {
     free(normsig_arr);
     (void)free_scrappie_matrix(normsignal);
-    (void)free_scrappie_matrix(signal);
+    (void)free_scrappie_matrix(trimsignal);
     return 0;
 }
 
@@ -83,17 +83,17 @@ void test_trim_signal(void) {
 
     scrappie_matrix mat_trim = mat_from_array(rt.raw + rt.start, 1, rt.end - rt.start);
     CU_ASSERT_PTR_NOT_NULL_FATAL(mat_trim);
-    CU_ASSERT_EQUAL(mat_trim->nc, signal->nc);
+    CU_ASSERT_EQUAL(mat_trim->nc, trimsignal->nc);
 
-    CU_ASSERT_TRUE(equality_scrappie_matrix(mat_trim, signal, 1e-4));
+    CU_ASSERT_TRUE(equality_scrappie_matrix(mat_trim, trimsignal, 1e-4));
 
     (void)free_scrappie_matrix(mat_trim);
     free(rt.raw);
 }
 
 void test_normalise_signal(void) {
-    float * sigarr = array_from_scrappie_matrix(signal);
-    size_t n = signal->nc;
+    float * sigarr = array_from_scrappie_matrix(trimsignal);
+    size_t n = trimsignal->nc;
     CU_ASSERT_PTR_NOT_NULL_FATAL(sigarr);
 
     medmad_normalise_array(sigarr, n);

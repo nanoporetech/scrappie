@@ -1,5 +1,6 @@
 // fast5_interface needs cleaning
 #define BANANA 1
+#define _C99_SOURCE  // Required for snprintf on Mac (not set by clang -std=c99)
 #include <assert.h>
 #include <err.h>
 #include <math.h>
