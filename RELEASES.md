@@ -28,6 +28,8 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
 * 1.3 series: Recurrent Neural Network - Random Field models
+    * *release-1.3.2*
+        * Support older platforms that don't support C11 memalign functions (e.g. Mac)
     * *release-1.3.1*
         * Scrappie-mappy, map signal to predicted squiggle.
         * Python interface mapping and basecalling.
