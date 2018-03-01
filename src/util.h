@@ -5,7 +5,6 @@
 #    include <math.h>
 #    include <stdbool.h>
 #    include <stdint.h>
-#    include <stdio.h>
 #    include "sse_mathfun.h"
 
 #    ifdef FAST_LOG
@@ -40,7 +39,9 @@
 
 
 /* From math.h */
-# define M_LN2          0.69314718055994530942  /* log_e 2 */
+#    ifndef M_LN2
+#        define M_LN2          0.69314718055994530942  /* log_e 2 */
+#    endif
 
 /* Create a vector of  ones.  */
 extern __inline __m128 __attribute__ ((__gnu_inline__, __always_inline__))

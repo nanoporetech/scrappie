@@ -1,4 +1,5 @@
 buildDir ?= build
+releaseType ?= Release
 
 .PHONY: all
 all: ${buildDir}/scrappie
@@ -9,7 +10,7 @@ ${buildDir}:
 .PHONY: test
 test: ${buildDir}/scrappie
 	cd ${buildDir} && \
-		make test
+	make test
 
 .PHONY: clean
 clean:
@@ -17,6 +18,6 @@ clean:
 
 ${buildDir}/scrappie: ${buildDir}
 	cd ${buildDir} && \
-		cmake .. && \
-	    make
+	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} && \
+	make
     
