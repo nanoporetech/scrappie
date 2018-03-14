@@ -1439,23 +1439,24 @@ bool are_bounds_sane(int const * low, int const * high, size_t nblock, size_t se
             ret = false;
         }
         if(low[i] > high[i]){
-            warnx("Low bound for block %zu exceeds high bound (%d , %d).\n", i, low[i], high[i]);
+            warnx("Low bound for block %zu exceeds high bound [%d , %d).\n", i, low[i], high[i]);
             ret = false;
         }
     }
     for(size_t i=1 ; i < nblock ; i++){
         if(low[i] > high[i - 1]){
-            warnx("Blocks %zu and %zu don't overlap ( %d , %d ) -> (%d , %d )\n",
+            // Allow case where step but not stay is possible (low[i] == high[i-1])
+            warnx("Blocks %zu and %zu don't overlap [%d , %d) -> [%d , %d)\n",
                   i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
             ret = false;
         }
         if(low[i] < low[i - 1]){
-            warnx("Low bounds for blocks %zu and %zu aren't monotonic ( %d , %d ) -> (%d , %d )\n",
+            warnx("Low bounds for blocks %zu and %zu aren't monotonic [%d , %d) -> [%d , %d)\n",
                   i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
             ret = false;
         }
         if(high[i] < high[i - 1]){
-            warnx("High bounds for blocks %zu and %zu aren't monotonic ( %d , %d ) -> (%d , %d )\n",
+            warnx("High bounds for blocks %zu and %zu aren't monotonic [%d , %d) -> [%d , %d)\n",
                   i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
             ret = false;
         }
