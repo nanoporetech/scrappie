@@ -21,6 +21,42 @@ def _none_if_null(p):
     return p
 
 
+def all_kmers(length=5, alphabet='ACGT'):
+    """All kmers of a given length and alphabet."""
+    return [''.join(x) for x in itertools.product(alphabet, repeat=length)]
+
+
+def kmer_mapping(length=5, alphabet='ACGT'):
+    """Mapping of kmers to lexographical order."""
+    return {k:i for i, k in enumerate(all_kmers(length, alphabet))}
+
+
+def base_seq_to_kmer_seq(seq, kmer_len=5, alphabet='ACGT'):
+    """Transform a base sequence into a kmer-state sequence."""
+    kmer_map = kmer_mapping(kmer_len, alphabet)
+    kmers = (seq[x:x + kmer_len] for x in range(len(seq) - kmer_len + 1))
+    kmer_seq = np.array([kmer_map[k] for k in kmers])
+    return kmer_seq
+
+
+def guess_state_properties(nstate):
+    """Find likely kmer length and alphabet size from transducer state-space size.
+    
+    :param nstate: number of states in transducer.
+
+    :returns: alphabet size, kmer length.
+    """
+    alpha_len = (4, 5, 6)
+    kmer_len = (2, 3, 4, 5, 6, 7, 8, 9)
+    pairs = [(a, k) for a, k in itertools.product(alpha_len, kmer_len)]
+    state_lookup = {a**k: (a, k) for a, k in pairs}
+    assert len(state_lookup) == len(pairs) # check all are unique
+
+    nkmers = nstate - 1 # for stay
+    return state_lookup[nkmers]
+
+
+
 class RawTable(object):
     def __init__(self, data, start=0, end=None):
         """Representation of a scrappie `raw_table`.
@@ -311,7 +347,7 @@ def sequence_to_squiggle(sequence, rescale=False, as_numpy=False):
 
     :returns: a simulated squiggle as either a `scrappie_matrix` or a ndarray.
 
-    ..note:: if a `scrappie_matrix is returned, this will require freeing.
+    ..note:: if a `scrappie_matrix` is returned, this will require freeing.
     """
 
     seq_len = len(sequence)
@@ -346,7 +382,6 @@ def map_signal_to_squiggle(data, sequence, back_prob=0.0, local_pen=2.0, min_sco
     if squiggle is None:
         return None
 
-
     path = np.ascontiguousarray(np.zeros(raw._rt.n, dtype=np.int32))
     p_path = ffi.cast("int32_t *", ffi.from_buffer(path))
 
@@ -370,6 +405,89 @@ def _raw_gen(filelist):
             raise RuntimeError('Failed to read signal data from {}.'.format(fname))
         else:
             yield os.path.basename(fname), data
+
+
+def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0,
+                         viterbi=False, path=False, bands=None, alphabet='ACGT'):
+    """Block-based alignment of a squiggle to a sequence using either Forward
+    or Viterbi algorithm. For the latter the Viterbi path can optionally be
+    calculated.
+
+    :param post: a `scrappie_matrix` containing log-probabilities (as from
+       `calc_post`).
+    :param sequence: a base sequence which to map.
+    :param stay_pen: penalty for zero-state movement from one block to next.
+    :param skip_pen: penalty for two-state movement from one block to next.
+    :param viterbi: use Viterbi algorithm rather than forward.
+    :param path: calculate alignment path (only valid for `viterbi==True`
+        and `bands==None`).
+    :param bands: two sequences containing lower and upper extremal allowed
+        positions for each block. Should be length corresponding to number
+        of blocks of `post`. If a single number is given, a diagonal band with
+        width 2 * `bands` * #states / #blocks will be used. If `None` is given
+        banding is not used (a full DP matrix is evaluated).
+    :param alphabet: the alphabet from which `sequence` is composed.
+
+    :returns: (score, path), (or (None, *) in the case of failure).
+
+    ..note:: if `viterbi`==False or `path`==False, the returned path will
+        be `None`.
+    """
+    if path and not viterbi:
+        raise ValueError('Cannot calulate path with `viterbi==False`.')
+
+    nblock, nstate = post.nc, post.nr
+    alpha_len, kmer_len = guess_state_properties(nstate)
+    if alpha_len != len(alphabet):
+        raise ValueError(
+            'Error inferring state properties, check `alphabet` argument.')
+    seq = base_seq_to_kmer_seq(sequence, kmer_len=kmer_len, alphabet=alphabet)
+    p_seq = ffi.cast("int *", ffi.from_buffer(seq))
+    seq_len = len(seq)
+
+    if viterbi and path:
+        path_data = np.zeros(nblock, dtype=np.int32)
+        p_path = ffi.cast("int *", ffi.from_buffer(path_data))
+    else:
+        path_data = None
+        p_path = ffi.NULL
+
+    if bands is None:
+        if viterbi:
+            score = lib.map_to_sequence_viterbi(
+                post, stay_pen, skip_pen, p_seq, seq_len, p_path)
+        else:
+            score = lib.map_to_sequence_forward(
+                post, stay_pen, skip_pen, p_seq, seq_len)
+    else:
+        if isinstance(bands, int):
+            # create a monotonic diagonal band
+            gradient = seq_len / nblock
+            bands = 2 * bands * gradient
+            hband = bands / 2
+            bands = [np.ascontiguousarray(np.array(x, dtype=np.int32)) for x in (
+                [(max(0,       x * gradient - hband)) for x in range(nblock)],
+                [(min(seq_len, x * gradient + hband)) for x in range(nblock)]
+            )]
+        elif len(bands) == 2:
+            bands = [
+                np.ascontiguousarray(x, dtype=np.int32) for x in bands]
+        else:
+            raise ValueError('`bands` should be `None`, an integer, or length 2.')
+
+        p_poslow, p_poshigh = (
+            ffi.cast("int *", ffi.from_buffer(x)) for x in bands)
+        if not lib.are_bounds_sane(p_poslow, p_poshigh, nblock, seq_len):
+            raise ValueError('Supplied banding structure is not valid.')
+
+        if viterbi:
+            func = lib.map_to_sequence_viterbi_banded
+        else:
+            func = lib.map_to_sequence_forward_banded
+        score = func(
+            post, stay_pen, skip_pen, p_seq, seq_len, p_poslow, p_poshigh)
+
+    return _none_if_null(score), path_data
 
 
 def _basecall():
