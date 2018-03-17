@@ -41,7 +41,7 @@ def base_seq_to_kmer_seq(seq, kmer_len=5, alphabet='ACGT'):
 
 def guess_state_properties(nstate):
     """Find likely kmer length and alphabet size from transducer state-space size.
-    
+
     :param nstate: number of states in transducer.
 
     :returns: alphabet size, kmer length.
@@ -312,7 +312,7 @@ def basecall_raw(data, model='rgrgr_r94', with_base_probs=False, **kwargs):
 
     :param data: `ndarray` containing raw signal data.
     :param model: model to use in calculating basecall.
-    :param with_base_probs: calculate per-block base (ACGT-) probabilities. 
+    :param with_base_probs: calculate per-block base (ACGT-) probabilities.
     :param kwargs: kwargs passed to `decode_post`.
 
     :returns: tuple containing: (basecall, score, per-block call positions
@@ -377,7 +377,7 @@ def map_signal_to_squiggle(data, sequence, back_prob=0.0, local_pen=2.0, min_sco
     """
     raw = RawTable(data)
     raw.trim().scale()
-    
+
     squiggle = sequence_to_squiggle(sequence)
     if squiggle is None:
         return None
@@ -407,17 +407,18 @@ def _raw_gen(filelist):
             yield os.path.basename(fname), data
 
 
-def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0,
+def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0, local_pen=4.0,
                          viterbi=False, path=False, bands=None, alphabet='ACGT'):
-    """Block-based alignment of a squiggle to a sequence using either Forward
-    or Viterbi algorithm. For the latter the Viterbi path can optionally be
-    calculated.
+    """Block-based local-global alignment of a squiggle to a sequence using
+    either Forward or Viterbi algorithm. For the latter the Viterbi path can
+    optionally be calculated.
 
     :param post: a `scrappie_matrix` containing log-probabilities (as from
        `calc_post`).
     :param sequence: a base sequence which to map.
     :param stay_pen: penalty for zero-state movement from one block to next.
     :param skip_pen: penalty for two-state movement from one block to next.
+    :param local_pen: penalty for local alignment through blocks
     :param viterbi: use Viterbi algorithm rather than forward.
     :param path: calculate alignment path (only valid for `viterbi==True`
         and `bands==None`).
@@ -455,10 +456,10 @@ def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0,
     if bands is None:
         if viterbi:
             score = lib.map_to_sequence_viterbi(
-                post, stay_pen, skip_pen, p_seq, seq_len, p_path)
+                post, stay_pen, skip_pen, local_pen, p_seq, seq_len, p_path)
         else:
             score = lib.map_to_sequence_forward(
-                post, stay_pen, skip_pen, p_seq, seq_len)
+                post, stay_pen, skip_pen, local_pen, p_seq, seq_len)
     else:
         if isinstance(bands, int):
             # create a monotonic diagonal band
@@ -485,7 +486,7 @@ def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0,
         else:
             func = lib.map_to_sequence_forward_banded
         score = func(
-            post, stay_pen, skip_pen, p_seq, seq_len, p_poslow, p_poshigh)
+            post, stay_pen, skip_pen, local_pen, p_seq, seq_len, p_poslow, p_poshigh)
 
     return _none_if_null(score), path_data
 

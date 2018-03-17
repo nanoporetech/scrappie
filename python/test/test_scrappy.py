@@ -66,7 +66,7 @@ class TestScrappy(unittest.TestCase):
         with open(_test_fasta_[chosen_one], 'r') as fh:
             self.one_ref = next(self._parse_fasta(fh))[1]
         print("  finished setUp.")
-        
+
 
     def test_000_same_as_scrappie(self):
         for fname, data in self.signals.items():
@@ -147,11 +147,11 @@ class TestScrappy(unittest.TestCase):
 
         t0 = now()
         score_band, _ = scrappy.map_post_to_sequence(
-            post, self.one_ref, stay_pen=0, skip_pen=0,
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
             viterbi=False, path=False, bands=100)
         t1 = now()
         score_no_band, _ = scrappy.map_post_to_sequence(
-            post, self.one_ref, stay_pen=0, skip_pen=0,
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
             viterbi=False, path=False, bands=None)
         t2 = now()
         self.assertIsInstance(score_no_band, float, 'score is float.')
@@ -160,7 +160,7 @@ class TestScrappy(unittest.TestCase):
         with self.assertRaises(ValueError):
             # can't calculate path with Forward
             score_no_band = scrappy.map_post_to_sequence(
-                post, self.one_ref, stay_pen=0, skip_pen=0,
+                post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
                 viterbi=False, path=True, bands=None)
 
         scrappy.free_matrix(post)
@@ -173,18 +173,18 @@ class TestScrappy(unittest.TestCase):
 
         t0 = now()
         score_band, _ = scrappy.map_post_to_sequence(
-            post, self.one_ref, stay_pen=0, skip_pen=0,
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
             viterbi=True, path=False, bands=100)
         t1 = now()
         score_no_band, _ = scrappy.map_post_to_sequence(
-            post, self.one_ref, stay_pen=0, skip_pen=0,
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
             viterbi=True, path=False, bands=None)
         t2 = now()
         self.assertIsInstance(score_no_band, float, 'score is float.')
         self.assertLess(t1 - t0, t2 - t0, 'banded mapping is faster.')
 
         score_band, path = scrappy.map_post_to_sequence(
-            post, self.one_ref, stay_pen=0, skip_pen=0,
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
             viterbi=True, path=True, bands=100)
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
 
