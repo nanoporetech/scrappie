@@ -99,7 +99,7 @@ static struct argp argp = { options, parse_arg, args_doc, doc };
 static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale){
     RETURN_NULL_IF(NULL == base_seq, NULL);
 
-    int * sequence = encode_bases_to_integers(base_seq, n);
+    int * sequence = encode_bases_to_integers(base_seq, n, 1);
     RETURN_NULL_IF(NULL == sequence, NULL);
 
     scrappie_matrix squiggle = dna_squiggle(sequence, n, rescale);

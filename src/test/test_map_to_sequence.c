@@ -10,6 +10,7 @@
 #include <test_common.h>
 
 static const char posteriorfile[] = "posterior_trimmed.crp";
+static float BIG_VAL = 1.e30f;
 
 static const int32_t mapping_target[] = {
     332, 306, 202, 811, 174, 699, 749, 949, 725, 854,
@@ -136,7 +137,7 @@ void test_viterbi_map_to_sequence(void){
     CU_ASSERT_PTR_NOT_NULL_FATAL(logpost);
     log_activation_inplace(logpost);
 
-    float score = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, NULL);
+    float score = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, NULL);
     CU_ASSERT_NOT_EQUAL(score, NAN);
 
     logpost = free_scrappie_matrix(logpost);
@@ -147,7 +148,7 @@ void test_forward_map_to_sequence(void){
     CU_ASSERT_PTR_NOT_NULL_FATAL(logpost);
     log_activation_inplace(logpost);
 
-    float score = map_to_sequence_forward(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len);
+    float score = map_to_sequence_forward(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len);
     CU_ASSERT_NOT_EQUAL(score, NAN);
 
     logpost = free_scrappie_matrix(logpost);
@@ -162,17 +163,17 @@ void test_viterbi_with_path_map_to_sequence(void){
     int * path = calloc(nblock, sizeof(int));
     CU_ASSERT_PTR_NOT_NULL_FATAL(path);
 
-    float score = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, path);
+    float score = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, path);
     CU_ASSERT_NOT_EQUAL(score, NAN);
 
-    /*fputs("Viterbi mapping path",stdout);
+    fputs("Viterbi mapping path\n",stdout);
     fprintf(stdout,"%d",path[0]);
     for(size_t blk=1 ; blk < nblock ; blk++){
         printf(", %d", path[blk]);
         if((blk + 1) % 20 == 0){
             fputc('\n', stdout);
         }
-    }*/
+    }
 
     free(path);
     logpost = free_scrappie_matrix(logpost);
@@ -183,8 +184,9 @@ void test_forward_better_than_viterbi_map_to_sequence(void){
     CU_ASSERT_PTR_NOT_NULL_FATAL(logpost);
     log_activation_inplace(logpost);
 
-    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, NULL);
-    float score_fwd = map_to_sequence_forward(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len);
+    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, NULL);
+    float score_fwd = map_to_sequence_forward(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len);
+    printf("vit = %f fwd = %f\n", score_vit, score_fwd);
     CU_ASSERT_TRUE(score_fwd >= score_vit);
 
     logpost = free_scrappie_matrix(logpost);
@@ -207,8 +209,9 @@ void test_full_band_viterbi_map_to_sequence(void){
         poshigh[i] = mapping_target_len;
     }
 
-    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, NULL);
-    float score_vitB = map_to_sequence_viterbi_banded(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, poslow, poshigh);
+    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, NULL);
+    float score_vitB = map_to_sequence_viterbi_banded(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, poslow, poshigh);
+    printf("vit = %f vitB = %f\n", score_vit, score_vitB);
     CU_ASSERT_DOUBLE_EQUAL(score_vit, score_vitB, 1e-3);
 
     free(poshigh);
@@ -233,8 +236,9 @@ void test_full_band_forward_map_to_sequence(void){
         poshigh[i] = mapping_target_len;
     }
 
-    float score_fwd = map_to_sequence_forward(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len);
-    float score_fwdB = map_to_sequence_forward_banded(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, poslow, poshigh);
+    float score_fwd = map_to_sequence_forward(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len);
+    float score_fwdB = map_to_sequence_forward_banded(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, poslow, poshigh);
+    printf("fwd = %f fwdB = %f\n", score_fwd, score_fwdB);
     CU_ASSERT_DOUBLE_EQUAL(score_fwd, score_fwdB, 1e-3);
 
     free(poshigh);
@@ -243,7 +247,7 @@ void test_full_band_forward_map_to_sequence(void){
 }
 
 
-void test_relaxed_band_helper(int32_t band){
+void test_relaxed_band_helper(float local_pen, int32_t band){
 
     scrappie_matrix logpost = read_scrappie_matrix(posteriorfile);
     CU_ASSERT_PTR_NOT_NULL_FATAL(logpost);
@@ -261,8 +265,9 @@ void test_relaxed_band_helper(int32_t band){
         poshigh[i] = imin(tightlow[i] + band, mapping_target_len);
     }
 
-    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, NULL);
-    float score_vitB = map_to_sequence_viterbi_banded(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, poslow, poshigh);
+    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, local_pen, mapping_target, mapping_target_len, NULL);
+    float score_vitB = map_to_sequence_viterbi_banded(logpost, 0.0f, 0.0f, local_pen, mapping_target, mapping_target_len, poslow, poshigh);
+    printf("vit = %f vitB = %f\n", score_vit, score_vitB);
     CU_ASSERT_DOUBLE_EQUAL(score_vit, score_vitB, 1e-3);
 
     free(poshigh);
@@ -272,19 +277,36 @@ void test_relaxed_band_helper(int32_t band){
 
 
 void test_relaxed_band2_viterbi_map_to_sequence(void){
-    test_relaxed_band_helper(2);
+    test_relaxed_band_helper(BIG_VAL, 2);
 }
 
 void test_relaxed_band3_viterbi_map_to_sequence(void){
-    test_relaxed_band_helper(3);
+    test_relaxed_band_helper(BIG_VAL, 3);
 }
 
 void test_relaxed_band4_viterbi_map_to_sequence(void){
-    test_relaxed_band_helper(4);
+    test_relaxed_band_helper(BIG_VAL, 4);
 }
 
 void test_relaxed_band5_viterbi_map_to_sequence(void){
-    test_relaxed_band_helper(5);
+    test_relaxed_band_helper(BIG_VAL, 5);
+}
+
+static const float test_local_pen = 0.5f;
+void test_relaxed_band2_with_local_viterbi_map_to_sequence(void){
+    test_relaxed_band_helper(test_local_pen, 2);
+}
+
+void test_relaxed_band3_with_local_viterbi_map_to_sequence(void){
+    test_relaxed_band_helper(test_local_pen, 3);
+}
+
+void test_relaxed_band4_with_local_viterbi_map_to_sequence(void){
+    test_relaxed_band_helper(test_local_pen, 4);
+}
+
+void test_relaxed_band5_with_local_viterbi_map_to_sequence(void){
+    test_relaxed_band_helper(test_local_pen, 5);
 }
 
 void test_tight_band_forward_map_to_sequence(void){
@@ -302,10 +324,11 @@ void test_tight_band_forward_map_to_sequence(void){
         tighthigh[i] = tightlow[i] - 1;
     }
 
-    float score_fwd = map_to_sequence_forward(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len);
-    float score_fwdB = map_to_sequence_forward_banded(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len,
+    float score_fwd = map_to_sequence_forward(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len);
+    float score_fwdB = map_to_sequence_forward_banded(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len,
                                                       tightlow, tighthigh);
-    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, mapping_target, mapping_target_len, NULL);
+    float score_vit = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, NULL);
+    printf("vit = %f fwd = %f fwdB = %f\n", score_vit, score_fwd, score_fwdB);
     CU_ASSERT_DOUBLE_EQUAL(score_fwdB, score_vit, 1e-3);
     CU_ASSERT_TRUE(score_fwd > score_fwdB);
 
@@ -330,6 +353,10 @@ static test_with_description tests[] = {
     {"Test mapping -- Viterbi with relaxed band3 equals Viterbi", test_relaxed_band3_viterbi_map_to_sequence},
     {"Test mapping -- Viterbi with relaxed band4 equals Viterbi", test_relaxed_band4_viterbi_map_to_sequence},
     {"Test mapping -- Viterbi with relaxed band5 equals Viterbi", test_relaxed_band5_viterbi_map_to_sequence},
+    {"Test mapping -- Viterbi with relaxed band2 equals Viterbi, local pen", test_relaxed_band2_with_local_viterbi_map_to_sequence},
+    {"Test mapping -- Viterbi with relaxed band3 equals Viterbi, local pen", test_relaxed_band3_with_local_viterbi_map_to_sequence},
+    {"Test mapping -- Viterbi with relaxed band4 equals Viterbi, local pen", test_relaxed_band4_with_local_viterbi_map_to_sequence},
+    {"Test mapping -- Viterbi with relaxed band5 equals Viterbi, local pen", test_relaxed_band5_with_local_viterbi_map_to_sequence},
     {0}};
 
 /**   Register tests with CUnit

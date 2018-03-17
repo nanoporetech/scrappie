@@ -35,15 +35,15 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
 
 
 bool are_bounds_sane(int const * low, int const * high, size_t nblock, size_t seqlen);
-float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen,
-                              float skip_pen, int const *seq, size_t seqlen, int * path);
-float map_to_sequence_forward(const_scrappie_matrix logpost, float stay_pen,
-                              float skip_pen, int const *seq, size_t seqlen);
-float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_pen,
-                                     float skip_pen, int const *seq, size_t seqlen,
+float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                              float local_pen, int const *seq, size_t seqlen, int * path);
+float map_to_sequence_forward(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                              float local_pen, int const *seq, size_t seqlen);
+float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                                     float local_pen, int const *seq, size_t seqlen,
                                      int const * poslow, int const * poshigh);
-float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_pen,
-                                     float skip_pen, int const *seq, size_t seqlen,
+float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                                     float local_pen, int const *seq, size_t seqlen,
                                      int const * poslow, int const * poshigh);
 
 

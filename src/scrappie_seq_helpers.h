@@ -5,6 +5,6 @@
 #include <stdbool.h>
 
 int base_to_int(char c, bool allow_lower);
-int * encode_bases_to_integers(char const * seq, size_t n);
+int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len);
 
 #endif /* SCRAPPIE_SEQ_HELPERS */
