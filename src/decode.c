@@ -1320,10 +1320,10 @@ float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, flo
         }
 
         // Move directly from start to end without mapping
-        if(pscore[START_STATE] - local_pen > cscore[END_STATE]){
+        /*if(pscore[START_STATE] - local_pen > cscore[END_STATE]){
             cscore[END_STATE] = pscore[START_STATE] - local_pen;
             traceback->data.f[toffset + END_STATE] = START_STATE;
-        }
+        }*/
         // Move from start into sequence
         if(pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]] > cscore[0]){
             cscore[0] = pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]];
@@ -1436,7 +1436,7 @@ float map_to_sequence_forward(const_scrappie_matrix logpost, float stay_pen, flo
         }
 
         // Move directly from start to end without mapping
-        cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        //cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
         // Move from start into sequence
         cscore[0] = logsumexpf(cscore[0], pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]]);
         // Move from sequence into end
@@ -1642,7 +1642,7 @@ float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_p
         }
 
         // Move directly from start to end without mapping -- always allow
-        cscore[END_STATE] = fmaxf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        //cscore[END_STATE] = fmaxf(cscore[END_STATE], pscore[START_STATE] - local_pen);
         // Move from start into sequence -- only allowed if lower bound is zero
         if(0 == poslow[blk]){
             cscore[0] = fmaxf(cscore[0], pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]]);
@@ -1780,7 +1780,7 @@ float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_p
         }
 
         // Move directly from start to end without mapping -- always allow
-        cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        //cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
         // Move from start into sequence -- only allowed if lower bound is zero
         if(0 == poslow[blk]){
             cscore[0] = logsumexpf(cscore[0], pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]]);
