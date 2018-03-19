@@ -1226,3 +1226,574 @@ clean:
 
     return final_score;
 }
+
+
+
+/**  Viterbi score of sequence
+ *
+ *   Local-global mapping through sequence calculating scores of best path from basecall posterior
+ *
+ *   Internal states are seq0 ... seq, start, end
+ *
+ *   @param logpost   Log posterior probability of state at each block.  Stay is last state.
+ *   @param stay_pen  Penalty for staying
+ *   @param skip_pen  Penalty for skipping
+ *   @param local_pen Penalty for local mapping (stay in start or ends state)
+ *   @param seq       Sequence encoded into same history states as basecalls
+ *   @param seqlen    Length of seq
+ *   @param path      Viterbi path [out].  If NULL, no path is returned
+ *
+ *   @returns score
+ **/
+float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                              float local_pen, int const *seq, size_t seqlen, int *path){
+    float logscore = NAN;
+    RETURN_NULL_IF(NULL == logpost, logscore);
+    RETURN_NULL_IF(NULL == seq, logscore);
+
+    const size_t nblock = logpost->nc;
+    const size_t nst = logpost->nr;
+    const size_t STAY = nst - 1;
+
+    const size_t nseqstate = seqlen + 2;
+    const size_t START_STATE = seqlen;
+    const size_t END_STATE = seqlen + 1;
+
+    // Memory.
+    float * cscore = calloc(nseqstate, sizeof(float));
+    float * pscore = calloc(nseqstate, sizeof(float));
+    scrappie_imatrix traceback = make_scrappie_imatrix(nseqstate, nblock);
+    if(NULL == cscore || NULL == pscore){
+        free(pscore);
+        free(cscore);
+        return logscore;
+    }
+
+
+    //  Initialise
+    for(size_t pos=0 ; pos < nseqstate ; pos++){
+        cscore[pos] = -BIG_FLOAT;
+    }
+    cscore[START_STATE] = 0.0;
+
+    // Forwards Viterbi
+    for(size_t blk=0 ; blk < nblock ; blk++){
+        const size_t lpoffset = blk * logpost->stride;
+        const size_t toffset = blk * traceback->stride;
+        {   // Swap vectors
+            float * tmp = pscore;
+            pscore = cscore;
+            cscore = tmp;
+        }
+
+        // Stay in start state (local penalty or stay)
+        cscore[START_STATE] = pscore[START_STATE] + fmaxf(-local_pen, logpost->data.f[lpoffset + STAY]);
+        traceback->data.f[toffset + START_STATE] = START_STATE;
+        // Stay in end state (local penalty or stay)
+        cscore[END_STATE] = pscore[END_STATE] + fmaxf(-local_pen, logpost->data.f[lpoffset + STAY]);
+        traceback->data.f[toffset + END_STATE] = END_STATE;
+
+        for(size_t pos=0 ; pos < seqlen ; pos++){
+            //  Stay in ordinary state
+            cscore[pos] = pscore[pos] - stay_pen + logpost->data.f[lpoffset + STAY];
+            traceback->data.f[toffset + pos] = pos;
+        }
+
+        for(size_t pos=1 ; pos < seqlen ; pos++){
+            //  Step
+            const size_t newstate = seq[pos];
+            const float step_score = pscore[pos - 1] + logpost->data.f[lpoffset + newstate];
+            if(step_score > cscore[pos]){
+                cscore[pos] = step_score;
+                traceback->data.f[toffset + pos] = pos - 1;
+            }
+        }
+
+        for(size_t pos=2 ; pos < seqlen ; pos++){
+            //  Skip
+            const size_t newstate = seq[pos];
+            const float skip_score = pscore[pos - 2] + skip_pen + logpost->data.f[lpoffset + newstate];
+            if(skip_score > cscore[pos]){
+                cscore[pos] = skip_score;
+                traceback->data.f[toffset + pos] = pos - 2;
+            }
+        }
+
+        // Move directly from start to end without mapping
+        /*if(pscore[START_STATE] - local_pen > cscore[END_STATE]){
+            cscore[END_STATE] = pscore[START_STATE] - local_pen;
+            traceback->data.f[toffset + END_STATE] = START_STATE;
+        }*/
+        // Move from start into sequence
+        if(pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]] > cscore[0]){
+            cscore[0] = pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]];
+            traceback->data.f[toffset + 0] = START_STATE;
+        }
+        // Move from sequence into end
+        if(pscore[seqlen - 1] - local_pen > cscore[END_STATE]){
+            cscore[END_STATE] = pscore[seqlen - 1] - local_pen;
+            traceback->data.f[toffset + END_STATE] = seqlen - 1;
+        }
+    }
+
+    logscore = fmaxf(cscore[seqlen - 1], cscore[END_STATE]);
+    if(NULL != path){
+        path[nblock - 1] = (cscore[seqlen-1] > cscore[END_STATE]) ? (seqlen - 1) : END_STATE;
+        for(size_t blk=nblock - 1; blk > 0 ; blk--){
+            const size_t toffset = blk * traceback->stride;
+            path[blk - 1] = traceback->data.f[toffset + path[blk]];
+        }
+        for(size_t blk=0 ; blk < nblock ; blk++){
+            if(START_STATE == path[blk] || END_STATE == path[blk]){
+                path[blk] = -1;
+            }
+        }
+    }
+
+    traceback = free_scrappie_imatrix(traceback);
+    free(pscore);
+    free(cscore);
+
+    return logscore;
+}
+
+
+/**  Forward  score of sequence
+ *
+ *   Local-Global mapping through sequence calculating sum of scores over all paths from basecall posterior
+ *
+ *   @param logpost   Log posterior probability of state at each block.  Stay is last state.
+ *   @param stay_pen  Penalty for staying
+ *   @param skip_pen  Penalty for skipping
+ *   @param local_pen Penalty for local mapping (stay in start or ends state)
+ *   @param seq       Sequence encoded into same history states as basecalls
+ *   @param seqlen    Length of seq
+ *
+ *   @returns score
+ **/
+float map_to_sequence_forward(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
+                              float local_pen, int const *seq, size_t seqlen){
+    float logscore = NAN;
+    RETURN_NULL_IF(NULL == logpost, logscore);
+    RETURN_NULL_IF(NULL == seq, logscore);
+
+    const size_t nblock = logpost->nc;
+    const size_t nst = logpost->nr;
+    const size_t STAY = nst - 1;
+
+    const size_t nseqstate = seqlen + 2;
+    const size_t START_STATE = seqlen;
+    const size_t END_STATE = seqlen + 1;
+
+    // Memory.
+    float * cscore = calloc(nseqstate, sizeof(float));
+    float * pscore = calloc(nseqstate, sizeof(float));
+    if(NULL == cscore || NULL == pscore){
+        free(pscore);
+        free(cscore);
+        return logscore;
+    }
+
+
+    //  Initialise
+    for(size_t pos=0 ; pos < nseqstate ; pos++){
+        cscore[pos] = -BIG_FLOAT;
+    }
+    cscore[START_STATE] = 0.0;
+
+    // Forwards pass
+    for(size_t blk=0 ; blk < nblock ; blk++){
+        const size_t lpoffset = blk * logpost->stride;
+        {   // Swap vectors
+            float * tmp = pscore;
+            pscore = cscore;
+            cscore = tmp;
+        }
+
+        // Stay in start state (local penalty or stay)
+        cscore[START_STATE] = pscore[START_STATE] + logsumexpf(-local_pen, logpost->data.f[lpoffset + STAY]);
+        // Stay in end state (local penalty or stay)
+        cscore[END_STATE] = pscore[END_STATE] + logsumexpf(-local_pen, logpost->data.f[lpoffset + STAY]);
+
+        for(size_t pos=0 ; pos < seqlen ; pos++){
+            //  Stay
+            cscore[pos] = pscore[pos] - stay_pen + logpost->data.f[lpoffset + STAY];
+        }
+
+        for(size_t pos=1 ; pos < seqlen ; pos++){
+            //  Step
+            const size_t newstate = seq[pos];
+            const float step_score = pscore[pos - 1] + logpost->data.f[lpoffset + newstate];
+            cscore[pos] = logsumexpf(cscore[pos], step_score);
+        }
+
+
+        for(size_t pos=2 ; pos < seqlen ; pos++){
+            //  skip
+            const size_t newstate = seq[pos];
+            const float skip_score = pscore[pos - 2] - skip_pen + logpost->data.f[lpoffset + newstate];
+            cscore[pos] = logsumexpf(cscore[pos], skip_score);
+        }
+
+        // Move directly from start to end without mapping
+        //cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        // Move from start into sequence
+        cscore[0] = logsumexpf(cscore[0], pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]]);
+        // Move from sequence into end
+        cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[seqlen - 1] - local_pen);
+    }
+
+    logscore = logsumexpf(cscore[seqlen - 1], cscore[END_STATE]);
+
+
+    free(pscore);
+    free(cscore);
+
+    return logscore;
+}
+
+
+/**  Check if sequences of lower and upper bounds are consistent
+ *
+ *   @param low     Array of lower bounds
+ *   @param high    Array of upper bounds
+ *   @param nblock  Number of blocks (bounds)
+ *   @param seqlen  Length of sequence (maximum upper bound)
+ *
+ *   @returns bool
+ **/
+bool are_bounds_sane(int const * low, int const * high, size_t nblock, size_t seqlen){
+    bool ret = true;
+
+    if(NULL == low || NULL == high){
+        warnx("One or more bounds are NULL\n");
+        // Early return since further tests make no sense
+        return false;
+    }
+
+    if(low[0] != 0){
+        warnx("First bound must include 0 (got %d)\n", low[0]);
+        ret = false;
+    }
+    if(high[nblock - 1] != seqlen){
+        warnx("Last bound must equal seqlen %zu (got %d)\n", seqlen, high[nblock - 1]);
+        ret = false;
+    }
+    for(size_t i=0 ; i < nblock ; i++){
+        if(low[i] < 0){
+            warnx("Low bound for block %zu less than zero (got %d)\n", i, low[i]);
+            ret = false;
+        }
+        if(high[i] < 0){
+            warnx("high bound for block %zu less than zero (got %d)\n", i, high[i]);
+            ret = false;
+        }
+        if(low[i] > seqlen){
+            warnx("Low bound for block %zu exceeds length of sequence (got %d but seqlen is %zu)\n", i, low[i], seqlen);
+            ret = false;
+        }
+        if(high[i] > seqlen){
+            warnx("High bound for block %zu exceeds length of sequence (got %d but seqlen is %zu)\n", i, high[i], seqlen);
+            ret = false;
+        }
+        if(low[i] > high[i]){
+            warnx("Low bound for block %zu exceeds high bound [%d , %d).\n", i, low[i], high[i]);
+            ret = false;
+        }
+    }
+    for(size_t i=1 ; i < nblock ; i++){
+        if(low[i] > high[i - 1]){
+            // Allow case where step but not stay is possible (low[i] == high[i-1])
+            warnx("Blocks %zu and %zu don't overlap [%d , %d) -> [%d , %d)\n",
+                  i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
+            ret = false;
+        }
+        if(low[i] < low[i - 1]){
+            warnx("Low bounds for blocks %zu and %zu aren't monotonic [%d , %d) -> [%d , %d)\n",
+                  i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
+            ret = false;
+        }
+        if(high[i] < high[i - 1]){
+            warnx("High bounds for blocks %zu and %zu aren't monotonic [%d , %d) -> [%d , %d)\n",
+                  i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
+            ret = false;
+        }
+    }
+
+    return ret;
+}
+
+
+/**  Viterbi score of sequence, banded
+ *
+ *   Local-Global mapping through sequence calculating scores of best path from basecall posterior (banded)
+ *
+ *   @param logpost   Log posterior probability of state at each block.  Stay is last state.
+ *   @param stay_pen  Penalty for staying
+ *   @param skip_pen  Penalty for skipping
+ *   @param local_pen Penalty for local mapping (stay in start or ends state)
+ *   @param seq       Sequence encoded into same history states as basecalls
+ *   @param seqlen    Length of seq
+ *   @param poslow, poshigh  Arrays of lowest and highest coordinate for each block. Low inclusive, high exclusive
+ *
+ *   @returns score
+ **/
+float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen,
+                                     int const *seq, size_t seqlen, int const * poslow, int const * poshigh){
+    float logscore = NAN;
+    RETURN_NULL_IF(NULL == logpost, logscore);
+    RETURN_NULL_IF(NULL == seq, logscore);
+    RETURN_NULL_IF(NULL == poslow, logscore);
+    RETURN_NULL_IF(NULL == poshigh, logscore);
+
+    const size_t nblock = logpost->nc;
+    const size_t nst = logpost->nr;
+    const size_t STAY = nst - 1;
+
+    const size_t nseqstate = seqlen + 2;
+    const size_t START_STATE = seqlen;
+    const size_t END_STATE = seqlen + 1;
+
+
+    // Verify assumptions about bounds
+    RETURN_NULL_IF(!are_bounds_sane(poslow, poshigh, nblock, seqlen), logscore);
+
+    // Memeory. First state is stay in previous position
+    float * cscore = calloc(nseqstate, sizeof(float));
+    float * pscore = calloc(nseqstate, sizeof(float));
+    if(NULL == cscore || NULL == pscore){
+        free(pscore);
+        free(cscore);
+        return logscore;
+    }
+
+
+    //  Initialise
+    for(size_t pos=0 ; pos < nseqstate ; pos++){
+        pscore[pos] = -BIG_FLOAT;
+        cscore[pos] = -BIG_FLOAT;
+    }
+    pscore[START_STATE] = 0.0;
+
+    // Forwards Viterbi
+    {  // First block
+        // Stay in start state (local penalty or stay)
+        cscore[START_STATE] = pscore[START_STATE] + fmaxf(-local_pen, logpost->data.f[STAY]);
+        // Stay in end state (local penalty or stay)
+        cscore[END_STATE] = pscore[END_STATE] + fmaxf(-local_pen, logpost->data.f[STAY]);
+
+        cscore[0] = fmaxf(cscore[0], pscore[0] + logpost->data.f[STAY] - stay_pen);
+        if(poshigh[0] > 0){
+            // Step
+            const size_t stepto = seq[1];
+            const float step_score = logpost->data.f[stepto];
+            cscore[1] = step_score;
+        }
+        if(poshigh[0] > 1){
+            // Skip
+            const size_t stepto = seq[2];
+            const float skip_score = logpost->data.f[stepto] - skip_pen;
+            cscore[2] = skip_score;
+        }
+        // Move directly from start to end without mapping -- always allow
+        cscore[END_STATE] = fmaxf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        // Move from start into sequence -- lower bound for first block must be zero
+        cscore[0] = fmaxf(cscore[0], pscore[START_STATE] + logpost->data.f[seq[0]]);
+        // Move from sequence into end
+        cscore[END_STATE] = fmaxf(cscore[END_STATE], pscore[seqlen - 1] - local_pen);
+    }
+
+    for(size_t blk=1 ; blk < nblock ; blk++){
+        const size_t lpoffset = blk * logpost->stride;
+        {   // Swap vectors
+            float * tmp = pscore;
+            pscore = cscore;
+            cscore = tmp;
+        }
+
+        // Stay in start state (local penalty or stay)
+        cscore[START_STATE] = pscore[START_STATE] + fmaxf(-local_pen, logpost->data.f[lpoffset + STAY]);
+        // Stay in end state (local penalty or stay)
+        cscore[END_STATE] = pscore[END_STATE] + fmaxf(-local_pen, logpost->data.f[lpoffset + STAY]);
+
+
+        for(size_t pos=poslow[blk] ; pos < poshigh[blk - 1] ; pos++){
+            //  Stay
+            cscore[pos] = pscore[pos] - stay_pen + logpost->data.f[lpoffset + STAY];
+        }
+
+        const int min_step_idx = imax(poslow[blk], poslow[blk - 1] + 1);
+        const int max_step_idx = imin(poshigh[blk], poshigh[blk - 1] + 1);
+        for(size_t pos=min_step_idx ; pos < max_step_idx ; pos++){
+            // step -- pos is position going _to_
+            const size_t stepto = seq[pos];
+            const float step_score = pscore[pos - 1] + logpost->data.f[lpoffset + stepto];
+            cscore[pos] = fmaxf(step_score, cscore[pos]);
+        }
+
+        const int min_skip_idx = imax(poslow[blk], poslow[blk - 1] + 2);
+        const int max_skip_idx = imin(poshigh[blk], poshigh[blk - 1] + 2);
+        for(size_t pos=min_skip_idx ; pos < max_skip_idx ; pos++){
+            // skip -- pos is position going _to_
+            const size_t skipto = seq[pos];
+            const float skip_score = pscore[pos - 2] - skip_pen
+                                   + logpost->data.f[lpoffset + skipto];
+            cscore[pos] = fmaxf(skip_score, cscore[pos]);
+        }
+
+        // Move directly from start to end without mapping -- always allow
+        //cscore[END_STATE] = fmaxf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        // Move from start into sequence -- only allowed if lower bound is zero
+        if(0 == poslow[blk]){
+            cscore[0] = fmaxf(cscore[0], pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]]);
+        }
+        // Move from sequence into end
+        cscore[END_STATE] = fmaxf(cscore[END_STATE], pscore[seqlen - 1] - local_pen);
+    }
+
+
+    logscore = fmax(cscore[seqlen - 1], cscore[END_STATE]);
+
+    free(pscore);
+    free(cscore);
+
+    return logscore;
+}
+
+
+/**  Forward score of sequence, banded
+ *
+ *   Local-Global mapping through sequence calculating scores of best path from basecall posterior (banded)
+ *
+ *   @param logpost   Log posterior probability of state at each block.  Stay is last state.
+ *   @param stay_pen  Penalty for staying
+ *   @param skip_pen  Penalty for skipping
+ *   @param local_pen Penalty for local mapping (stay in start or ends state)
+ *   @param seq       Sequence encoded into same history states as basecalls
+ *   @param seqlen    Length of seq
+ *   @param poslow, poshigh  Arrays of lowest and highest coordinate for each block. Low inclusive, high exclusive
+ *
+ *
+ *   @returns score
+ **/
+float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen,
+                                     int const *seq, size_t seqlen, int const * poslow, int const * poshigh){
+    float logscore = NAN;
+    RETURN_NULL_IF(NULL == logpost, logscore);
+    RETURN_NULL_IF(NULL == seq, logscore);
+    RETURN_NULL_IF(NULL == poslow, logscore);
+    RETURN_NULL_IF(NULL == poshigh, logscore);
+
+    const size_t nblock = logpost->nc;
+    const size_t nst = logpost->nr;
+    const size_t STAY = nst - 1;
+
+    const size_t nseqstate = seqlen + 2;
+    const size_t START_STATE = seqlen;
+    const size_t END_STATE = seqlen + 1;
+
+
+    // Verify assumptions about bounds
+    RETURN_NULL_IF(!are_bounds_sane(poslow, poshigh, nblock, seqlen), logscore);
+
+    // Memory. First state is stay in previous position
+    float * cscore = calloc(nseqstate, sizeof(float));
+    float * pscore = calloc(nseqstate, sizeof(float));
+    if(NULL == cscore || NULL == pscore){
+        free(pscore);
+        free(cscore);
+        return logscore;
+    }
+
+
+    //  Initialise
+    for(size_t pos=0 ; pos < nseqstate ; pos++){
+        pscore[pos] = -BIG_FLOAT;
+        cscore[pos] = -BIG_FLOAT;
+    }
+    pscore[START_STATE] = 0.0f;
+
+    // Forwards pass
+    {  // First block
+        // Stay in start state (local penalty or stay)
+        cscore[START_STATE] = pscore[START_STATE] + logsumexpf(-local_pen, logpost->data.f[STAY]);
+        // Stay in end state (local penalty or stay)
+        cscore[END_STATE] = pscore[END_STATE] + logsumexpf(-local_pen, logpost->data.f[STAY]);
+
+        cscore[0] = logsumexpf(cscore[0], pscore[0] + logpost->data.f[STAY] - stay_pen);
+        if(poshigh[0] > 0){
+            // Step
+            const size_t stepto = seq[1];
+            const float step_score = logpost->data.f[stepto];
+            cscore[1] = step_score;
+        }
+        if(poshigh[0] > 1){
+            // Skip
+            const size_t stepto = seq[2];
+            const float skip_score = logpost->data.f[stepto] - skip_pen;
+            cscore[2] = skip_score;
+        }
+        // Move directly from start to end without mapping -- always allow
+        cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        // Move from start into sequence -- lower bound for first block must be zero
+        cscore[0] = logsumexpf(cscore[0], pscore[START_STATE] + logpost->data.f[seq[0]]);
+        // Move from sequence into end
+        cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[seqlen - 1] - local_pen);
+    }
+
+    for(size_t blk=1 ; blk < nblock ; blk++){
+        const size_t lpoffset = blk * logpost->stride;
+        {   // Swap vectors
+            float * tmp = pscore;
+            pscore = cscore;
+            cscore = tmp;
+        }
+
+        // Stay in start state (local penalty or stay)
+        cscore[START_STATE] = pscore[START_STATE] + logsumexpf(-local_pen, logpost->data.f[lpoffset + STAY]);
+        // Stay in end state (local penalty or stay)
+        cscore[END_STATE] = pscore[END_STATE] + logsumexpf(-local_pen, logpost->data.f[lpoffset + STAY]);
+
+
+        for(size_t pos=poslow[blk] ; pos < poshigh[blk - 1] ; pos++){
+            //  Stay
+            cscore[pos] = pscore[pos] - stay_pen + logpost->data.f[lpoffset + STAY];
+        }
+
+        const int min_step_idx = imax(poslow[blk], poslow[blk - 1] + 1);
+        const int max_step_idx = imin(poshigh[blk], poshigh[blk - 1] + 1);
+        for(size_t pos=min_step_idx ; pos < max_step_idx ; pos++){
+            // step -- pos is position going _to_
+            const size_t stepto = seq[pos];
+            const float step_score = pscore[pos - 1] + logpost->data.f[lpoffset + stepto];
+            cscore[pos] = logsumexpf(step_score, cscore[pos]);
+        }
+
+        const int min_skip_idx = imax(poslow[blk], poslow[blk - 1] + 2);
+        const int max_skip_idx = imin(poshigh[blk], poshigh[blk - 1] + 2);
+        for(size_t pos=min_skip_idx ; pos < max_skip_idx ; pos++){
+            // skip -- pos is position going _to_
+            const size_t skipto = seq[pos];
+            const float skip_score = pscore[pos - 2] - skip_pen
+                                   + logpost->data.f[lpoffset + skipto];
+            cscore[pos] = logsumexpf(skip_score, cscore[pos]);
+        }
+
+        // Move directly from start to end without mapping -- always allow
+        //cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[START_STATE] - local_pen);
+        // Move from start into sequence -- only allowed if lower bound is zero
+        if(0 == poslow[blk]){
+            cscore[0] = logsumexpf(cscore[0], pscore[START_STATE] + logpost->data.f[lpoffset + seq[0]]);
+        }
+        // Move from sequence into end
+        cscore[END_STATE] = logsumexpf(cscore[END_STATE], pscore[seqlen - 1] - local_pen);
+    }
+
+
+    logscore = logsumexpf(cscore[seqlen - 1], cscore[END_STATE]);
+
+    free(pscore);
+    free(cscore);
+
+    return logscore;
+}

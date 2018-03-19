@@ -251,6 +251,14 @@ static inline int ifloor(int x, int y) {
     return x / y;
 }
 
+static inline int imin(int x, int y){
+    return (x < y) ? x : y;
+}
+
+static inline int imax(int x, int y){
+    return (x > y) ? x : y;
+}
+
 void quantilef(const float *x, size_t nx, float *p, size_t np);
 float medianf(const float *x, size_t n);
 float madf(const float *x, size_t n, const float *med);

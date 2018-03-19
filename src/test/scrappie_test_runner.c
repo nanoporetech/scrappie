@@ -3,6 +3,7 @@
 #include <CUnit/Basic.h>
 
 int register_scrappie_util(void);
+int register_test_map_to_sequence(void);
 int register_test_skeleton(void);
 int register_test_convolution(void);
 int register_test_decoding(void);
@@ -20,6 +21,7 @@ int (*test_suites[]) (void) = {
     register_test_decoding,
     register_test_elu,
     register_test_eventdetection,
+    register_test_map_to_sequence,
     register_test_matrix,
     register_test_signal,
     register_test_squiggle,

@@ -23,15 +23,16 @@ KSEQ_INIT(int, read)
 
 extern const char *argp_program_version;
 extern const char *argp_program_bug_address;
-static char doc[] = "Scrappie squiggler";
+static char doc[] = "Scrappie seqmappy (local-global)";
 static char args_doc[] = "fasta fast5";
 static struct argp_option options[] = {
-    {"backprob", 'b', "probability", 0, "Probability of backwards movement"},
     {"localpen", 'l', "float", 0, "Penalty for local matching"},
-    {"minscore", 'm', "float", 0, "Minimum possible score for matching emission"},
+    {"min_prob", 'm', "probability", 0, "Minimum bound on probability of match"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of read"},
-    {"segmentation", 's', "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
+    {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
+    {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
+    {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
@@ -45,9 +46,10 @@ typedef struct {
 } scrappie_seq_t;
 
 struct arguments {
-    float backprob;
-    float localpen;
-    float minscore;
+    float local_pen;
+    float min_prob;
+    float skip_pen;
+    float stay_pen;
     FILE * output;
     char * prefix;
     int trim_start;
@@ -60,9 +62,10 @@ struct arguments {
 };
 
 static struct arguments args = {
-    .backprob = 0.0f,
-    .localpen = 2.0f,
-    .minscore = 5.0f,
+    .local_pen = 4.0f,
+    .min_prob = 1e-5f,
+    .stay_pen = 0.0f,
+    .skip_pen = 0.0f,
     .output = NULL,
     .prefix = "",
     .trim_start = 200,
@@ -78,17 +81,11 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     switch (key) {
         int ret = 0;
         char * next_tok = NULL;
-    case 'b':
-        args.backprob = atof(arg);
-        if(args.backprob < 0.0 && args.backprob >= 1.0){
-            errx(EXIT_FAILURE, "Backwards probability must be in [0, 1). Got %f", args.backprob);
-        }
-        break;
     case 'l':
-        args.localpen = atof(arg);
+        args.local_pen = atof(arg);
         break;
     case 'm':
-        args.minscore = atof(arg);
+        args.min_prob = atof(arg);
         break;
     case 'o':
         args.output = fopen(arg, "w");
@@ -100,14 +97,8 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         args.prefix = arg;
         break;
     case 's':
-        args.varseg_chunk = atoi(strtok(arg, ":"));
-        next_tok = strtok(NULL, ":");
-        if(NULL == next_tok){
-            errx(EXIT_FAILURE, "--segmentation should be of form chunk:percentile");
-        }
-        args.varseg_thresh = atof(next_tok) / 100.0;
-        assert(args.varseg_chunk >= 0);
-        assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
+        args.skip_pen = atof(arg);
+        assert(isfinite(args.skip_pen));
         break;
     case 't':
         args.trim_start = atoi(strtok(arg, ":"));
@@ -119,6 +110,20 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         }
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
+        break;
+    case 'y':
+        args.stay_pen = atof(arg);
+        assert(isfinite(args.stay_pen));
+        break;
+    case 3:
+        args.varseg_chunk = atoi(strtok(arg, ":"));
+        next_tok = strtok(NULL, ":");
+        if(NULL == next_tok){
+            errx(EXIT_FAILURE, "--segmentation should be of form chunk:percentile");
+        }
+        args.varseg_thresh = atof(next_tok) / 100.0;
+        assert(args.varseg_chunk >= 0);
+        assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
         break;
     case 10:
     case 11:
@@ -146,37 +151,6 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 }
 
 static struct argp argp = { options, parse_arg, args_doc, doc };
-
-
-static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale){
-    RETURN_NULL_IF(NULL == base_seq, NULL);
-
-    int * sequence = encode_bases_to_integers(base_seq, n, 1);
-    RETURN_NULL_IF(NULL == sequence, NULL);
-
-    scrappie_matrix squiggle = dna_squiggle(sequence, n, rescale);
-    free(sequence);
-
-    return squiggle;
-}
-
-/**  Map signal to a predicted squiggle
- *
- *
- *   @returns array
- **/
-static int * map_signal_to_squiggle(const raw_table signal, const_scrappie_matrix squiggle,
-                                    float backprob, float localpen, float minscore){
-    RETURN_NULL_IF(NULL == signal.raw, NULL);
-    RETURN_NULL_IF(NULL == squiggle, NULL);
-
-    int32_t * path = calloc(signal.n, sizeof(int32_t));
-    RETURN_NULL_IF(NULL == path, NULL);
-
-    (void)squiggle_match_viterbi(signal, squiggle, backprob, localpen, minscore, path);
-
-    return path;
-}
 
 
 static scrappie_seq_t read_sequence_from_fasta(char const * filename){
@@ -207,7 +181,8 @@ static scrappie_seq_t read_sequence_from_fasta(char const * filename){
     return seq;
 }
 
-int main_mappy(int argc, char *argv[]) {
+
+int main_seqmappy(int argc, char *argv[]) {
     argp_parse(&argp, argc, argv, 0, 0, NULL);
     if(NULL == args.output){
         args.output = stdout;
@@ -221,6 +196,10 @@ int main_mappy(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    const size_t state_len = 5;
+    int * states = encode_bases_to_integers(seq.seq, seq.n, state_len);
+    const size_t nstate = seq.n - state_len + 1;
+
     //  Read raw signal and normalise
     raw_table rt = read_raw(args.fast5_file, true);
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
@@ -231,31 +210,30 @@ int main_mappy(int argc, char *argv[]) {
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
 
+    scrappie_matrix logpost = nanonet_rgrgr_r94_posterior(rt, args.min_prob, true);
+    if(NULL == logpost){
+        warnx("Failed to calculate posterior for \"%s\" ", args.fasta_file);
+        return EXIT_SUCCESS;
+    }
 
-    scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false);
-	if(NULL != squiggle){
-        int * path = map_signal_to_squiggle(rt, squiggle, args.backprob, args.localpen, args.minscore);
-        if(NULL != path){
-            fprintf(args.output, "# %s to %s\n", args.fast5_file, args.fasta_file);
-            fprintf(args.output, "sample\tpos\tbase\tcurrent\tsd\tdwell\n");
-            for(size_t i=0 ; i < rt.n ; i++){
-                const int32_t pos = path[i];
-                if(pos >= 0){
-                    const size_t offset = pos * squiggle->stride;
-                    fprintf(args.output, "%zu\t%d\t%c\t%3.6f\t%3.6f\t%3.6f\n", i, pos, seq.seq[pos],
-                            squiggle->data.f[offset + 0],
-                            expf(squiggle->data.f[offset + 1]),
-                            expf(-squiggle->data.f[offset + 2]));
-                } else {
-                    fprintf(args.output, "%zu\t%d\tN\tNaN\tNaN\tNaN\n", i, pos);
-                }
-            }
-            free(path);
+    const size_t nblock = logpost->nc;
+    int * path = calloc(nblock, sizeof(int));
+    if(NULL != path){
+        float score = map_to_sequence_viterbi(logpost, args.stay_pen, args.skip_pen, args.local_pen, states, nstate, path);
+
+        fprintf(args.output, "# %s to %s -- score %f over %zu blocks (%f per block)\n", args.fast5_file, args.fasta_file, -score, nblock, -score / nblock);
+        fprintf(args.output, "block\tpos\n");
+        for(size_t i=0 ; i < nblock ; i++){
+            const int32_t pos = path[i];
+            fprintf(args.output, "%zu\t%d\n", i, pos);
         }
-		squiggle = free_scrappie_matrix(squiggle);
-	}
+
+        free(path);
+    }
 
 
+    free(states);
+    logpost = free_scrappie_matrix(logpost);
     free(seq.seq);
     free(seq.name);
 

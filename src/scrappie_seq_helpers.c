@@ -4,6 +4,8 @@
 
 #include "scrappie_seq_helpers.h"
 
+static int nbase = 4;
+
 /**  Converts a nucleotide base into integer
  *
  *   Input may be uppercase or (optionally) lowercase.  Ambiguous
@@ -42,16 +44,24 @@ int base_to_int(char base, bool allow_lower){
  *   @returns Array [n] containing encoding of sequence or NULL if an
  *   invalid base was encountered
  **/
-int * encode_bases_to_integers(char const * seq, size_t n){
-    int * iseq = calloc(n, sizeof(int));
-    for(size_t i=0 ; i < n ; i++){
-        int ib = base_to_int(seq[i], true);
-        iseq[i] = ib;
-        if(-1 == ib){
-            free(iseq);
-            iseq = NULL;
-            break;
+int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len){
+    const size_t nstate = n - state_len + 1;
+
+    int * iseq = calloc(nstate, sizeof(int));
+    for(size_t i=0 ; i < nstate ; i++){
+        int ib = 0;
+        for(size_t j=0 ; j < state_len ; j++){
+            int newbase = base_to_int(seq[i + j], true);
+            if(-1 == newbase){
+                free(iseq);
+                iseq = NULL;
+                break;
+            }
+
+            ib *= nbase;
+            ib += newbase;
         }
+        iseq[i] = ib;
     }
 
     return iseq;

@@ -14,6 +14,7 @@ enum scrappie_mode {SCRAPPIE_MODE_EVENTS = 0,
                     SCRAPPIE_MODE_VERSION,
                     SCRAPPIE_MODE_SQUIGGLE,
                     SCRAPPIE_MODE_MAPPY,
+                    SCRAPPIE_MODE_SEQMAPPY,
                     SCRAPPIE_MODE_INVALID };
 
 enum scrappie_mode get_scrappie_mode(const char *modestr);
@@ -28,6 +29,7 @@ int main_help_short(void);
 int main_licence(int argc, char *argv[]);
 int main_mappy(int argc, char * argv[]);
 int main_raw(int argc, char *argv[]);
+int main_seqmappy(int argc, char * argv[]);
 int main_squiggle(int argc, char * argv[]);
 int main_version(int argc, char *argv[]);
 

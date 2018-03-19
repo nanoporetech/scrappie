@@ -71,7 +71,7 @@ add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/laye
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
-add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_mappy.c src/scrappie_squiggle.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
+add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_mappy.c src/scrappie_seqmappy.c src/scrappie_squiggle.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
 
 if (BUILD_SHARED_LIB)
 	if (APPLE)
@@ -129,7 +129,7 @@ install (TARGETS scrappie scrappie_static RUNTIME DESTINATION bin ARCHIVE DESTIN
 
 
 enable_testing()
-add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_decoding.c src/test/test_scrappie_elu.c src/test/test_scrappie_event_detection.c src/test/test_scrappie_matrix.c src/test/test_scrappie_signal.c src/test/test_scrappie_squiggle.c src/test/test_util.c)
+add_executable(scrappie_unittest src/test/scrappie_test_runner.c src/test/test_map_to_sequence.c src/test/test_scrappie_util.c src/test/scrappie_util.c src/test/test_scrappie_convolution.c src/test/test_skeleton.c src/test/test_scrappie_decoding.c src/test/test_scrappie_elu.c src/test/test_scrappie_event_detection.c src/test/test_scrappie_matrix.c src/test/test_scrappie_signal.c src/test/test_scrappie_squiggle.c src/test/test_util.c)
 target_include_directories(scrappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(scrappie_unittest scrappie_static ${BLAS} ${HDF5} m cunit)
 
@@ -145,6 +145,7 @@ add_test(test_rawrgrgr_r94_call scrappie raw --model rgrgr_r94 ${USE_THREADS} ${
 add_test(test_rawrgrgr_r95_call scrappie raw --model rgrgr_r95 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrnnrf_r94_call scrappie raw --model rnnrf_r94 ${USE_THREADS} ${READSDIR})
 add_test(test_mappy scrappie mappy ${READSDIR}/${TESTREAD}.fa ${READSDIR}/${TESTREAD}.fast5)
+add_test(test_seqmappy scrappie seqmappy ${READSDIR}/${TESTREAD}.fa ${READSDIR}/${TESTREAD}.fast5)
 add_test(test_squiggle scrappie squiggle ${READSDIR}/test_squiggles.fa)
 add_test(test_licence scrappie licence)
 add_test(test_licence scrappie license)
