@@ -1312,7 +1312,7 @@ float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, flo
         for(size_t pos=2 ; pos < seqlen ; pos++){
             //  Skip
             const size_t newstate = seq[pos];
-            const float skip_score = pscore[pos - 2] + skip_pen + logpost->data.f[lpoffset + newstate];
+            const float skip_score = pscore[pos - 2] - skip_pen + logpost->data.f[lpoffset + newstate];
             if(skip_score > cscore[pos]){
                 cscore[pos] = skip_score;
                 traceback->data.f[toffset + pos] = pos - 2;
