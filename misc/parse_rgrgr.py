@@ -61,7 +61,8 @@ if __name__ == '__main__':
 
     with open(args.model, 'rb') as fh:
         network = pickle.load(fh, encoding='latin1')
-    assert network.version == 1, "Sloika model must be version 1.  Perhaps you need to run Sloika's model_upgrade.py"
+    network_major_version = network.version[0] if isinstance(network.version, tuple) else network.version
+    assert network_major_version >= 1, "Sloika model must be version >= 1.  Perhaps you need to run Sloika's model_upgrade.py"
 
     sys.stdout.write("""#pragma once
     #ifndef NANONET_RGRGR_{}MODEL_H
