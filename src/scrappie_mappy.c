@@ -1,13 +1,10 @@
 #include <math.h>
 #include <stdio.h>
-//#include <string.h>
 #include <strings.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #include "decode.h"
 #include "fast5_interface.h"
-#include "kseq.h"
 #include "networks.h"
 #include "scrappie_common.h"
 #include "scrappie_licence.h"
@@ -15,7 +12,6 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-KSEQ_INIT(int, read)
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
@@ -38,11 +34,6 @@ static struct argp_option options[] = {
     {0}
 };
 
-typedef struct {
-    size_t n;
-    char * seq;
-    char * name;
-} scrappie_seq_t;
 
 struct arguments {
     float backprob;
@@ -178,34 +169,6 @@ static int * map_signal_to_squiggle(const raw_table signal, const_scrappie_matri
     return path;
 }
 
-
-static scrappie_seq_t read_sequence_from_fasta(char const * filename){
-    scrappie_seq_t seq = {0, NULL, NULL};
-
-    FILE * fh = fopen(filename, "r");
-    if(NULL == fh){
-        return seq;
-    }
-
-    kseq_t * kseqer = kseq_init(fileno(fh));
-    if(kseq_read(kseqer) >= 0){
-        char * name = calloc(kseqer->name.l + 1, sizeof(char));
-        char * base_seq = calloc(kseqer->seq.l, sizeof(char));
-        if(NULL == base_seq || NULL == name){
-            free(base_seq);
-            free(name);
-        } else {
-            seq.seq = strncpy(base_seq, kseqer->seq.s, kseqer->seq.l);
-            seq.name = strncpy(name, kseqer->name.s, kseqer->name.l);
-            seq.n = kseqer->seq.l;
-        }
-    }
-
-    kseq_destroy(kseqer);
-    fclose(fh);
-
-    return seq;
-}
 
 int main_mappy(int argc, char *argv[]) {
     argp_parse(&argp, argc, argv, 0, 0, NULL);

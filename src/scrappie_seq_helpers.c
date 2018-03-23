@@ -1,10 +1,14 @@
 #include <ctype.h>
 #include <err.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
+#include "kseq.h"
 #include "scrappie_seq_helpers.h"
 
 static int nbase = 4;
+KSEQ_INIT(int, read);
 
 /**  Converts a nucleotide base into integer
  *
@@ -66,3 +70,32 @@ int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len){
 
     return iseq;
 }
+
+scrappie_seq_t read_sequence_from_fasta(char const * filename){
+    scrappie_seq_t seq = {0, NULL, NULL};
+
+    FILE * fh = fopen(filename, "r");
+    if(NULL == fh){
+        return seq;
+    }
+
+    kseq_t * kseqer = kseq_init(fileno(fh));
+    if(kseq_read(kseqer) >= 0){
+        char * name = calloc(kseqer->name.l + 1, sizeof(char));
+        char * base_seq = calloc(kseqer->seq.l, sizeof(char));
+        if(NULL == base_seq || NULL == name){
+            free(base_seq);
+            free(name);
+        } else {
+            seq.seq = strncpy(base_seq, kseqer->seq.s, kseqer->seq.l);
+            seq.name = strncpy(name, kseqer->name.s, kseqer->name.l);
+            seq.n = kseqer->seq.l;
+        }
+    }
+
+    kseq_destroy(kseqer);
+    fclose(fh);
+
+    return seq;
+}
+
