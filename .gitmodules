@@ -1,3 +1,0 @@
-[submodule "data"]
-	path = data
-	url = https://git.oxfordnanolabs.local/algorithm/scrappie_data.git
