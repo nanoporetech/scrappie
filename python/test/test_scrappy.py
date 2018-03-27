@@ -91,6 +91,7 @@ class TestScrappy(unittest.TestCase):
         self.assertEqual(np.median(rt._data[rt.start:rt.end]), 0.0, 'Scaling shifts median to 0.0.')
         # .data(as_numpy=True) should own its data
         new_data = rt.data(as_numpy=True)
+        self.assertIsInstance(new_data, np.ndarray)
         self.assertTrue(new_data.flags.owndata)
 
 
@@ -106,11 +107,13 @@ class TestScrappy(unittest.TestCase):
         rt = scrappy.RawTable(self.one_signal)
         self.assertIsInstance(rt._rt, scrappy.ffi.CData)
         rt.trim().scale()
-        post = scrappy.calc_post(rt.data(), self.model, log=True)
-        self.assertIsInstance(post, scrappy.ffi.CData)
+        self.assertIsInstance(rt, scrappy.RawTable)
+        self.assertIsInstance(rt._rt, scrappy.ffi.CData)
+        post = scrappy.calc_post(rt, self.model, log=True)
+        self.assertIsInstance(post, scrappy.ScrappyMatrix)
 
         # Check matrix is formed sanely
-        sloika_post = scrappy.scrappie_to_numpy(post, sloika=True)
+        sloika_post = scrappy._scrappie_to_numpy(post._data, sloika=True)
         self.assertIsInstance(sloika_post, np.ndarray)
         self.assertEqual(sloika_post.shape[1], self.expected_states)
 
@@ -119,8 +122,6 @@ class TestScrappy(unittest.TestCase):
         self.assertIsInstance(seq, str, 'sequence is str.')
         self.assertIsInstance(score, float, 'score is float.')
         self.assertIsInstance(pos, np.ndarray, 'pos is ndarray.')
-
-        scrappy.free_matrix(post)
 
 
     def test_030_threaded_call(self):
@@ -143,7 +144,7 @@ class TestScrappy(unittest.TestCase):
     def test_045_post_forward_mapping(self):
         rt = scrappy.RawTable(self.one_signal)
         rt.trim().scale()
-        post = scrappy.calc_post(rt.data(), self.model, log=True)
+        post = scrappy.calc_post(rt, self.model, log=True)
 
         t0 = now()
         score_band, _ = scrappy.map_post_to_sequence(
@@ -163,13 +164,11 @@ class TestScrappy(unittest.TestCase):
                 post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
                 viterbi=False, path=True, bands=None)
 
-        scrappy.free_matrix(post)
-
 
     def test_046_post_viterbi_mapping(self):
         rt = scrappy.RawTable(self.one_signal)
         rt.trim().scale()
-        post = scrappy.calc_post(rt.data(), self.model, log=True)
+        post = scrappy.calc_post(rt, self.model, log=True)
 
         t0 = now()
         score_band, _ = scrappy.map_post_to_sequence(
@@ -187,8 +186,6 @@ class TestScrappy(unittest.TestCase):
             post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
             viterbi=True, path=True, bands=100)
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
-
-        scrappy.free_matrix(post)
 
 
     def test_050_model_stride(self):

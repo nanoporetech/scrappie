@@ -100,7 +100,7 @@ ffibuilder.cdef("""
                                        int const * poslow, int const * poshigh);
 
   // Misc
-  int * encode_bases_to_integers(char const * seq, size_t n);
+  int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len);
   int get_raw_model_stride_from_string(const char * modelstr);
 
 """)
