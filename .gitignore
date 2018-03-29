@@ -2,3 +2,12 @@
 *.sw?
 build
 tags
+
+python/.eggs/
+python/dist/
+python/lib/
+python/venv
+python/libscrappy.abi3.so
+python/scrappy.egg-info/
+*.pyc
+__pycache__
