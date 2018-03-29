@@ -1,8 +1,9 @@
 buildDir ?= build
 releaseType ?= Release
 
-.PHONY: all
-all: ${buildDir}/scrappie
+.PHONY: all scrappie
+all: scrappie
+scrappie: ${buildDir}/scrappie
 
 ${buildDir}:
 	mkdir ${buildDir}

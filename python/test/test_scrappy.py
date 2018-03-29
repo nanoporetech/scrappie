@@ -1,9 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
 import functools
+from io import StringIO
 import os
 import shutil
-from io import StringIO
 import subprocess
+from timeit import default_timer as now
 import unittest
 
 import h5py
@@ -65,7 +66,7 @@ class TestScrappy(unittest.TestCase):
         with open(_test_fasta_[chosen_one], 'r') as fh:
             self.one_ref = next(self._parse_fasta(fh))[1]
         print("  finished setUp.")
-        
+
 
     def test_000_same_as_scrappie(self):
         for fname, data in self.signals.items():
@@ -90,6 +91,7 @@ class TestScrappy(unittest.TestCase):
         self.assertEqual(np.median(rt._data[rt.start:rt.end]), 0.0, 'Scaling shifts median to 0.0.')
         # .data(as_numpy=True) should own its data
         new_data = rt.data(as_numpy=True)
+        self.assertIsInstance(new_data, np.ndarray)
         self.assertTrue(new_data.flags.owndata)
 
 
@@ -105,11 +107,13 @@ class TestScrappy(unittest.TestCase):
         rt = scrappy.RawTable(self.one_signal)
         self.assertIsInstance(rt._rt, scrappy.ffi.CData)
         rt.trim().scale()
-        post = scrappy.calc_post(rt.data(), self.model, log=True)
-        self.assertIsInstance(post, scrappy.ffi.CData)
+        self.assertIsInstance(rt, scrappy.RawTable)
+        self.assertIsInstance(rt._rt, scrappy.ffi.CData)
+        post = scrappy.calc_post(rt, self.model, log=True)
+        self.assertIsInstance(post, scrappy.ScrappyMatrix)
 
         # Check matrix is formed sanely
-        sloika_post = scrappy.scrappie_to_numpy(post, sloika=True)
+        sloika_post = scrappy._scrappie_to_numpy(post._data, sloika=True)
         self.assertIsInstance(sloika_post, np.ndarray)
         self.assertEqual(sloika_post.shape[1], self.expected_states)
 
@@ -118,8 +122,6 @@ class TestScrappy(unittest.TestCase):
         self.assertIsInstance(seq, str, 'sequence is str.')
         self.assertIsInstance(score, float, 'score is float.')
         self.assertIsInstance(pos, np.ndarray, 'pos is ndarray.')
-
-        scrappy.free_matrix(post)
 
 
     def test_030_threaded_call(self):
@@ -137,6 +139,53 @@ class TestScrappy(unittest.TestCase):
         self.assertIsInstance(score, float, 'score is float.')
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
         self.assertEqual(len(self.one_signal), len(path), 'Length of path is length of signal.')
+
+
+    def test_045_post_forward_mapping(self):
+        rt = scrappy.RawTable(self.one_signal)
+        rt.trim().scale()
+        post = scrappy.calc_post(rt, self.model, log=True)
+
+        t0 = now()
+        score_band, _ = scrappy.map_post_to_sequence(
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
+            viterbi=False, path=False, bands=100)
+        t1 = now()
+        score_no_band, _ = scrappy.map_post_to_sequence(
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
+            viterbi=False, path=False, bands=None)
+        t2 = now()
+        self.assertIsInstance(score_no_band, float, 'score is float.')
+        self.assertLess(t1 - t0, t2 - t0, 'banded mapping is faster.')
+
+        with self.assertRaises(ValueError):
+            # can't calculate path with Forward
+            score_no_band = scrappy.map_post_to_sequence(
+                post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
+                viterbi=False, path=True, bands=None)
+
+
+    def test_046_post_viterbi_mapping(self):
+        rt = scrappy.RawTable(self.one_signal)
+        rt.trim().scale()
+        post = scrappy.calc_post(rt, self.model, log=True)
+
+        t0 = now()
+        score_band, _ = scrappy.map_post_to_sequence(
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
+            viterbi=True, path=False, bands=100)
+        t1 = now()
+        score_no_band, _ = scrappy.map_post_to_sequence(
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
+            viterbi=True, path=False, bands=None)
+        t2 = now()
+        self.assertIsInstance(score_no_band, float, 'score is float.')
+        self.assertLess(t1 - t0, t2 - t0, 'banded mapping is faster.')
+
+        score_band, path = scrappy.map_post_to_sequence(
+            post, self.one_ref, stay_pen=0, skip_pen=0, local_pen=4.0,
+            viterbi=True, path=True, bands=100)
+        self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
 
 
     def test_050_model_stride(self):

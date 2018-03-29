@@ -44,7 +44,7 @@ ffibuilder.cdef("""
   raw_table trim_and_segment_raw(raw_table rt,
     int trim_start, int trim_end, int varseg_chunk, float varseg_thresh
   );
-  raw_table trim_raw_by_mad(raw_table rt, int chunk_size, float perc); 
+  raw_table trim_raw_by_mad(raw_table rt, int chunk_size, float perc);
 
   typedef struct {
     unsigned int nr, nrq, nc, stride;
@@ -55,7 +55,7 @@ ffibuilder.cdef("""
   } _Mat;
   typedef _Mat *scrappie_matrix;
   typedef _Mat const *const_scrappie_matrix;
-  
+
   scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 
   // Transducer basecalling
@@ -79,10 +79,30 @@ ffibuilder.cdef("""
                                float prob_back, float localpen, float minscore,
                                int32_t * path_padded);
 
+  // Block-based mapping
+  bool are_bounds_sane(int const * low, int const * high,
+                       size_t nblock, size_t seqlen);
+  float map_to_sequence_forward(const_scrappie_matrix logpost,
+                                float stay_pen, float skip_pen, float local_pen,
+                                int const *seq, size_t seqlen);
+  float map_to_sequence_forward_banded(const_scrappie_matrix logpost,
+                                       float stay_pen, float skip_pen, float local_pen,
+                                       int const *seq, size_t seqlen,
+                                       int const * poslow, int const * poshigh);
+
+  float map_to_sequence_viterbi(const_scrappie_matrix logpost,
+                                float stay_pen, float skip_pen, float local_pen,
+                                int const *seq, size_t seqlen,
+                                int *path);
+  float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost,
+                                       float stay_pen, float skip_pen, float local_pen,
+                                       int const *seq, size_t seqlen,
+                                       int const * poslow, int const * poshigh);
+
   // Misc
-  int * encode_bases_to_integers(char const * seq, size_t n);
+  int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len);
   int get_raw_model_stride_from_string(const char * modelstr);
- 
+
 """)
 
 if __name__ == "__main__":
