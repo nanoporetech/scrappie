@@ -28,7 +28,18 @@ ffibuilder.set_source("libscrappy",
     include_dirs=[
         os.path.join('..', 'src')
     ],
-    extra_objects=[os.path.join('lib', 'libscrappie.a')]
+    sources=[
+        os.path.join('..', 'src', '{}.c'.format(x)) for x in
+        r'''decode
+            event_detection
+            layers
+            networks
+            nnfeatures
+            scrappie_common
+            scrappie_matrix
+            scrappie_seq_helpers
+            util'''.split()
+    ]
 )
 
 ffibuilder.cdef("""

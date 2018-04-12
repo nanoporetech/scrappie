@@ -6,22 +6,13 @@ Scrappy provides a minimal python binding to some of the core functionality of t
 Installation
 ------------
 
-Providing one can build scrappie, building scrappy should be straight-forward.
-A Makefile is provided to illustrate the process; this will i) build the
-scrappie C library, ii) create a python virtual environment, and iii) build and
-install the scrappy into the virtual environment. To follow this path simply
-run:
+Providing one can build scrappie, building its python counterpart should be
+straight forward:
 
-    make install
-
-If one wishes to install scrappy into an alternative environment simply run the
-following:
-
-    make lib/libscrappie.a
-    pip install -r requirements.txt
+    pip install -r requirements
     python setup.py install
 
-The final command may be modified as appropriate (perhaps by adding `--user`
+The second command may be modified as appropriate (perhaps by adding `--user`
 for non-root installations).
 
 API
