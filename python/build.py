@@ -1,8 +1,13 @@
 import os
 
 from cffi import FFI
-ffibuilder = FFI()
 
+if 'MANYLINUX' in os.environ:
+    src_dir = os.path.join('/io', 'src')
+else:
+    src_dir = os.path.join('..', 'src')
+
+ffibuilder = FFI()
 ffibuilder.set_source("libscrappy",
     r"""
       #include "decode.h"
@@ -25,11 +30,10 @@ ffibuilder.set_source("libscrappy",
 
     """,
     libraries=['blas'],
-    include_dirs=[
-        os.path.join('..', 'src')
-    ],
+    library_dirs=[],
+    include_dirs=[src_dir],
     sources=[
-        os.path.join('..', 'src', '{}.c'.format(x)) for x in
+        os.path.join(src_dir, '{}.c'.format(x)) for x in
         r'''decode
             event_detection
             layers
@@ -39,7 +43,8 @@ ffibuilder.set_source("libscrappy",
             scrappie_matrix
             scrappie_seq_helpers
             util'''.split()
-    ]
+    ],
+    extra_compile_args=['-std=c99', '-msse3', '-O3']
 )
 
 ffibuilder.cdef("""
