@@ -70,7 +70,7 @@ else:
     data_files = []
 
 setup(
-    name=__pkg_name__,
+    name='scrappie', # scrappy is taken on pypi
     version=__version__,
     url='https://github.com/nanoporetech/{}'.format(__pkg_name__),
     author=__author__,

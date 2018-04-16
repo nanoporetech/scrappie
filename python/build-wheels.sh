@@ -58,14 +58,15 @@ done
 
 
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/scrappy*.whl; do
-    auditwheel repair "$whl" -w wheelhouse/
+for whl in "wheelhouse/${PACKAGE_NAME}"*.whl; do
+    auditwheel repair "${whl}" -w wheelhouse/
+    rm "${whl}"
 done
 
 
 # Install packages and "test"
 for minor in 4 5 6; do
     PYBIN="/opt/python/cp3${minor}-cp3${minor}m/bin"
-    "${PYBIN}/pip" install scrappy --no-index -f wheelhouse
+    "${PYBIN}/pip" install "${PACKAGE_NAME}" --no-index -f wheelhouse
     "${PYBIN}/python" -c "from scrappy import *; import numpy as np; print(basecall_raw(np.random.normal(10,4,1000)))" 
 done

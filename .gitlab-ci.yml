@@ -41,7 +41,7 @@ build-manylinux:
         - docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/python/build-wheels.sh
     artifacts:
         paths:
-          - python/wheelhouse/scrappy*.whl
+          - python/wheelhouse/scrappie*.whl
 
 
 testing:
