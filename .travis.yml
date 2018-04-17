@@ -17,7 +17,9 @@ language: c
 compiler:
     - gcc
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j 4 && make test ; fi
+script:
+    - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j 4 && make test && cd .. ; fi
+    - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/python/build-wheels.sh ; fi
 
 env:
   global:
