@@ -72,12 +72,15 @@ else:
 setup(
     name='scrappie', # scrappy is taken on pypi
     version=__version__,
-    url='https://github.com/nanoporetech/{}'.format(__pkg_name__),
+    url='https://github.com/nanoporetech/scrappie',
     author=__author__,
     author_email='{}@nanoporetech.com'.format(__author__),
     classifiers=classifiers,
     description=__description__,
     long_description=__long_description,
+    python_requires='~=3.4',
+    license='MPL 2.0',
+
     dependency_links=[],
     ext_modules=extensions,
     install_requires=install_requires,
@@ -97,5 +100,5 @@ setup(
     },
     scripts=[
     ],
-    test_suite='nose.collector'
+    test_suite='nose.collector',
 )

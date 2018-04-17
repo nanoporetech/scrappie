@@ -8,7 +8,14 @@ if 'MANYLINUX' in os.environ:
     libraries=['openblas']
     library_dirs=['/usr/local/lib/']
 else:
-    src_dir = os.path.join('..', 'src')
+    if os.path.isfile(os.path.join('..', 'src','decode.h')):
+        # assume the git repo
+        src_dir = os.path.join('..', 'src')
+    elif os.path.isfile(os.path.join('src','decode.h')):
+        # else we're from an sdist
+        src_dir = 'src'
+    else:
+        raise IOError('Cannot find scrappie C sources.')
     # this might want to be cblas on some systems
     libraries=['blas']
     library_dirs=[]
