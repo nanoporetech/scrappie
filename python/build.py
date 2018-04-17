@@ -1,8 +1,19 @@
 import os
 
 from cffi import FFI
-ffibuilder = FFI()
 
+if 'MANYLINUX' in os.environ:
+    src_dir = os.path.join('/io', 'src')
+    # build-wheels.sh determines these
+    libraries=['openblas']
+    library_dirs=['/usr/local/lib/']
+else:
+    src_dir = os.path.join('..', 'src')
+    # this might want to be cblas on some systems
+    libraries=['blas']
+    library_dirs=[]
+
+ffibuilder = FFI()
 ffibuilder.set_source("libscrappy",
     r"""
       #include "decode.h"
@@ -24,11 +35,22 @@ ffibuilder.set_source("libscrappy",
       }
 
     """,
-    libraries=['blas'],
-    include_dirs=[
-        os.path.join('..', 'src')
+    libraries=libraries,
+    library_dirs=library_dirs,
+    include_dirs=[src_dir],
+    sources=[
+        os.path.join(src_dir, '{}.c'.format(x)) for x in
+        r'''decode
+            event_detection
+            layers
+            networks
+            nnfeatures
+            scrappie_common
+            scrappie_matrix
+            scrappie_seq_helpers
+            util'''.split()
     ],
-    extra_objects=[os.path.join('lib', 'libscrappie.a')]
+    extra_compile_args=['-std=c99', '-msse3', '-O3']
 )
 
 ffibuilder.cdef("""
@@ -60,6 +82,7 @@ ffibuilder.cdef("""
 
   // Transducer basecalling
   scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);
+  scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, bool return_log);
   float decode_transducer(
     const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen, int *seq, bool allow_slip
   );

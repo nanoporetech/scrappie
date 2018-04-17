@@ -1,4 +1,4 @@
-__version__ = '0.0.1'
+__version__ = '1.3.3'
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
@@ -312,11 +312,13 @@ def _decode_post_crf(post):
 # Network and decoder functions used above
 _models_ = {
     'rgrgr_r94': lib.nanonet_rgrgr_r94_posterior,
+    'rgrgr_r95': lib.nanonet_rgrgr_r95_posterior,
     'rnnrf_r94': lib.nanonet_rnnrf_r94_transitions,
 }
 
 _decoders_ = {
     'rgrgr_r94': _decode_post,
+    'rgrgr_r95': _decode_post,
     'rnnrf_r94': _decode_post_crf,
 }
 

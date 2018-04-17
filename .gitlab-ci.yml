@@ -14,6 +14,7 @@ stages:
   - test
   - publish
 
+
 building:
   stage: build
   script:
@@ -31,6 +32,17 @@ building:
       - ${BUILD_DIR}/Makefile
       - ${BUILD_DIR}/CTestTestfile.cmake
       - ${BUILD_DIR}/CMakeFiles/scrappie_test.dir/
+
+
+build-manylinux:
+    stage: build
+    image: docker-registry.oxfordnanolabs.local:5000/ont-base-docker
+    script:
+        - docker run --rm -v `pwd`:/io ontresearch/manylinux1_x86_64_openblas /io/python/build-wheels.sh
+    artifacts:
+        paths:
+          - python/wheelhouse/scrappie*.whl
+
 
 testing:
   stage: test
@@ -53,6 +65,7 @@ upload-development:
   only:
     - dev
 
+
 upload-staging:
   stage: publish
   script:
@@ -64,6 +77,7 @@ upload-staging:
   only:
     - master
 
+
 upload-prod:
   stage: publish
   script:
@@ -74,3 +88,4 @@ upload-prod:
     REPO: $REPO_PRODUCTION
   only:
     - /^release-\d+\.\d+(?:.\d+)?(?:-\d+)?$/ # use regexp
+
