@@ -2,9 +2,51 @@
 set -e -x
 export MANYLINUX=1
 
-# Install a system package required by our library
-yum install -y atlas-devel
-ln -s /usr/lib64/atlas/libcblas.so /usr/lib64/libblas.so
+BUILD_PREFIX="/usr/local"
+OPENBLAS_VERS="0.2.18"
+OPENBLAS_TAR="/io/python/openblas_${OPENBLAS_VERS}.tgz"
+OPENBLAS_PATH="/usr/local/lib/libopenblasp-r${OPENBLAS_VERS}.so"
+PACKAGE_NAME='scrappie'
+
+function build_openblas {
+    # this takes a long time so record success in openblas-built
+    if [ -e "openblas-built" ]; then return; fi
+    if [ -d "OpenBLAS" ]; then
+        (cd OpenBLAS && git clean -fxd && git reset --hard)
+    else
+        git clone https://github.com/xianyi/OpenBLAS
+    fi
+    (cd OpenBLAS \
+        && git checkout "v${OPENBLAS_VERSION}" \
+        && make DYNAMIC_ARCH=1 USE_OPENMP=0 NUM_THREADS=64 TARGET=NEHALEM > /dev/null)
+    touch openblas-built
+}
+
+function install_openblas {
+    (cd OpenBLAS && make PREFIX=$BUILD_PREFIX install)
+    # copy license to a sensible place
+    license_path="/usr/share/doc/openblas"
+    mkdir -p ${license_path}
+    cp OpenBLAS/LICENSE ${license_path}
+    tar zcf ${OPENBLAS_TAR} /usr/local/lib /usr/local/include ${license_path}
+}
+
+cd /io
+
+# OpenBLAS possibilities:
+#   i) check /usr/local/lib for openblas -> nothing to do
+#  ii) look for a tar (containing compiled blas) -> unpack
+# iii) build from scratch
+if [ -e ${OPENBLAS_PATH} ]; then
+    echo "Found OpenBLAS at ${OPENBLAS_PATH}"
+elif [ -e ${OPENBLAS_TAR} ]; then
+    echo "Unpacking OpenBLAS tar ${OPENBLAS_TAR}"
+    tar xzf ${OPENBLAS_TAR} -C /
+else
+    echo "Building OpenBLAS"
+    build_openblas
+    install_openblas
+fi
 
 cd /io/python
 

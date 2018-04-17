@@ -62,6 +62,13 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Mathematics'
 ]
 
+
+if 'MANYLINUX' in os.environ:
+    # when building wheel we need to include this
+    data_files = [('', ['OPENBLAS_LICENSE'])]
+else:
+    data_files = []
+
 setup(
     name=__pkg_name__,
     version=__version__,
@@ -82,8 +89,7 @@ setup(
     packages=find_packages(exclude=['*.test', '*.test.*', 'test.*', 'test']),
     package_data={},
     zip_safe=False,
-    data_files=[
-    ],
+    data_files=data_files,
     entry_points={
         'console_scripts': [
             '{} = {}:_basecall'.format(__pkg_name__, __pkg_name__)
