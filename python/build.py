@@ -4,8 +4,14 @@ from cffi import FFI
 
 if 'MANYLINUX' in os.environ:
     src_dir = os.path.join('/io', 'src')
+    # build-wheels.sh determines these
+    libraries=['openblas']
+    library_dirs=['/usr/local/lib/']
 else:
     src_dir = os.path.join('..', 'src')
+    # this might want to be cblas on some systems
+    libraries=['blas']
+    library_dirs=[]
 
 ffibuilder = FFI()
 ffibuilder.set_source("libscrappy",
@@ -29,8 +35,8 @@ ffibuilder.set_source("libscrappy",
       }
 
     """,
-    libraries=['blas'],
-    library_dirs=[],
+    libraries=libraries,
+    library_dirs=library_dirs,
     include_dirs=[src_dir],
     sources=[
         os.path.join(src_dir, '{}.c'.format(x)) for x in
