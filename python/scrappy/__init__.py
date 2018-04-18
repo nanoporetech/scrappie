@@ -189,7 +189,7 @@ def _numpy_to_scrappy_matrix(numpy_array):
     nc = numpy_array.shape[0]
     nr = numpy_array.shape[1]
 
-    data = np.ascontiguousarray(numpy_array.astype(ftype, order='C', copy=True))
+    data = np.ascontiguousarray(numpy_array.astype(ftype, order='C', copy=False))
     buf = ffi.from_buffer(data)
     return lib.mat_from_array(buf, nr, nc)
 
