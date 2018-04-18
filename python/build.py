@@ -80,7 +80,6 @@ ffibuilder.cdef("""
   typedef _Mat const *const_scrappie_matrix;
 
   scrappie_matrix mat_from_array(const float * x, int nr, int nc);
-  scrappie_matrix make_scrappie_matrix(int nr, int nc);
   scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 
   // Transducer basecalling
