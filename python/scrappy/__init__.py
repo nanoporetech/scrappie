@@ -184,12 +184,12 @@ class ScrappyMatrix(object):
             return self._data
 
 
-def _numpy_to_scrappy_matrix(a):
+def _numpy_to_scrappy_matrix(numpy_array):
     """Convert a `ndarray` to a bare `scrappie_matrix`"""
-    nc = a.shape[0]
-    nr = a.shape[1]
+    nc = numpy_array.shape[0]
+    nr = numpy_array.shape[1]
 
-    data = np.ascontiguousarray(a.astype(ftype, order='C', copy=True))
+    data = np.ascontiguousarray(numpy_array.astype(ftype, order='C', copy=True))
     buf = ffi.from_buffer(data)
     return lib.mat_from_array(buf, nr, nc)
 
