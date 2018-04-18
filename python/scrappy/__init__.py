@@ -12,7 +12,8 @@ from libscrappy import ffi, lib
 
 ftype = np.float32
 size_ftype = np.dtype(ftype).itemsize
-vsize = 4 #SSE vector length
+vsize = 4  # SSE vector length
+
 
 def _none_if_null(p):
     # convert cffi NULL to None
@@ -147,7 +148,10 @@ def _scale_raw(rt):
 class ScrappyMatrix(object):
     def __init__(self, scrappy_matrix):
         """Container to manage lifetime of a bare scrappie_matrix."""
-        self._data = scrappy_matrix
+        if isinstance(scrappy_matrix, np.ndarray):
+            self._data = _numpy_to_scrappy_matrix(scrappy_matrix)
+        else:
+            self._data = scrappy_matrix
 
     def __del__(self):
         _free_matrix(self._data)
@@ -157,10 +161,10 @@ class ScrappyMatrix(object):
         """Tuple (columns, rows)
 
         .. note:: The rows value is of the realised array. The actual data is
-            stored padded for ease of use with SSE vectors. 
+            stored padded for ease of use with SSE vectors.
         """
         return self._data.nc, self._data.nr
-    
+
     def data(self, as_numpy=False, sloika=True):
         """Current data as either C object or realised numpy copy. In the
         latter case, padding due to SSE vector use is removed.
@@ -176,6 +180,15 @@ class ScrappyMatrix(object):
             return _scrappie_to_numpy(self._data, sloika=sloika)
         else:
             return self._data
+
+
+def _numpy_to_scrappy_matrix(a):
+    nc = a.shape[0]
+    nr = a.shape[1]
+
+    data = np.ascontiguousarray(a.astype(ftype, order='C', copy=True))
+    buf = ffi.from_buffer(data)
+    return lib.mat_from_array(buf, nr, nc)
 
 
 def _free_matrix(matrix):
