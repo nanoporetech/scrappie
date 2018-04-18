@@ -147,7 +147,9 @@ def _scale_raw(rt):
 
 class ScrappyMatrix(object):
     def __init__(self, scrappy_matrix):
-        """Container to manage lifetime of a bare scrappie_matrix."""
+        """Container to manage lifetime of a bare scrappie_matrix.
+        Can be initialised by a pointer to a `scrappy_matrix` or a numpy `ndarray`.
+        """
         if isinstance(scrappy_matrix, np.ndarray):
             self._data = _numpy_to_scrappy_matrix(scrappy_matrix)
         else:
@@ -183,6 +185,7 @@ class ScrappyMatrix(object):
 
 
 def _numpy_to_scrappy_matrix(a):
+    """Convert a `ndarray` to a bare `scrappie_matrix`"""
     nc = a.shape[0]
     nr = a.shape[1]
 
