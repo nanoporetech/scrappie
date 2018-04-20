@@ -31,9 +31,9 @@ def _gsp():
 
     def guess_state_properties(nstate):
         """Find likely kmer length and alphabet size from transducer state-space size.
-        
+
         :param nstate: number of states in transducer.
-    
+
         :returns: alphabet size, kmer length.
         """
         nkmers = nstate - 1 # for stay
@@ -157,10 +157,10 @@ class ScrappyMatrix(object):
         """Tuple (columns, rows)
 
         .. note:: The rows value is of the realised array. The actual data is
-            stored padded for ease of use with SSE vectors. 
+            stored padded for ease of use with SSE vectors.
         """
         return self._data.nc, self._data.nr
-    
+
     def data(self, as_numpy=False, sloika=True):
         """Current data as either C object or realised numpy copy. In the
         latter case, padding due to SSE vector use is removed.
@@ -176,6 +176,41 @@ class ScrappyMatrix(object):
             return _scrappie_to_numpy(self._data, sloika=sloika)
         else:
             return self._data
+
+    def __getitem__(self, slice):
+        return ScrappyMatrixView(self, slice)
+
+
+class ScrappyMatrixView(ScrappyMatrix):
+    def __init__(self, scrappy_matrix_obj, slice):
+        """Container to provide view of `ScrappyMatrix`.
+        Won't free underlying data upon garbage collection.
+
+        :param scrappy_matrix_obj: `ScrappyMatrix` instance.
+        :param slice: slice
+        """
+        n_elems = scrappy_matrix_obj.shape[0]
+        start = slice.start if slice.start is not None else 0
+        stop = slice.stop if slice.stop is not None else n_elems
+
+        if slice.step is not None and slice.step != 1:
+            raise ValueError('stride must be 1 for a view')
+
+        if start > stop:
+            raise IndexError('start should be smaller than stop')
+
+        for i in start, stop:
+            if i > n_elems:
+                raise IndexError('index {} is out of bounds for axis 0 with size {}'.format(i, n_elems))
+
+        attrs = ['nr', 'nrq', 'nc', 'stride', 'data']
+        init_data = [getattr(scrappy_matrix_obj._data, a) for a in attrs]
+        self._data = ffi.new("scrappie_matrix", init=init_data)
+        self._data.data.f += start * self._data.stride
+        self._data.nc = stop - start
+
+    def __del__(self):
+        pass  # This is a view, we don't want underlying data garbage collected
 
 
 def _free_matrix(matrix):
@@ -445,7 +480,7 @@ def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0, local_pen=4.0,
     if not isinstance(post, ScrappyMatrix):
         raise TypeError('`post` should be a ScrappyMatrix.')
 
-    nblock, nstate = post.shape 
+    nblock, nstate = post.shape
     alpha_len, kmer_len = guess_state_properties(nstate)
 
     seq_len = len(sequence) - kmer_len + 1
