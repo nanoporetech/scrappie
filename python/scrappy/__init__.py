@@ -152,8 +152,11 @@ class ScrappyMatrix(object):
         """
         if isinstance(scrappy_matrix, np.ndarray):
             self._data = _numpy_to_scrappy_matrix(scrappy_matrix)
-        else:
+        elif isinstance(scrappy_matrix, ffi.CData):
             self._data = scrappy_matrix
+        else:
+            raise TypeError('ScrappyMatrix can only be contructed from a '
+                '`scrappy_matrix pointer or `ndarray`.')
 
     def __del__(self):
         _free_matrix(self._data)

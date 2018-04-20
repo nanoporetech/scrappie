@@ -197,3 +197,35 @@ class TestScrappy(unittest.TestCase):
     def test_051_model_stride_unknown(self):
         with self.assertRaises(ValueError):
             stride = scrappy.get_model_stride('garbage_model')
+
+
+    def test_060_matrix_conversions(self):
+        rt = scrappy.RawTable(self.one_signal)
+        rt.trim().scale()
+        original = scrappy.calc_post(rt, self.model, log=True)
+        from_np = scrappy.ScrappyMatrix(
+            original.data(as_numpy=True, sloika=False))
+
+        # decoding both as a check on the C structure
+        scores = [scrappy.decode_post(x)[1] for x in (original, from_np)]
+        np.testing.assert_almost_equal(scores[0], scores[1], err_msg='Scores equal after round trip.')
+
+
+    def test_065_matrix_view(self):
+        rt = scrappy.RawTable(self.one_signal)
+        rt.trim().scale()
+        original = scrappy.calc_post(rt, self.model, log=True)
+
+        all_view = original[:]
+        self.assertSequenceEqual(original.shape, all_view.shape, 'All view is same shape.')
+        small_view = original[100:200]
+        self.assertSequenceEqual((100, original.shape[1]), small_view.shape, 'Slice has correct shape.')
+        smaller_view = small_view[10:50]
+        self.assertSequenceEqual((40, original.shape[1]), smaller_view.shape, 'Slice of slice has correct shape.')
+
+        np_original = original.data(as_numpy=True, sloika=False)
+        np_smaller = smaller_view.data(as_numpy=True, sloika=False)
+        np.testing.assert_allclose(np_original[110:150,], np_smaller, err_msg='Slice contains correct data.')
+
+
+
