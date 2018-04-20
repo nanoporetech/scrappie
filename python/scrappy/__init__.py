@@ -12,7 +12,8 @@ from libscrappy import ffi, lib
 
 ftype = np.float32
 size_ftype = np.dtype(ftype).itemsize
-vsize = 4 #SSE vector length
+vsize = 4  # SSE vector length
+
 
 def _none_if_null(p):
     # convert cffi NULL to None
@@ -146,8 +147,13 @@ def _scale_raw(rt):
 
 class ScrappyMatrix(object):
     def __init__(self, scrappy_matrix):
-        """Container to manage lifetime of a bare scrappie_matrix."""
-        self._data = scrappy_matrix
+        """Container to manage lifetime of a bare scrappie_matrix.
+        Can be initialised by a pointer to a `scrappy_matrix` or a numpy `ndarray`.
+        """
+        if isinstance(scrappy_matrix, np.ndarray):
+            self._data = _numpy_to_scrappy_matrix(scrappy_matrix)
+        else:
+            self._data = scrappy_matrix
 
     def __del__(self):
         _free_matrix(self._data)
@@ -211,6 +217,16 @@ class ScrappyMatrixView(ScrappyMatrix):
 
     def __del__(self):
         pass  # This is a view, we don't want underlying data garbage collected
+
+
+def _numpy_to_scrappy_matrix(numpy_array):
+    """Convert a `ndarray` to a bare `scrappie_matrix`"""
+    nc = numpy_array.shape[0]
+    nr = numpy_array.shape[1]
+
+    data = np.ascontiguousarray(numpy_array.astype(ftype, order='C', copy=False))
+    buf = ffi.cast("float *", data.ctypes.data)
+    return lib.mat_from_array(buf, nr, nc)
 
 
 def _free_matrix(matrix):

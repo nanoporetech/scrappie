@@ -21,6 +21,7 @@ ffibuilder.set_source("libscrappy",
       #include "scrappie_common.h"
       #include "util.h"
       #include "scrappie_seq_helpers.h"
+      #include "scrappie_matrix.h"
 
       int get_raw_model_stride_from_string(const char * modelstr){
         // Obtain the model stride from its str name
@@ -78,6 +79,7 @@ ffibuilder.cdef("""
   typedef _Mat *scrappie_matrix;
   typedef _Mat const *const_scrappie_matrix;
 
+  scrappie_matrix mat_from_array(const float * x, int nr, int nc);
   scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 
   // Transducer basecalling
