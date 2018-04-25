@@ -499,6 +499,150 @@ void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
     }
 }
 
+scrappie_matrix grumod_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
+                               scrappie_matrix ostate) {
+    RETURN_NULL_IF(NULL == X, NULL);
+
+    assert(NULL != sW);
+
+    const int bsize = X->nc;
+    const int size = sW->nr;
+    assert(X->nr == 3 * size);
+    assert(sW->nc == 3 * size);
+
+    ostate = remake_scrappie_matrix(ostate, size, bsize);
+    RETURN_NULL_IF(NULL == ostate, NULL);
+
+    scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
+    if(NULL == tmp){
+        //  Memory allocation falled, clean-up and return
+        free(ostate);
+        return NULL;
+    }
+
+    /* First step state is zero.  Set second column of ostate to zero and use that */
+    _Mat xCol, sCol1, sCol2;
+    memset(ostate->data.v + ostate->nrq, 0, ostate->nrq * sizeof(__m128));
+    xCol = *X;
+    sCol1 = *ostate;
+    sCol2 = *ostate;
+    xCol.nc = sCol1.nc = sCol2.nc = 1;
+    sCol1.data.v = ostate->data.v + ostate->nrq;
+    sCol2.data.v = ostate->data.v;
+    grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
+    for (int i = 1; i < bsize; i++) {
+        xCol.data.v = X->data.v + i * X->nrq;
+        sCol1.data.v = ostate->data.v + (i - 1) * ostate->nrq;
+        sCol2.data.v = ostate->data.v + i * ostate->nrq;
+        grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
+    }
+
+    tmp = free_scrappie_matrix(tmp);
+
+    assert(validate_scrappie_matrix
+           (ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
+    return ostate;
+}
+
+scrappie_matrix grumod_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
+                                scrappie_matrix ostate) {
+    RETURN_NULL_IF(NULL == X, NULL);
+    assert(NULL != sW);
+
+    const int size = sW->nr;
+    const int bsize = X->nc;
+    assert(X->nr == 3 * size);
+    assert(sW->nc == 3 * size);
+
+    ostate = remake_scrappie_matrix(ostate, size, bsize);
+    RETURN_NULL_IF(NULL == ostate, NULL);
+
+    scrappie_matrix tmp = make_scrappie_matrix(3 * size, 1);
+    if(NULL == tmp){
+        //  Memory allocation falled, clean-up and return
+        free(ostate);
+        return NULL;
+    }
+
+    /* First step state is zero.  Set first column of ostate to zero and use that */
+    _Mat xCol, sCol1, sCol2;
+    memset(ostate->data.v, 0, ostate->nrq * sizeof(__m128));
+    xCol = *X;
+    sCol1 = *ostate;
+    sCol2 = *ostate;
+    xCol.nc = sCol1.nc = sCol2.nc = 1;
+    xCol.data.v = X->data.v + (X->nc - 1) * X->nrq;
+    sCol1.data.v = ostate->data.v;
+    sCol2.data.v = ostate->data.v + (ostate->nc - 1) * ostate->nrq;
+    grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
+    for (int i = 1; i < bsize; i++) {
+        const int index = bsize - i - 1;
+        xCol.data.v = X->data.v + index * X->nrq;
+        sCol1.data.v = ostate->data.v + (index + 1) * ostate->nrq;
+        sCol2.data.v = ostate->data.v + index * ostate->nrq;
+        grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
+    }
+
+    tmp = free_scrappie_matrix(tmp);
+
+    assert(validate_scrappie_matrix
+           (ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
+    return ostate;
+}
+
+void grumod_step(const_scrappie_matrix x, const_scrappie_matrix istate,
+                 const_scrappie_matrix sW, scrappie_matrix xF,
+                 scrappie_matrix ostate) {
+    /* Perform a single modified GRU step
+     * x      is [isize]
+     * istate is [size]
+     * xW     is [isize, 3 * size]
+     * sW     is [size, 2 * size]
+     * sW2    is [size, size]
+     * bias   is [3 * size]
+     * xF     is [3 * size]
+     * ostate is [size]
+     */
+    assert(NULL != x);
+    assert(NULL != sW);
+    const int size = istate->nr;
+    assert(x->nr == 3 * size);
+    assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
+    const int sizeq = size / 4;
+    assert(size == sW->nr);
+    assert(3 * size == sW->nc);
+    assert(3 * size == xF->nr);
+    assert(size == ostate->nr);
+
+
+    // Copy input vector = iW x + b to temporary vector and zero last chunk
+    memcpy(xF->data.v, x->data.v, x->nrq * sizeof(__m128));
+    memset(xF->data.v + sizeq + sizeq, 0, sizeq *sizeof(__m128));
+    /*  Add sW * istate to first 3 * size elts of xF
+     *  then apply gate function to get r and z
+     */
+    cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f,
+                sW->stride, istate->data.f, 1, 1.0, xF->data.f, 1);
+    for (int i = 0; i < (sizeq + sizeq); i++) {
+        xF->data.v[i] = LOGISTICFV(xF->data.v[i]);
+    }
+
+    const __m128 *z = xF->data.v;
+    const __m128 *r = xF->data.v + sizeq;
+    __m128 *hbar = xF->data.v + sizeq + sizeq;
+    for (int i = 0; i < sizeq; i++) {
+        hbar[i] = r[i] * hbar[i] + x->data.v[sizeq + sizeq + i];
+    }
+    for (int i = 0; i < sizeq; i++) {
+        hbar[i] = TANHFV(hbar[i]);
+    }
+
+    const __m128 ones = _mm_set1_ps(1.0f);
+    for (int i = 0; i < sizeq ; i++) {
+        ostate->data.v[i] = z[i] * istate->data.v[i] + (ones - z[i]) * hbar[i];
+    }
+}
+
 scrappie_matrix lstm_forward(const_scrappie_matrix Xaffine,
                              const_scrappie_matrix sW, const_scrappie_matrix p,
                              scrappie_matrix output) {
