@@ -189,6 +189,9 @@ class ScrappyMatrix(object):
     def __getitem__(self, slice):
         return ScrappyMatrixView(self, slice)
 
+    def __len__(self):
+        return self.shape[0]
+
 
 class ScrappyMatrixView(ScrappyMatrix):
     def __init__(self, scrappy_matrix_obj, slice):
