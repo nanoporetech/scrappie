@@ -861,10 +861,12 @@ float decode_crf(const_scrappie_matrix trans, int * path){
         }
 
         for(size_t st1=0 ; st1 < nstate ; st1++){
+	    // st1 is to-state (in -ACGT)
             const size_t offsetS = offset + st1 * nstate;
             curr[st1] = trans->data.f[offsetS + 0] + prev[0];
             tb->data.f[tboffset + st1] = 0;
             for(size_t st2=1 ; st2 < nstate ; st2++){
+		// st2 is from-state (in -ACGT)
                 const float score = trans->data.f[offsetS + st2] + prev[st2];
                 if(score > curr[st1]){
                     curr[st1] = score;

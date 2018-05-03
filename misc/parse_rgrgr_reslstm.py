@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+import argparse
+import pickle
+import math
+import numpy as np
+import re
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('model', help='Pickle to read model from')
+
+
+model_file = sys.argv[1]
+
+trim_trailing_zeros = re.compile('0+p')
+
+def small_hex(f):
+    hf = float(f).hex()
+    return trim_trailing_zeros.sub('p', hf)
+
+
+def process_column(v, pad):
+    """ process and pad """
+    return [small_hex(f) for f in v] + [small_hex(0.0)] * pad
+
+def reshape_lstmM(mat):
+        _, isize = mat.shape
+        return mat.reshape((-1, 4, isize)).transpose([1, 0, 2]).reshape((-1, isize))
+
+
+def reshape_lstmV(mat):
+        return mat.reshape((-1, 4)).transpose().reshape(-1)
+
+
+
+def cformatM(fh, name, X, nr=None, nc=None):
+    nrq = int(math.ceil(X.shape[1] / 4.0))
+    pad = nrq * 4 - X.shape[1]
+    lines = map(lambda v: ', '.join(process_column(v, pad)), X)
+
+    if nr is None:
+        nr = X.shape[1]
+    else:
+        nrq = int(math.ceil(nr / 4.0))
+    if nc is None:
+        nc = X.shape[0]
+
+    fh.write('float {}[] = {}\n'.format('__' + name, '{'))
+    fh.write('\t' + ',\n\t'.join(lines))
+    fh.write('};\n')
+    fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.stride = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', nr, nrq, nc, nrq * 4, '__' + name, '}'))
+    fh.write('const scrappie_matrix {} = &{};\n\n'.format(name, '_' + name))
+
+
+def cformatV(fh, name, X):
+    nrq = int(math.ceil(X.shape[0] / 4.0))
+    pad = nrq * 4 - X.shape[0]
+    lines = ', '.join(list(map(lambda f: small_hex(f), X)) + [small_hex(0.0)] * pad)
+    fh.write('float {}[] = {}\n'.format( '__' + name, '{'))
+    fh.write('\t' + lines)
+    fh.write('};\n')
+    fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.stride = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', X.shape[0], nrq, 1, nrq * 4, '__' + name, '}'))
+    fh.write('const scrappie_matrix {} = &{};\n\n'.format(name, '_' + name))
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    modelid = 'reslstm_'
+
+    with open(args.model, 'rb') as fh:
+        network = pickle.load(fh, encoding='latin1')
+    network_major_version = network.version[0] if isinstance(network.version, tuple) else network.version
+    assert network_major_version >= 1, "Sloika model must be version >= 1.  Perhaps you need to run Sloika's model_upgrade.py"
+
+    sys.stdout.write("""#pragma once
+    #ifndef NANONET_RGRGR_{}MODEL_H
+    #define NANONET_RGRGR_{}MODEL_H
+    #include <assert.h>
+    #include "../util.h"
+    """.format(modelid.upper(), modelid.upper()))
+
+    """ Convolution layer
+    """
+
+    filterW =  network.sublayers[0].W.get_value()
+    nfilter, _ , winlen = filterW.shape
+    cformatM(sys.stdout, 'conv_rgrgr_{}W'.format(modelid), filterW.reshape(-1, 1), nr = winlen * 4 - 3, nc=nfilter)
+    cformatV(sys.stdout, 'conv_rgrgr_{}b'.format(modelid), network.sublayers[0].b.get_value().reshape(-1))
+    sys.stdout.write("const int conv_rgrgr_{}stride = {};\n".format(modelid, network.sublayers[0].stride))
+    sys.stdout.write("""const size_t _conv_rgrgr_{}nfilter = {};
+    const size_t _conv_rgrgr_{}winlen = {};
+    """.format(modelid, nfilter, modelid, winlen))
+
+    """  Backward LSTM (first layer)
+    """
+    lstm = network.sublayers[1].sublayers[0].sublayers[0]
+    cformatM(sys.stdout, 'lstmR1_rgrgr_{}iW'.format(modelid),
+             reshape_lstmM(lstm.iW.get_value()))
+    cformatM(sys.stdout, 'lstmR1_rgrgr_{}sW'.format(modelid),
+             reshape_lstmM(lstm.sW.get_value()))
+    cformatV(sys.stdout, 'lstmR1_rgrgr_{}b'.format(modelid),
+             reshape_lstmV(lstm.b.get_value().reshape(-1)))
+    cformatV(sys.stdout, 'lstmR1_rgrgr_{}p'.format(modelid),
+             lstm.p.get_value().reshape(-1))
+
+    """  Forward LSTM (second layer)
+    """
+    lstm = network.sublayers[2].sublayers[0]
+    cformatM(sys.stdout, 'lstmF2_rgrgr_{}iW'.format(modelid),
+             reshape_lstmM(lstm.iW.get_value()))
+    cformatM(sys.stdout, 'lstmF2_rgrgr_{}sW'.format(modelid),
+             reshape_lstmM(lstm.sW.get_value()))
+    cformatV(sys.stdout, 'lstmF2_rgrgr_{}b'.format(modelid),
+             reshape_lstmV(lstm.b.get_value().reshape(-1)))
+    cformatV(sys.stdout, 'lstmF2_rgrgr_{}p'.format(modelid),
+             lstm.p.get_value().reshape(-1))
+
+    """ backward LSTM(third layer)
+    """
+    lstm = network.sublayers[3].sublayers[0].sublayers[0]
+    cformatM(sys.stdout, 'lstmR3_rgrgr_{}iW'.format(modelid),
+             reshape_lstmM(lstm.iW.get_value()))
+    cformatM(sys.stdout, 'lstmR3_rgrgr_{}sW'.format(modelid),
+             reshape_lstmM(lstm.sW.get_value()))
+    cformatV(sys.stdout, 'lstmR3_rgrgr_{}b'.format(modelid),
+             reshape_lstmV(lstm.b.get_value().reshape(-1)))
+    cformatV(sys.stdout, 'lstmR3_rgrgr_{}p'.format(modelid),
+             lstm.p.get_value().reshape(-1))
+
+    """  Forward LSTM (fourth layer)
+    """
+    lstm = network.sublayers[4].sublayers[0]
+    cformatM(sys.stdout, 'lstmF4_rgrgr_{}iW'.format(modelid),
+             reshape_lstmM(lstm.iW.get_value()))
+    cformatM(sys.stdout, 'lstmF4_rgrgr_{}sW'.format(modelid),
+             reshape_lstmM(lstm.sW.get_value()))
+    cformatV(sys.stdout, 'lstmF4_rgrgr_{}b'.format(modelid),
+             reshape_lstmV(lstm.b.get_value().reshape(-1)))
+    cformatV(sys.stdout, 'lstmF4_rgrgr_{}p'.format(modelid),
+             lstm.p.get_value().reshape(-1))
+
+    """ backward LSTM(fifth layer)
+    """
+    lstm = network.sublayers[5].sublayers[0].sublayers[0]
+    cformatM(sys.stdout, 'lstmR5_rgrgr_{}iW'.format(modelid),
+             reshape_lstmM(lstm.iW.get_value()))
+    cformatM(sys.stdout, 'lstmR5_rgrgr_{}sW'.format(modelid),
+             reshape_lstmM(lstm.sW.get_value()))
+    cformatV(sys.stdout, 'lstmR5_rgrgr_{}b'.format(modelid),
+             reshape_lstmV(lstm.b.get_value().reshape(-1)))
+    cformatV(sys.stdout, 'lstmR5_rgrgr_{}p'.format(modelid),
+             lstm.p.get_value().reshape(-1))
+
+    """ Softmax layer
+    """
+    nstate = network.sublayers[6].W.get_value().shape[0]
+    shuffle = np.append(np.arange(nstate - 1) + 1, 0)
+    cformatM(sys.stdout, 'FF_rgrgr_{}W'.format(modelid), network.sublayers[6].W.get_value()[shuffle])
+    cformatV(sys.stdout, 'FF_rgrgr_{}b'.format(modelid), network.sublayers[6].b.get_value()[shuffle])
+
+    sys.stdout.write('#endif /* NANONET_RGRGR_{}_MODEL_H */'.format(modelid.upper()))
