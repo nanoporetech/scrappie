@@ -45,6 +45,14 @@ void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
               const_scrappie_matrix sW, const_scrappie_matrix sW2,
               scrappie_matrix xF, scrappie_matrix ostate);
 
+scrappie_matrix grumod_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
+                               scrappie_matrix res);
+scrappie_matrix grumod_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
+                                scrappie_matrix res);
+void grumod_step(const_scrappie_matrix x, const_scrappie_matrix istate,
+                 const_scrappie_matrix sW, scrappie_matrix xF,
+                 scrappie_matrix ostate);
+
 scrappie_matrix lstm_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
                              const_scrappie_matrix p, scrappie_matrix output);
 scrappie_matrix lstm_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
