@@ -269,19 +269,20 @@ event_table detect_events(raw_table const rt, detector_param const edparam) {
 
     event_table et = { 0 };
     RETURN_NULL_IF(NULL == rt.raw, et);
+    const size_t nsample = rt.end - rt.start;
 
-    double *sums = calloc(rt.n + 1, sizeof(double));
-    double *sumsqs = calloc(rt.n + 1, sizeof(double));
+    double *sums = calloc(nsample + 1, sizeof(double));
+    double *sumsqs = calloc(nsample + 1, sizeof(double));
 
-    compute_sum_sumsq(rt.raw, sums, sumsqs, rt.n);
-    float *tstat1 = compute_tstat(sums, sumsqs, rt.n, edparam.window_length1);
-    float *tstat2 = compute_tstat(sums, sumsqs, rt.n, edparam.window_length2);
+    compute_sum_sumsq(rt.raw + rt.start, sums, sumsqs, nsample);
+    float *tstat1 = compute_tstat(sums, sumsqs, nsample, edparam.window_length1);
+    float *tstat2 = compute_tstat(sums, sumsqs, nsample, edparam.window_length2);
 
     Detector short_detector = {
         .DEF_PEAK_POS = -1,
         .DEF_PEAK_VAL = FLT_MAX,
         .signal = tstat1,
-        .signal_length = rt.n,
+        .signal_length = nsample,
         .threshold = edparam.threshold1,
         .window_length = edparam.window_length1,
         .masked_to = 0,
@@ -294,7 +295,7 @@ event_table detect_events(raw_table const rt, detector_param const edparam) {
         .DEF_PEAK_POS = -1,
         .DEF_PEAK_VAL = FLT_MAX,
         .signal = tstat2,
-        .signal_length = rt.n,
+        .signal_length = nsample,
         .threshold = edparam.threshold2,
         .window_length = edparam.window_length2,
         .masked_to = 0,
@@ -307,7 +308,7 @@ event_table detect_events(raw_table const rt, detector_param const edparam) {
         short_long_peak_detector(&short_detector, &long_detector,
                                  edparam.peak_height);
 
-    et = create_events(peaks, sums, sumsqs, rt.n);
+    et = create_events(peaks, sums, sumsqs, nsample);
 
     free(peaks);
     free(tstat2);
