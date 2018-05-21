@@ -245,11 +245,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
-    if(SCRAPPIE_MODEL_DRGRGR_RESGRU != model){
-        //  Don't normalise delta sample models
-        medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-    }
-
+    medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
     scrappie_matrix post = calcpost(rt, args.min_prob, args.temperature, true);
 
     if (NULL == post) {

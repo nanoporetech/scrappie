@@ -244,6 +244,77 @@ void studentise_array_kahan(float *x, size_t n) {
     }
 }
 
+
+/**  Sliding differences
+ *
+ *   Calculated x[i] := x[i + 1] - x[i]
+ *   Array updated in-place with final element set to zero
+ *
+ *
+ *   @param x Array to difference [in/out]
+ *   @param n Length of array
+ *
+ *   @return  void
+ **/
+void difference_array(float *x, size_t n){
+    if (NULL == x) {
+        return;
+    }
+
+    for(size_t i=1 ; i < n ; i++){
+        x[i - 1] = x[i] - x[i - 1];
+    }
+    x[n - 1] = 0.0f;
+}
+
+
+/**  Filter absolutely large values from array
+ *
+ *   Replaces elements of array whose absolute value exceeds a threshhold
+ *   Array updated in-place.
+ *
+ *   @param x        Array to filter [in/out]
+ *   @param n        Length of array
+ *   @param fill_val Value to replace filtered elements by
+ *   @param thresh   Threshold
+ *
+ *   @returns void
+ **/
+void filter_array(float *x, size_t n, float fill_val, float thresh){
+    if (NULL == x) {
+        return;
+    }
+
+    for(size_t i=0 ; i < n ; i++){
+        if(fabsf(x[i]) > thresh){
+            x[i] = fill_val;
+        }
+    }
+}
+
+
+/**  Clip array into range
+ *
+ *   Clip elements of array into [-thresh, thresh].  Array updated in-place.
+ *
+ *   @param x      Array to filter [in/out]
+ *   @param n      Length of array
+ *   @param thresh Threshold
+ *
+ *   @returns void
+ **/
+void clip_array(float *x, size_t n, float thresh){
+    if (NULL == x) {
+        return;
+    }
+
+    for(size_t i=0 ; i < n ; i++){
+        const float val = fminf(thresh, fabsf(x[i]));
+        x[i] = copysignf(val, x[i]);
+    }
+}
+
+
 bool equality_array(double const * x, double const * y, size_t n, double const tol){
 
     if(NULL == x || NULL == y){

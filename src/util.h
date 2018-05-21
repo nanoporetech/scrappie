@@ -264,6 +264,9 @@ float medianf(const float *x, size_t n);
 float madf(const float *x, size_t n, const float *med);
 void medmad_normalise_array(float *x, size_t n);
 void studentise_array_kahan(float *x, size_t n);
+void difference_array(float *x, size_t n);
+void filter_array(float *x, size_t n, float fill_val, float thresh);
+void clip_array(float *x, size_t n, float thresh);
 
 bool equality_array(double const * x, double const * y, size_t n, double const tol);
 bool equality_arrayf(float const * x, float const * y, size_t n, float const tol);

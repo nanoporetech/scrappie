@@ -10,6 +10,7 @@
 #include "networks.h"
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
+#include "util.h"
 
 #include "models/squiggle_dna_test.h"
 
@@ -563,72 +564,6 @@ scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float mi
     shift_scale_matrix_inplace(lstmR5, 0.0f, temp);
     scrappie_matrix post = softmax(lstmR5, FF_rgrgr_reslstm_W, FF_rgrgr_reslstm_b, NULL);
     lstmR5 = free_scrappie_matrix(lstmR5);
-
-    if (return_log) {
-        robustlog_activation_inplace(post, min_prob);
-    }
-
-    return post;
-}
-
-
-scrappie_matrix deltasample_rgrgr_resgru_posterior(const raw_table signal, float min_prob,
-                                                   float temp, bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
-    RETURN_NULL_IF(0 == signal.n, NULL);
-    RETURN_NULL_IF(NULL == signal.raw, NULL);
-
-    scrappie_matrix raw_mat = deltasample_features_from_raw(signal,
-                                                            deltasample_drgrgr_resgru_shift,
-                                                            deltasample_drgrgr_resgru_scale,
-                                                            deltasample_drgrgr_resgru_sdthresh);
-    scrappie_matrix conv1 =
-        convolution(raw_mat, conv1_drgrgr_resgru_W, conv1_drgrgr_resgru_b, conv1_drgrgr_resgru_stride, NULL);
-    raw_mat = free_scrappie_matrix(raw_mat);
-
-    scrappie_matrix maxpool1 = max_pooling(conv1, maxpool_drgrgr_resgru_poolsize, NULL);
-    conv1 = free_scrappie_matrix(conv1);
-    elu_activation_inplace(maxpool1);
-
-    scrappie_matrix conv2 =
-        convolution(maxpool1, conv2_drgrgr_resgru_W, conv2_drgrgr_resgru_b, conv2_drgrgr_resgru_stride, NULL);
-    maxpool1 = free_scrappie_matrix(maxpool1);
-    tanh_activation_inplace(conv2);
-
-    //  First GRU layer
-    scrappie_matrix gruB1in = feedforward_linear(conv2, gruB1_drgrgr_resgru_iW, gruB1_drgrgr_resgru_b, NULL);
-    scrappie_matrix gruB1 = gru_backward(gruB1in, gruB1_drgrgr_resgru_sW, gruB1_drgrgr_resgru_sW2, NULL);
-    residual_inplace(conv2, gruB1);
-    conv2 = free_scrappie_matrix(conv2);
-    gruB1in = free_scrappie_matrix(gruB1in);
-    //  Second GRU layer
-    scrappie_matrix gruF2in = feedforward_linear(gruB1, gruF2_drgrgr_resgru_iW, gruF2_drgrgr_resgru_b, NULL);
-    scrappie_matrix gruF2 = gru_forward(gruF2in, gruF2_drgrgr_resgru_sW, gruF2_drgrgr_resgru_sW2, NULL);
-    residual_inplace(gruB1, gruF2);
-    gruB1 = free_scrappie_matrix(gruB1);
-    gruF2in = free_scrappie_matrix(gruF2in);
-    //  Third GRU layer
-    scrappie_matrix gruB3in = feedforward_linear(gruF2, gruB3_drgrgr_resgru_iW, gruB3_drgrgr_resgru_b, NULL);
-    scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_drgrgr_resgru_sW, gruB3_drgrgr_resgru_sW2, NULL);
-    residual_inplace(gruF2, gruB3);
-    gruF2 = free_scrappie_matrix(gruF2);
-    gruB3in = free_scrappie_matrix(gruB3in);
-    //  Fourth GRU layer
-    scrappie_matrix gruF4in = feedforward_linear(gruB3, gruF4_drgrgr_resgru_iW, gruF4_drgrgr_resgru_b, NULL);
-    scrappie_matrix gruF4 = gru_forward(gruF4in, gruF4_drgrgr_resgru_sW, gruF4_drgrgr_resgru_sW2, NULL);
-    residual_inplace(gruB3, gruF4);
-    gruB3 = free_scrappie_matrix(gruB3);
-    gruF4in = free_scrappie_matrix(gruF4in);
-    //  Fifth GRU layer
-    scrappie_matrix gruB5in = feedforward_linear(gruF4, gruB5_drgrgr_resgru_iW, gruB5_drgrgr_resgru_b, NULL);
-    scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_drgrgr_resgru_sW, gruB5_drgrgr_resgru_sW2, NULL);
-    residual_inplace(gruF4, gruB5);
-    gruF4 = free_scrappie_matrix(gruF4);
-    gruB5in = free_scrappie_matrix(gruB5in);
-
-    shift_scale_matrix_inplace(gruB5, 0.0f, temp);
-    scrappie_matrix post = softmax(gruB5, FF_drgrgr_resgru_W, FF_drgrgr_resgru_b, NULL);
-    gruB5 = free_scrappie_matrix(gruB5);
 
     if (return_log) {
         robustlog_activation_inplace(post, min_prob);

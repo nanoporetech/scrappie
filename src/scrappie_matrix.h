@@ -67,4 +67,10 @@ bool validate_ivector(int *vec, const int n, const int lower,
 bool validate_vector(float *vec, const float n, const float lower,
                      const float upper, const char *file, const int line);
 
+void shift_scale_matrix_inplace(scrappie_matrix sigmat, float shift, float scale);
+void clip_matrix_inplace(scrappie_matrix C, float thresh);
+void filter_matrix_inplace(scrappie_matrix C, float fill_val,float thresh);
+void difference_matrix_inplace(scrappie_matrix C, float val);
+
+
 #endif                          /* SCRAPPIE_MATRIX_H */

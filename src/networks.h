@@ -35,7 +35,6 @@ scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_pr
 scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix deltasample_rgrgr_resgru_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
 
 //  Squiggle functions
 scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units);
