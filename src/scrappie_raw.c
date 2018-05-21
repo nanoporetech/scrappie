@@ -45,6 +45,7 @@ static struct argp_option options[] = {
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"local", 6, "penalty", 0, "Penalty for local basecalling"},
+    {"temperature", 7, "factor", 0, "Temperature for softmax"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -73,6 +74,7 @@ struct arguments {
     float skip_pen;
     float stay_pen;
     float local_pen;
+    float temperature;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -94,6 +96,7 @@ static struct arguments args = {
     .skip_pen = 0.0f,
     .stay_pen = 0.0f,
     .local_pen = 2.0f,
+    .temperature = 1.0f,
     .use_slip = false,
     .trim_start = 200,
     .trim_end = 10,
@@ -184,6 +187,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         args.local_pen = atof(arg);
         assert(isfinite(args.local_pen));
         break;
+    case 7:
+	args.temperature = atof(arg);
+	assert(isfinite(args.temperature) && args.temperature >= 0.0f);
+        break;
     case 10:
     case 11:
         ret = fputs(scrappie_licence_text, stdout);
@@ -238,8 +245,13 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
-    medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-    scrappie_matrix post = calcpost(rt, args.min_prob, true);
+    if(SCRAPPIE_MODEL_DRGRGR_RESGRU != model){
+        //  Don't normalise delta sample models
+        medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
+    }
+
+    scrappie_matrix post = calcpost(rt, args.min_prob, args.temperature, true);
+
     if (NULL == post) {
         free(rt.raw);
         return (struct _raw_basecall_info){0};

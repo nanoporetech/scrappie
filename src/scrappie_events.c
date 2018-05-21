@@ -53,6 +53,7 @@ static struct argp_option options[] = {
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"local", 7, "penalty", 0, "Penalty for local basecalling"},
+    {"temperature", 8, "factor", 0, "Temperature for softmax"},
     {"trim", 't', "start:end", 0, "Number of events to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -82,6 +83,7 @@ struct arguments {
     float skip_pen;
     float stay_pen;
     float local_pen;
+    float temperature;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -103,6 +105,7 @@ static struct arguments args = {
     .skip_pen = 0.0f,
     .stay_pen = 0.0f,
     .local_pen = 2.0f,
+    .temperature = 1.0f,
     .use_slip = false,
     .trim_start = 200,
     .trim_end = 10,
@@ -181,6 +184,10 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         args.local_pen = atof(arg);
         assert(isfinite(args.local_pen));
         break;
+    case 8:
+        args.temperature = atof(arg);
+        assert(isfinite(args.temperature) && args.temperature >= 0.0f);
+        break;
     case 10:
     case 11:
         ret = fputs(scrappie_licence_text, stdout);
@@ -251,7 +258,7 @@ static struct _bs calculate_post(char *filename) {
         return _bs_null;
     }
 
-    scrappie_matrix post = nanonet_posterior(et, args.min_prob, true);
+    scrappie_matrix post = nanonet_posterior(et, args.min_prob, args.temperature, true);
     if (NULL == post) {
         free(et.event);
         free(rt.raw);
