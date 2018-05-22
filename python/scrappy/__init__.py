@@ -121,16 +121,14 @@ def _trim_raw(rt, start=200, end=10, varseg_chunk=100, varseg_thresh=0.0):
 
     :returns: new scrappie raw data structure.
     """
-    trimmed_rt = _none_if_null(lib.trim_raw_by_mad(rt, varseg_chunk, varseg_thresh))
-    pstart, pend = 0, 0
-    if trimmed_rt is not None:
-        pstart, pend = trimmed_rt.start, trimmed_rt.end
-        pstart = min(trimmed_rt.n, pstart + start)
-        pend = max(0, pend - end)
-        if pend < pstart:
-            pstart, pend = 0, 0
-    rt.start = pstart
-    rt.end = pend
+    rt = _none_if_null(lib.trim_raw_by_mad(rt, varseg_chunk, varseg_thresh))
+    if rt is not None:
+        rt.start = rt.start + start if (rt.n - rt.start) > start else rt.n
+        rt.end = rt.end - end if (rt.end > end) else 0
+    if rt.start >= rt.end:
+        rt.start, rt.end = 0, 0
+        # n.b. at this point the equivalent trim_and_segment_raw() from
+        #      scrappie_common.c frees the data array.
     return rt
 
 
@@ -410,6 +408,7 @@ def basecall_raw(data, model='rgrgr_r94', with_base_probs=False, **kwargs):
 
     raw = RawTable(data)
     raw.trim().scale()
+    print(raw.start, raw.end)
 
     post = calc_post(raw, model, log=True)
     seq, score, pos = decode_post(post, model, **kwargs)
@@ -568,7 +567,10 @@ def _raw_gen(filelist):
             with h5py.File(fname, 'r') as h:
                 base = 'Raw/Reads'
                 read_name = list(h[base].keys())[0]
-                data = h['{}/{}/Signal'.format(base, read_name)][()]
+                data = h['{}/{}/Signal'.format(base, read_name)][()].astype(np.float32)
+                meta = h['/UniqueGlobalKey/channel_id'].attrs
+                raw_unit = meta['range'] / meta['digitisation']
+                data = (data + meta['offset']) * raw_unit
         except:
             raise RuntimeError('Failed to read signal data from {}.'.format(fname))
         else:

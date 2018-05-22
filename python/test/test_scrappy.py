@@ -15,7 +15,8 @@ import scrappy
 _path_ = os.path.join(os.path.dirname(__file__), '..', '..', 'reads')
 _test_reads_ = tuple(os.path.abspath(os.path.join(_path_, x)) for x in (
     'MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch174_read172_strand.fast5',
-    'MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand.fast5'
+    'MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_read66_strand.fast5',
+    'read_ch228_file118.fast5',
 ))
 _test_fasta_ = {
     x:'{}.fa'.format(os.path.splitext(x)[0]) for x in _test_reads_
@@ -70,6 +71,7 @@ class TestScrappy(unittest.TestCase):
 
     def test_000_same_as_scrappie(self):
         for fname, data in self.signals.items():
+            print(fname)
             seq, score, pos, _, _, _ = scrappy.basecall_raw(data, model=self.model)
             self.assertEqual(seq, self.scrappie_seqs[os.path.basename(fname)])
 
