@@ -71,7 +71,6 @@ class TestScrappy(unittest.TestCase):
 
     def test_000_same_as_scrappie(self):
         for fname, data in self.signals.items():
-            print(fname)
             seq, score, pos, _, _, _ = scrappy.basecall_raw(data, model=self.model)
             self.assertEqual(seq, self.scrappie_seqs[os.path.basename(fname)])
 

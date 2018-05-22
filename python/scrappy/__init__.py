@@ -408,7 +408,6 @@ def basecall_raw(data, model='rgrgr_r94', with_base_probs=False, **kwargs):
 
     raw = RawTable(data)
     raw.trim().scale()
-    print(raw.start, raw.end)
 
     post = calc_post(raw, model, log=True)
     seq, score, pos = decode_post(post, model, **kwargs)
