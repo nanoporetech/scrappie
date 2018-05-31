@@ -10,6 +10,7 @@ enum raw_model_type {
     SCRAPPIE_MODEL_RGR,
     SCRAPPIE_MODEL_RGRGR_R94,
     SCRAPPIE_MODEL_RGRGR_R95,
+    SCRAPPIE_MODEL_RGRGR_RF14,
     SCRAPPIE_MODEL_RNNRF_R94,
     SCRAPPIE_MODEL_RGRGR_RESGRU,
     SCRAPPIE_MODEL_RGRGR_RESLSTM,
@@ -32,6 +33,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, fl
 scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
+scrappie_matrix nanonet_rgrgr_rf14_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
 scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
