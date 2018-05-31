@@ -329,6 +329,32 @@ scrappie_matrix softmax(const_scrappie_matrix X, const_scrappie_matrix W,
     return C;
 }
 
+/**   Softmax with separate temperatures on weights and bias
+ *
+ *    Calculates softmax( A x / tempW + b / tempb ) as
+ *    softmax( (A (x * tempb / tempW ) + b) / tempb )
+ *    
+ *    @returns matrix containing softmax 
+ **/
+scrappie_matrix softmax_with_temperature(scrappie_matrix X, const_scrappie_matrix W,
+                                         const_scrappie_matrix b, float tempW, float tempb,
+                                         scrappie_matrix C) {
+    RETURN_NULL_IF(NULL == X, NULL);
+    
+    shift_scale_matrix_inplace(X, 0.0f, tempW / tempb);
+
+    C = feedforward_linear(X, W, b, C);
+    RETURN_NULL_IF(NULL == C, NULL);
+
+    shift_scale_matrix_inplace(C, 0.0f, tempb);
+    exp_activation_inplace(C);
+    row_normalise_inplace(C);
+
+    assert(validate_scrappie_matrix
+           (C, 0.0, 1.0, NAN, true, __FILE__, __LINE__));
+    return C;
+}
+
 scrappie_matrix feedforward2_tanh(const_scrappie_matrix Xf,
                                   const_scrappie_matrix Xb,
                                   const_scrappie_matrix Wf,

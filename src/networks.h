@@ -16,7 +16,7 @@ enum raw_model_type {
     SCRAPPIE_MODEL_RGRGR_RESLSTM,
     SCRAPPIE_MODEL_INVALID};
 
-typedef scrappie_matrix (*posterior_function_ptr)(const raw_table, float, float, bool);
+typedef scrappie_matrix (*posterior_function_ptr)(const raw_table, float, float, float, bool);
 
 enum raw_model_type get_raw_model(const char * modelstr);
 const char * raw_model_string(const enum raw_model_type model);
@@ -25,18 +25,26 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model);
 
 
 //  Events posterior.  Other models via factory function
-scrappie_matrix nanonet_posterior(const event_table events, float min_prob, float temp,
-                                  bool return_log);
+scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
+		                  float tempW, float tempb, bool return_log);
 
 //  Raw posterior -- for preference, use get_posterior_function
-scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rgrgr_rf14_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
-scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float min_prob, float temp, bool return_log);
+scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
+		                      float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
+		                      float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob,
+		                            float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob,
+		                            float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgrgr_rf14_posterior(const raw_table signal, float min_prob,
+		                             float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob,
+		                              float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min_prob,
+		                               float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float min_prob,
+		                                float tempW, float tempb, bool return_log);
 
 //  Squiggle functions
 scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units);

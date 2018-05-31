@@ -45,7 +45,8 @@ static struct argp_option options[] = {
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"local", 6, "penalty", 0, "Penalty for local basecalling"},
-    {"temperature", 7, "factor", 0, "Temperature for softmax"},
+    {"temperature1", 7, "factor", 0, "Temperature for softmax weights"},
+    {"temperature2", 8, "factor", 0, "Temperature for softmax bias"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -74,7 +75,8 @@ struct arguments {
     float skip_pen;
     float stay_pen;
     float local_pen;
-    float temperature;
+    float temperature1;
+    float temperature2;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -96,7 +98,8 @@ static struct arguments args = {
     .skip_pen = 0.0f,
     .stay_pen = 0.0f,
     .local_pen = 2.0f,
-    .temperature = 1.0f,
+    .temperature1 = 1.0f,
+    .temperature2 = 1.0f,
     .use_slip = false,
     .trim_start = 200,
     .trim_end = 10,
@@ -188,8 +191,12 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         assert(isfinite(args.local_pen));
         break;
     case 7:
-	args.temperature = atof(arg);
-	assert(isfinite(args.temperature) && args.temperature >= 0.0f);
+	args.temperature1 = atof(arg);
+	assert(isfinite(args.temperature1) && args.temperature1 > 0.0f);
+        break;
+    case 8:
+	args.temperature2 = atof(arg);
+	assert(isfinite(args.temperature2) && args.temperature2 > 0.0f);
         break;
     case 10:
     case 11:
@@ -246,7 +253,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-    scrappie_matrix post = calcpost(rt, args.min_prob, args.temperature, true);
+    scrappie_matrix post = calcpost(rt, args.min_prob, args.temperature1, args.temperature2, true);
 
     if (NULL == post) {
         free(rt.raw);
