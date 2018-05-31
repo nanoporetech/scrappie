@@ -551,8 +551,9 @@ bool validate_ivector(int *vec, const int n, const int lower, const int upper,
  *   x[i] := (x[i] - shift) / scale
  *   Matrix updated in-place.
  *
- *   @param x      Matrix to filter [in/out]
- *   @param thresh Threshold
+ *   @param C     Matrix to transform [in/out]
+ *   @param shift
+ *   @param scale
  *
  *   @returns void
  **/
@@ -572,7 +573,7 @@ void shift_scale_matrix_inplace(scrappie_matrix C, float shift, float scale){
  *   Clip elements of matrix into [-thresh, thresh].
  *   Matrix updated in-place.
  *
- *   @param x      Matrix to filter [in/out]
+ *   @param x      Matrix to clip [in/out]
  *   @param thresh Threshold
  *
  *   @returns void
