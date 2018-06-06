@@ -192,6 +192,28 @@ int printRun(FILE *stream,int *path,scrappie_matrix posteriors,int start,int run
     return 0;
 }
 
+/*Go through a posterior matrix at the given time, printing all elements whose probabilities are
+larger than the given threshold. Used for debugging*/
+int printSignificantPosts(FILE * stream,scrappie_matrix post,double threshold,int timeloc,double checkTemp)
+{
+    double sump=0.0;
+    double fullsump=0.0;
+    double pstay = exp(post->data.f[ timeloc * post->stride + STAYPOST]);
+    for(int j=0;j<=STAYPOST;j++)
+    {
+        double p = exp(post->data.f[ timeloc * post->stride + j]  );
+        if(p>threshold)
+        {
+            fprintf(stream,"%d:%.4f (p/ps)^1/%.2f=%.4f  ",j,p,checkTemp,pow(p/pstay,1.0/checkTemp));
+            sump=sump+p;
+        }
+        fullsump=fullsump+p;
+    }
+    fprintf(stream,"[sum=%.4f,fullsum=%.4f]\n",sump,fullsump);
+    return 0;
+}
+
+
 /*Do a temperature change according to the recipe suggested by
   Guo et al ('On calibration of modern neural networks', arXiv:1706.04599 (2017))
   For each location we calculate (running over states k)
@@ -202,6 +224,13 @@ int printRun(FILE *stream,int *path,scrappie_matrix posteriors,int start,int run
 int change_temperature(double temperature,scrappie_matrix post)
 {
     const int nblock = post->nc;//Number of locations in read
+    #ifdef DEBUG
+    fprintf(stderr,"Doing temperature change with temp=%.4f\n",temperature);
+    double thresh = 0.01;
+    int debugloc=nblock/2;
+    fprintf(stderr,"Posts at time %d > %.3f before T change:\n",debugloc,thresh);
+    printSignificantPosts(stderr,post,thresh,debugloc,temperature);
+    #endif
     for(int t=0;t<nblock;t++)
     {
         double sump=0.0;
@@ -214,6 +243,10 @@ int change_temperature(double temperature,scrappie_matrix post)
         for(int k=0;k<=STAYPOST;k++)
             PP(post,t,k)=PP(post,t,k)-logz;
     }
+    #ifdef DEBUG
+    fprintf(stderr,"Posts at time %d > %.3f after T change:\n",debugloc,thresh);
+    printSignificantPosts(stderr,post,thresh,debugloc,1.0);
+    #endif
     return 0;
 }
 #undef PP
