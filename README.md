@@ -57,12 +57,14 @@ export OPENBLAS_NUM_THREADS=1
 scrappie events reads ... > basecalls.fa
 # Call a folder of reads from raw signal
 scrappie raw reads ... > basecalls.fa
-# Call indivdual reads
+# Call individual reads
 scrappie raw reads/read1.fast5 reads/read2.fast5 > basecalls.fa
 # Or using a strand list (skipping first line)
 tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie raw > basecalls.fa
 #  Using Scrappie in single-threaded mode
 find path/to/reads/ -name \*.fast5 | parallel -P ${OMP_NUM_THREADS} scrappie raw --threads 1 > basecalls.fa
+#  Run with homopolymer path calculation and temperature change
+scrappie raw --homopolymer mean --temperature 1.5 reads/read1.fast5 > basecalls.fa
 ```
 
 ## Commandline options
@@ -104,17 +106,21 @@ Scrappie basecaller -- basecall via events
 Usage: raw [OPTION...] fast5 [fast5 ...]
 Scrappie basecaller -- basecall from raw signal
 
-  -#, --threads=nreads       Number of reads to call in parallel
+  -#, --threads=nparallel    Number of reads to call in parallel
   -f, --format=format        Format to output reads (FASTA or SAM)
       --hdf5-chunk=size      Chunk size for HDF5 output
       --hdf5-compression=level   Gzip compression level for HDF5 output (0:off,
                              1: quickest, 9: best)
+  -h, --homopolymer=homopolymer   Homopolymer run calc. to use: choose from
+                             nochange (the default) or mean. Not implemented
+                             for CRF.
   -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
       --licence, --license   Print licensing information
       --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
       --model=name           Raw model to use: "raw_r94", "rgr_r94",
-                             "rgrgr_r94", "rgrgr_r95", "rnnrf_r94"
+                             "rgrgr_r94", "rgrgr_r95", "rgrgr_rf14",
+                             "rnnrf_r94", "rgrgr_resgru", "rgrgr_reslstm"
   -o, --output=filename      Write to file rather than stdout
   -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base
@@ -123,10 +129,14 @@ Scrappie basecaller -- basecall from raw signal
                              segmentation
       --slip, --no-slip      Use slipping
   -t, --trim=start:end       Number of samples to trim, as start:end
+  -T, --temperature=temperature   Temperature to apply to posteriors according
+                             to recipe in Guo arXiv:1706.04599. Not implemented
+                             for CRF.
   -y, --stay=penalty         Penalty for staying
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
+
 ```
 
 ```
