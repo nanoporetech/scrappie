@@ -97,7 +97,8 @@ ffibuilder.cdef("""
   scrappie_matrix posterior_crf(const_scrappie_matrix trans);
 
   // Squiggle generation
-  scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units);
+  scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_units);
+  scrappie_matrix squiggle_rf14(int const * sequence, size_t n, bool transform_units);
 
   // Scrappy Mappy
   float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
