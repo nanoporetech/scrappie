@@ -17,6 +17,7 @@
 #include "scrappie_licence.h"
 #include "scrappie_stdlib.h"
 #include "util.h"
+#include "homopolymer.h"
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
@@ -58,6 +59,8 @@ static struct argp_option options[] = {
     {"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
+    {"homopolymer", 'h',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},    
+    {"temperature", 'T',"temperature", 0, "Temperature to apply to posteriors according to recipe in Guo arXiv:1706.04599. Not implemented for CRF."},    
 #if defined(_OPENMP)
     {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
@@ -87,6 +90,8 @@ struct arguments {
     int compression_chunk_size;
     enum raw_model_type model_type;
     char ** files;
+    int homopolymer;
+    float temperature;
 };
 
 static struct arguments args = {
@@ -109,7 +114,9 @@ static struct arguments args = {
     .compression_level = 1,
     .compression_chunk_size = 200,
     .model_type = SCRAPPIE_MODEL_RGRGR_R94,
-    .files = NULL
+    .files = NULL,
+    .homopolymer = HOMOPOLYMER_NOCHANGE,
+    .temperature = 1.0
 };
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -160,6 +167,19 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 'y':
         args.stay_pen = atof(arg);
         assert(isfinite(args.stay_pen));
+        break;
+    case 'h':
+        if(0 == strcasecmp("mean", arg))
+            args.homopolymer = HOMOPOLYMER_MEAN;
+        else if(0 == strcasecmp("nochange", arg))
+            args.homopolymer = HOMOPOLYMER_NOCHANGE;
+        else
+            errx(EXIT_FAILURE, "Homopolymer option %s not recognised.", arg);
+        break;
+    case 'T':
+        args.temperature = atof(arg);
+        if( !(isfinite(args.temperature) && args.temperature > 0.0) )
+            errx(EXIT_FAILURE, "Supplied temperature is %s: temp. must be a positive number.", arg);
         break;
     case 1:
         args.use_slip = true;
@@ -267,8 +287,10 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     char * basecall = NULL;
     if(SCRAPPIE_MODEL_RNNRF_R94 != model){
         const int nstate = post->nr;
-
+        if(args.temperature>1.00001 || args.temperature <0.9999)
+            change_temperature(args.temperature,post);
         score = decode_transducer(post, args.stay_pen, args.skip_pen, args.local_pen, path, args.use_slip);
+        homopolymer_path(post,path,args.homopolymer);//Last arg is flag to decide which version of calculation to do - see homopolymer.h
         basecall = overlapper(path, nblock + 1, nstate - 1, pos);
     } else{
 
