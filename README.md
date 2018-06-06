@@ -136,6 +136,8 @@ Scrappie squiggler
 
   -l, --limit=nreads         Maximum number of reads to call (0 is unlimited)
       --licence, --license   Print licensing information
+  -m, --model=name           Squiggle model to use: "squiggle_r94",
+                             "squiggle_rf14"
   -o, --output=filename      Write to file rather than stdout
   -p, --prefix=string        Prefix to append to name of each read
       --rescale, --no-rescale   Rescale network output

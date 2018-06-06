@@ -22,6 +22,7 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Scrappie squiggler";
 static char args_doc[] = "fasta [fasta ...]";
 static struct argp_option options[] = {
+    {"model", 'm', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_rf14\""},
     {"limit", 'l', "nreads", 0,
      "Maximum number of reads to call (0 is unlimited)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
@@ -35,6 +36,7 @@ static struct argp_option options[] = {
 
 
 struct arguments {
+    enum squiggle_model_type model_type;
     int limit;
     FILE * output;
     char * prefix;
@@ -43,6 +45,7 @@ struct arguments {
 };
 
 static struct arguments args = {
+    .model_type = SCRAPPIE_SQUIGGLE_MODEL_R94,
     .limit = 0,
     .output = NULL,
     .prefix = "",
@@ -53,6 +56,12 @@ static struct arguments args = {
 static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     switch (key) {
         int ret = 0;
+    case 'm':
+        args.model_type = get_squiggle_model(arg);
+        if(SCRAPPIE_SQUIGGLE_MODEL_INVALID == args.model_type){
+            errx(EXIT_FAILURE, "Invalid squiggle model name \"%s\"", arg);
+        }
+        break;
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
@@ -96,13 +105,15 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_arg, args_doc, doc };
 
 
-static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale){
+static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale, enum squiggle_model_type squiggle_model){
     RETURN_NULL_IF(NULL == base_seq, NULL);
 
     int * sequence = encode_bases_to_integers(base_seq, n, 1);
     RETURN_NULL_IF(NULL == sequence, NULL);
 
-    scrappie_matrix squiggle = dna_squiggle(sequence, n, rescale);
+    squiggle_function_ptr squiggle_function = get_squiggle_function(squiggle_model);
+
+    scrappie_matrix squiggle = squiggle_function(sequence, n, rescale);
     free(sequence);
 
     return squiggle;
@@ -140,7 +151,7 @@ int main_squiggle(int argc, char *argv[]) {
             }
             reads_started += 1;
 
-            scrappie_matrix squiggle = sequence_to_squiggle(seq->seq.s, seq->seq.l, args.rescale);
+            scrappie_matrix squiggle = sequence_to_squiggle(seq->seq.s, seq->seq.l, args.rescale, args.model_type);
             if(NULL != squiggle){
                 fprintf(args.output, "#%s\n", seq->name.s);
                 fprintf(args.output, "pos\tbase\tcurrent\tsd\tdwell\n");

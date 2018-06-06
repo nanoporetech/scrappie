@@ -1013,7 +1013,7 @@ scrappie_matrix posterior_crf(const_scrappie_matrix trans){
 
 static float LARGE_VAL = 1e30f;
 
-/**  Map a signal to signal to a predicted squiggle using variant of dynamic time-warping
+/**  Map a signal to a predicted squiggle using variant of dynamic time-warping
  *
  *   Uses a local mapping so not all of signal may be mapped and not every position of the
  *   predicted squiggle may be mapped to.
