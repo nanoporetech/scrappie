@@ -1,3 +1,0 @@
-[console_scripts]
-scrappy = scrappy:_basecall
-
