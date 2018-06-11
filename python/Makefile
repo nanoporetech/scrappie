@@ -23,4 +23,4 @@ wheels:
 	cd .. && docker run -v `pwd`:/io ontresearch/manylinux1_x86_64_openblas /io/python/build-wheels.sh
 
 clean:
-	rm -rf lib venv build dist *.egg-info rm src test_sdist wheelhouse
+	rm -rf lib venv build dist *.egg-info src test_sdist wheelhouse
