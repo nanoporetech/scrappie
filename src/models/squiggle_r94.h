@@ -1,23 +1,23 @@
 #pragma once
-#ifndef NANONET_SQUIGGLE_DNA_MODEL_H
-    #define NANONET_SQUIGGLE_DNA_MODEL_H
+#ifndef NANONET_SQUIGGLE_R94_MODEL_H
+    #define NANONET_SQUIGGLE_R94_MODEL_H
     #include <assert.h>
     #include "../util.h"
-float __embed_squiggle_dna_W[16] = {
+float __embed_squiggle_r94_W[16] = {
 	0x1.p+0, 0x0.p+0, -0x1.6a09e6p-1, 0x0.p+0,
 	-0x1.p+0, 0x0.p+0, -0x1.6a09e6p-1, 0x0.p+0,
 	0x0.p+0, 0x1.p+0, 0x1.6a09e6p-1, 0x0.p+0,
 	0x0.p+0, -0x1.p+0, 0x1.6a09e6p-1, 0x0.p+0};
-_Mat _embed_squiggle_dna_W = {
+_Mat _embed_squiggle_r94_W = {
 	.nr = 3,
 	.stride = 4,
 	.nrq = 1,
 	.nc = 4,
-	.data.f = __embed_squiggle_dna_W
+	.data.f = __embed_squiggle_r94_W
 };
-const scrappie_matrix embed_squiggle_dna_W = &_embed_squiggle_dna_W;
+const scrappie_matrix embed_squiggle_r94_W = &_embed_squiggle_r94_W;
 
-float __conv1_squiggle_dna_W[896] = {
+float __conv1_squiggle_r94_W[896] = {
 	0x1.ae5406p-7, -0x1.6e24d6p-5, 0x1.59b6bp-4, 0x0.p+0,
 	0x1.16487cp-5, 0x1.e437d8p-5, -0x1.ab95cep-6, 0x0.p+0,
 	-0x1.1012a2p-4, -0x1.0c72d8p-5, 0x1.4261e2p-5, 0x0.p+0,
@@ -242,30 +242,30 @@ float __conv1_squiggle_dna_W[896] = {
 	-0x1.bd9558p-5, 0x1.a11d08p-11, -0x1.1d03fep-4, 0x0.p+0,
 	-0x1.503794p-9, 0x1.bb1e1ep-9, 0x1.19ef9cp-5, 0x0.p+0,
 	-0x1.96858ep-6, -0x1.1d310ep-3, -0x1.02114ep-8, 0x0.p+0};
-_Mat _conv1_squiggle_dna_W = {
+_Mat _conv1_squiggle_r94_W = {
 	.nr = 27,
 	.stride = 28,
 	.nrq = 7,
 	.nc = 32,
-	.data.f = __conv1_squiggle_dna_W
+	.data.f = __conv1_squiggle_r94_W
 };
-const scrappie_matrix conv1_squiggle_dna_W = &_conv1_squiggle_dna_W;
+const scrappie_matrix conv1_squiggle_r94_W = &_conv1_squiggle_r94_W;
 
-float __conv1_squiggle_dna_b[] = {
+float __conv1_squiggle_r94_b[] = {
 	0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0};
-_Mat _conv1_squiggle_dna_b = {
+_Mat _conv1_squiggle_r94_b = {
 	.nr = 32,
 	.stride = 32,
 	.nrq = 8,
 	.nc = 1,
-	.data.f = __conv1_squiggle_dna_b
+	.data.f = __conv1_squiggle_r94_b
 };
-const scrappie_matrix conv1_squiggle_dna_b = &_conv1_squiggle_dna_b;
+const scrappie_matrix conv1_squiggle_r94_b = &_conv1_squiggle_r94_b;
 
-const int conv1_squiggle_dna_stride = 1;
-const size_t _conv1_squiggle_dna_nfilter = 32;
-const size_t _conv1_squiggle_dna_winlen = 7;
-float __conv2_squiggle_dna_W[7168] = {
+const int conv1_squiggle_r94_stride = 1;
+const size_t _conv1_squiggle_r94_nfilter = 32;
+const size_t _conv1_squiggle_r94_winlen = 7;
+float __conv2_squiggle_r94_W[7168] = {
 	0x1.f35fep-6, 0x1.1bb9a6p-7, -0x1.a64ce4p-5, 0x1.117d8p-10, -0x1.5b1d3cp-8, 0x1.91b9e8p-7, -0x1.09ce66p-5, 0x1.746c54p-8, -0x1.f8b006p-6, -0x1.a6cf6p-7, -0x1.77b906p-5, -0x1.16f696p-4, -0x1.212008p-4, -0x1.7a7536p-6, 0x1.012b42p-4, 0x1.5d48c6p-6, 0x1.737e76p-10, -0x1.4c300cp-4, 0x1.059344p-5, -0x1.b79612p-5, 0x1.91fcbap-5, -0x1.098e8ep-5, -0x1.691a86p-10, -0x1.940a42p-8, -0x1.12fd06p-5, -0x1.92a222p-6, 0x1.560278p-7, -0x1.07e3cep-4, 0x1.da4e58p-7, 0x1.9fa3ep-6, -0x1.0be5c4p-7, -0x1.60f8aap-4,
 	-0x1.3bce8p-6, -0x1.d027c8p-5, -0x1.1784dp-5, -0x1.a6f22ep-6, 0x1.feba22p-4, -0x1.ee198p-6, 0x1.368b2ap-4, 0x1.c12cacp-6, -0x1.0049c8p-4, 0x1.2a1b8cp-4, -0x1.084122p-4, 0x1.5a7beep-5, -0x1.784a9p-5, -0x1.90a3c6p-5, -0x1.cc3f68p-8, -0x1.4ca7bp-5, 0x1.272d12p-4, -0x1.ee6bcep-5, -0x1.9bcceap-5, 0x1.dea906p-6, -0x1.0256a8p-4, 0x1.786746p-6, 0x1.7550cap-4, 0x1.f2de54p-5, 0x1.deabfp-6, -0x1.f5f1fp-5, 0x1.0bad88p-4, -0x1.bb864ap-6, -0x1.2effe8p-9, 0x1.5dc706p-5, -0x1.652d68p-6, -0x1.4a58ecp-4,
 	-0x1.38d96cp-4, 0x1.685354p-4, -0x1.24efbep-8, 0x1.ad1be8p-11, 0x1.51a5d4p-9, -0x1.da9598p-5, -0x1.37522ep-4, -0x1.2bbf4cp-5, 0x1.8dacacp-6, 0x1.648768p-7, 0x1.6d57e2p-5, -0x1.9d96ap-8, -0x1.66ec0ap-5, 0x1.3dae46p-5, -0x1.0497fep-7, 0x1.34e83ep-4, -0x1.5cfb66p-5, -0x1.309d74p-10, 0x1.2b9a2ap-4, -0x1.643fb6p-5, -0x1.3fdd5p-9, 0x1.120ec6p-6, 0x1.8ebb64p-7, -0x1.42639ap-7, -0x1.4c7558p-4, 0x1.7da3acp-8, 0x1.acebeep-5, -0x1.b9affap-5, 0x1.beaa46p-5, -0x1.0d4a94p-6, 0x1.5dcfeep-3, 0x1.e6ba98p-8,
@@ -490,30 +490,30 @@ float __conv2_squiggle_dna_W[7168] = {
 	0x1.dd701cp-5, 0x1.5d2608p-7, 0x1.d09e1ep-5, 0x1.a1dc52p-7, -0x1.fe310ep-5, 0x1.db4656p-10, 0x1.279326p-5, -0x1.4fbd74p-6, -0x1.048deep-5, -0x1.003688p-5, 0x1.e3cf6ap-7, -0x1.e5b332p-6, -0x1.2b86c6p-6, 0x1.06900ap-5, 0x1.9117e8p-5, -0x1.2f6836p-4, -0x1.4bd79ep-11, -0x1.2ca8f8p-9, 0x1.33642ep-5, 0x1.a90b2ep-6, 0x1.2829acp-7, 0x1.a4205ap-6, 0x1.b08accp-14, 0x1.bd4fp-8, 0x1.b6dbd2p-6, -0x1.a19a96p-8, -0x1.a7bd26p-7, 0x1.f5c25p-5, -0x1.a330dp-4, -0x1.b2f2bap-8, 0x1.9f40dp-7, 0x1.e44aa4p-6,
 	-0x1.318546p-5, 0x1.b71f1cp-5, -0x1.9a3e3p-6, -0x1.780f3ep-8, -0x1.8b7a8cp-5, -0x1.4ebd94p-5, -0x1.197bccp-6, -0x1.4d8914p-5, -0x1.86fe1p-5, -0x1.3fa50cp-7, 0x1.bb7d86p-5, -0x1.f53cc8p-11, -0x1.2d3fd4p-4, -0x1.014d82p-5, 0x1.6f798p-8, -0x1.2ace0cp-4, 0x1.066522p-6, 0x1.5195f6p-5, -0x1.dddd68p-6, -0x1.5979ap-5, -0x1.9e4284p-7, 0x1.2aa2b6p-4, 0x1.fd5cc6p-6, -0x1.f72a5ep-9, 0x1.f33db4p-7, 0x1.cb8e32p-6, -0x1.c614dep-9, 0x1.94df72p-5, -0x1.53ae3ep-12, -0x1.6377c2p-8, -0x1.e19baap-6, -0x1.e828a8p-8,
 	0x1.54fd1p-5, -0x1.14860ap-4, 0x1.3a024ep-8, -0x1.00f674p-4, -0x1.984226p-6, -0x1.8a9f42p-7, -0x1.8f34bp-5, -0x1.1cc64ap-5, -0x1.4a6f78p-6, -0x1.a88e54p-5, 0x1.3692bap-7, -0x1.826a44p-9, 0x1.21d084p-6, -0x1.3d17d8p-8, 0x1.29364ap-5, -0x1.2a1906p-9, -0x1.77a9a8p-7, 0x1.0b42d4p-4, -0x1.8e579ap-7, -0x1.501d9p-7, -0x1.a2f1dap-5, 0x1.99f11ep-5, -0x1.cbc248p-7, -0x1.38d35ep-5, 0x1.46da82p-6, 0x1.570474p-7, -0x1.c40968p-5, 0x1.930fa4p-5, 0x1.20f9f2p-5, 0x1.6ac4e8p-7, 0x1.47bc7p-6, 0x1.2d1eccp-4};
-_Mat _conv2_squiggle_dna_W = {
+_Mat _conv2_squiggle_r94_W = {
 	.nr = 224,
 	.stride = 224,
 	.nrq = 56,
 	.nc = 32,
-	.data.f = __conv2_squiggle_dna_W
+	.data.f = __conv2_squiggle_r94_W
 };
-const scrappie_matrix conv2_squiggle_dna_W = &_conv2_squiggle_dna_W;
+const scrappie_matrix conv2_squiggle_r94_W = &_conv2_squiggle_r94_W;
 
-float __conv2_squiggle_dna_b[] = {
+float __conv2_squiggle_r94_b[] = {
 	0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0};
-_Mat _conv2_squiggle_dna_b = {
+_Mat _conv2_squiggle_r94_b = {
 	.nr = 32,
 	.stride = 32,
 	.nrq = 8,
 	.nc = 1,
-	.data.f = __conv2_squiggle_dna_b
+	.data.f = __conv2_squiggle_r94_b
 };
-const scrappie_matrix conv2_squiggle_dna_b = &_conv2_squiggle_dna_b;
+const scrappie_matrix conv2_squiggle_r94_b = &_conv2_squiggle_r94_b;
 
-const int conv2_squiggle_dna_stride = 1;
-const size_t _conv2_squiggle_dna_nfilter = 32;
-const size_t _conv2_squiggle_dna_winlen = 7;
-float __conv3_squiggle_dna_W[7168] = {
+const int conv2_squiggle_r94_stride = 1;
+const size_t _conv2_squiggle_r94_nfilter = 32;
+const size_t _conv2_squiggle_r94_winlen = 7;
+float __conv3_squiggle_r94_W[7168] = {
 	0x1.59971p-6, 0x1.deaf64p-4, 0x1.2f285cp-3, -0x1.1995f6p-4, 0x1.737022p-5, 0x1.174874p-3, -0x1.04d712p-10, -0x1.37a9d6p-6, 0x1.4cc1e6p-5, 0x1.8498fep-4, 0x1.15c736p-6, -0x1.1475b8p-5, 0x1.da1088p-6, -0x1.d97978p-4, 0x1.bbac9p-5, 0x1.2c9e4cp-4, -0x1.4335cep-5, 0x1.0fcf46p-3, -0x1.c3de62p-5, -0x1.3433f8p-4, 0x1.8564b2p-4, -0x1.a5f0d2p-4, 0x1.65810ep-5, -0x1.80139cp-10, 0x1.ff1bap-6, 0x1.5f4a3ap-4, -0x1.09ec7ap-5, -0x1.026976p-5, -0x1.35b6ccp-4, 0x1.6a0906p-5, 0x1.86076ep-9, -0x1.8592cep-5,
 	0x1.01d022p-9, 0x1.30b164p-4, -0x1.260d86p-8, -0x1.ddeb74p-4, 0x1.952556p-5, 0x1.ba8b58p-4, 0x1.a0bea6p-4, 0x1.4b6dfp-4, 0x1.28291ep-6, -0x1.983994p-4, -0x1.c0c7fp-5, 0x1.760c6ap-5, -0x1.3c470ap-5, -0x1.356ddcp-6, -0x1.98a068p-5, -0x1.37b126p-6, 0x1.c9314p-4, 0x1.51cc42p-5, -0x1.a19c44p-7, 0x1.7d0e8ap-4, 0x1.791f4ep-4, -0x1.4f623ep-4, -0x1.1c1422p-5, 0x1.27f5e4p-4, 0x1.835834p-4, 0x1.066c96p-3, -0x1.c9d996p-5, 0x1.f20cfep-5, -0x1.52585ap-5, 0x1.d7130ap-4, -0x1.5b9306p-6, 0x1.f8b832p-5,
 	-0x1.79e9a6p-5, 0x1.ff6888p-9, 0x1.8a71b6p-5, -0x1.69062ap-6, 0x1.18cceap-3, -0x1.962858p-4, -0x1.1cf78ap-4, -0x1.00da94p-4, -0x1.0928dp-5, -0x1.904a1cp-4, 0x1.7d12f6p-5, 0x1.fce9eap-5, -0x1.458a1cp-4, 0x1.75dc82p-4, 0x1.8a3896p-6, 0x1.ba8288p-4, -0x1.7c841ap-9, 0x1.7cacd8p-5, 0x1.1ad024p-4, 0x1.a401bap-5, 0x1.33e8dap-7, -0x1.1b2516p-5, -0x1.32ce18p-9, 0x1.0e79cap-4, 0x1.e274a8p-4, 0x1.b0fce6p-6, -0x1.f4b38p-5, 0x1.2e684ep-4, -0x1.c3633ep-6, 0x1.cca79ep-5, 0x1.842d1ap-4, 0x1.439afap-3,
@@ -738,30 +738,30 @@ float __conv3_squiggle_dna_W[7168] = {
 	-0x1.e8fe8p-6, -0x1.403ffep-5, 0x1.7f3dbap-7, 0x1.3618fep-6, -0x1.658c04p-6, -0x1.ef3facp-6, -0x1.6c5948p-4, 0x1.ef925cp-10, 0x1.4c0ef2p-6, 0x1.5592dap-6, -0x1.ecc0b4p-8, -0x1.7cc7e2p-7, 0x1.d1f2dep-8, -0x1.04c37ap-7, 0x1.77ee58p-5, 0x1.818b22p-5, 0x1.0d0f7cp-6, -0x1.7a5e42p-6, 0x1.8e7bdcp-8, 0x1.3f435ap-6, 0x1.a5d938p-9, 0x1.27689ap-4, -0x1.68019ep-4, -0x1.6e97f2p-5, -0x1.20514cp-6, -0x1.40ae9cp-5, 0x1.36d7a2p-8, -0x1.478822p-8, 0x1.32444ep-5, -0x1.47ed74p-6, -0x1.9d04aap-7, -0x1.5a5c5ap-8,
 	0x1.54dac8p-9, -0x1.d15c5ep-7, -0x1.7c8e18p-6, -0x1.cf5d64p-8, 0x1.138f76p-6, 0x1.901aeep-5, 0x1.2225c4p-4, 0x1.68bd96p-6, 0x1.37da24p-8, 0x1.0d54dcp-5, -0x1.4ac78p-12, 0x1.2cc8ep-8, 0x1.87a08p-5, -0x1.0c2ap-5, -0x1.4ee0cap-8, -0x1.fc45e8p-5, -0x1.0a1518p-11, 0x1.5a994cp-8, 0x1.36ddb8p-6, -0x1.1c74f8p-9, 0x1.2770d8p-7, -0x1.14ed18p-6, 0x1.2a10eep-7, -0x1.348a78p-5, 0x1.ef90c8p-6, 0x1.e3ca14p-7, -0x1.8bac38p-6, 0x1.b1a168p-6, 0x1.d24492p-6, -0x1.b37adap-8, -0x1.aa5968p-4, -0x1.75a21p-6,
 	-0x1.30863ap-5, -0x1.4f7516p-6, -0x1.0b281cp-5, -0x1.418516p-6, 0x1.c99eaep-5, -0x1.7ad33cp-7, 0x1.e5d6a6p-6, -0x1.1b868ap-6, 0x1.9fba06p-6, -0x1.f02354p-6, -0x1.4a6348p-6, 0x1.29cdfep-4, -0x1.353cc4p-5, 0x1.3186b8p-11, -0x1.a45f3ap-8, -0x1.78c06p-6, 0x1.8ca616p-5, -0x1.21ebc2p-7, 0x1.f3751ap-6, 0x1.42ad1ap-7, 0x1.d60808p-6, -0x1.6f2d6ap-8, -0x1.1e1edap-9, -0x1.eb3b62p-5, -0x1.3607d2p-11, 0x1.83c1f8p-6, -0x1.abdcc4p-5, 0x1.509902p-4, 0x1.06c6bp-5, -0x1.cd76d2p-7, 0x1.8b5744p-6, 0x1.91551ap-5};
-_Mat _conv3_squiggle_dna_W = {
+_Mat _conv3_squiggle_r94_W = {
 	.nr = 224,
 	.stride = 224,
 	.nrq = 56,
 	.nc = 32,
-	.data.f = __conv3_squiggle_dna_W
+	.data.f = __conv3_squiggle_r94_W
 };
-const scrappie_matrix conv3_squiggle_dna_W = &_conv3_squiggle_dna_W;
+const scrappie_matrix conv3_squiggle_r94_W = &_conv3_squiggle_r94_W;
 
-float __conv3_squiggle_dna_b[] = {
+float __conv3_squiggle_r94_b[] = {
 	0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0};
-_Mat _conv3_squiggle_dna_b = {
+_Mat _conv3_squiggle_r94_b = {
 	.nr = 32,
 	.stride = 32,
 	.nrq = 8,
 	.nc = 1,
-	.data.f = __conv3_squiggle_dna_b
+	.data.f = __conv3_squiggle_r94_b
 };
-const scrappie_matrix conv3_squiggle_dna_b = &_conv3_squiggle_dna_b;
+const scrappie_matrix conv3_squiggle_r94_b = &_conv3_squiggle_r94_b;
 
-const int conv3_squiggle_dna_stride = 1;
-const size_t _conv3_squiggle_dna_nfilter = 32;
-const size_t _conv3_squiggle_dna_winlen = 7;
-float __conv4_squiggle_dna_W[7168] = {
+const int conv3_squiggle_r94_stride = 1;
+const size_t _conv3_squiggle_r94_nfilter = 32;
+const size_t _conv3_squiggle_r94_winlen = 7;
+float __conv4_squiggle_r94_W[7168] = {
 	0x1.ae512ep-6, -0x1.358116p-5, -0x1.8ded64p-6, -0x1.8b16eap-5, -0x1.c1668ap-5, 0x1.b3a298p-9, 0x1.a6953cp-6, -0x1.3ec094p-7, -0x1.6e9932p-8, 0x1.704e68p-5, -0x1.932bbap-6, -0x1.402038p-6, 0x1.8dc2a6p-8, -0x1.c5ac66p-8, -0x1.725796p-6, -0x1.5cf02cp-5, 0x1.23d42ap-4, 0x1.2a4c9p-4, -0x1.7dda04p-6, -0x1.6c7c32p-6, 0x1.3b534cp-6, 0x1.c1de1p-5, -0x1.4f1c4ap-5, 0x1.d053c8p-5, 0x1.cbe6fap-6, 0x1.5906d8p-9, 0x1.c753d8p-6, -0x1.38cadap-5, 0x1.4b71p-5, -0x1.09f676p-6, -0x1.ff3156p-9, 0x1.a4d9ap-5,
 	0x1.c1df82p-6, -0x1.6a1ddep-5, -0x1.de06fp-6, 0x1.809624p-5, -0x1.30fac8p-5, 0x1.867dbep-6, 0x1.df8774p-9, -0x1.6547eep-6, 0x1.01fba6p-5, -0x1.10a03ap-8, -0x1.996f76p-5, 0x1.49b7cp-7, 0x1.f93b7ap-6, -0x1.6dc8b2p-5, 0x1.85dbbap-6, -0x1.35e4cap-5, 0x1.40ee88p-5, 0x1.94db34p-6, 0x1.f149c2p-6, -0x1.3fe52ep-6, 0x1.7e5774p-7, 0x1.0f0e2p-6, -0x1.7a1236p-7, -0x1.77d80cp-7, -0x1.16f53ap-7, 0x1.ab4aecp-5, -0x1.d00878p-7, 0x1.ed6fp-10, -0x1.538e94p-7, -0x1.856382p-4, -0x1.a67afp-8, -0x1.1f9218p-7,
 	0x1.e19aaep-6, -0x1.302554p-10, 0x1.7c0228p-5, 0x1.2e2cb2p-4, 0x1.4283f2p-5, -0x1.5ef70ep-6, -0x1.a6aep-8, -0x1.118a38p-7, 0x1.238c42p-4, -0x1.1297f2p-4, -0x1.50def6p-5, 0x1.e5d582p-6, -0x1.7db73p-8, -0x1.35ff4ap-5, 0x1.c81e4cp-6, -0x1.33806p-7, 0x1.2c5546p-5, 0x1.1d1cc4p-5, -0x1.b407c8p-8, 0x1.23d3bcp-6, 0x1.f5a864p-6, -0x1.6eb0d2p-5, -0x1.7c976cp-4, -0x1.7956f6p-5, 0x1.077504p-5, -0x1.1beccep-5, -0x1.24e7f4p-4, 0x1.151f26p-5, 0x1.1bd85ep-4, -0x1.0a4e4cp-4, 0x1.3f1caap-6, 0x1.e22d86p-5,
@@ -986,30 +986,30 @@ float __conv4_squiggle_dna_W[7168] = {
 	-0x1.c8187cp-5, -0x1.1056e6p-6, -0x1.5a0fcap-8, -0x1.9e89f4p-6, 0x1.63c842p-5, 0x1.9a5f1p-8, -0x1.c6707cp-8, -0x1.44f57cp-5, 0x1.d73e5p-6, -0x1.fabf16p-9, -0x1.dd4472p-13, 0x1.4e1abp-7, 0x1.3f2ebcp-6, 0x1.62ad72p-6, 0x1.0d797ep-5, -0x1.e26008p-6, 0x1.939e36p-6, -0x1.90d7c2p-6, 0x1.456b3cp-5, 0x1.3ea4c4p-4, 0x1.6be7acp-8, -0x1.e47924p-8, -0x1.741664p-5, 0x1.5ee8f6p-5, 0x1.231014p-6, -0x1.c662bap-5, 0x1.4e76fep-5, 0x1.8895d4p-7, -0x1.8da40ep-11, -0x1.3de2dcp-5, 0x1.cd52d2p-6, -0x1.1e23b2p-6,
 	-0x1.aca51p-5, -0x1.1c2f18p-4, -0x1.45f08cp-6, -0x1.b6a5d8p-5, 0x1.490a66p-6, 0x1.6cae1p-7, -0x1.9f3846p-5, -0x1.d40a2cp-7, 0x1.800e5ep-9, -0x1.40e51ep-6, -0x1.480438p-6, 0x1.637b7cp-6, 0x1.1c3168p-8, 0x1.866884p-6, 0x1.c46f7ep-6, -0x1.10ed2ep-6, 0x1.6b89bep-6, -0x1.1e2d86p-6, 0x1.7fa8eap-7, 0x1.8b3ceep-6, 0x1.065264p-5, 0x1.a0206ep-7, 0x1.ac8cc2p-6, -0x1.70db5ep-9, 0x1.dbe948p-7, 0x1.2b7f12p-6, 0x1.fb2c2ap-5, 0x1.4cde6cp-5, 0x1.dd609ep-6, 0x1.6528fp-5, -0x1.ada6a6p-6, 0x1.4cef6ap-7,
 	-0x1.3191ap-4, -0x1.cb4a84p-5, -0x1.19523ap-8, 0x1.d28542p-9, 0x1.c51ca6p-6, 0x1.b2e81ep-5, -0x1.0f7766p-5, -0x1.b16984p-5, 0x1.d8f7ap-6, 0x1.12ec9cp-6, 0x1.e47a7p-7, 0x1.8753d8p-6, -0x1.292b9cp-6, -0x1.c3d7dcp-4, 0x1.b2af82p-6, 0x1.58da86p-6, 0x1.3257a2p-5, 0x1.24295p-7, 0x1.15b12cp-4, 0x1.94c3e6p-5, 0x1.3422ecp-4, 0x1.e9e99ap-9, 0x1.c676f4p-6, -0x1.04ec0ep-6, -0x1.84b53cp-6, 0x1.58e26ep-9, 0x1.d9e5ap-6, 0x1.15f902p-5, -0x1.d66ea6p-5, 0x1.76f9dap-7, 0x1.3c017p-4, -0x1.8c62a8p-5};
-_Mat _conv4_squiggle_dna_W = {
+_Mat _conv4_squiggle_r94_W = {
 	.nr = 224,
 	.stride = 224,
 	.nrq = 56,
 	.nc = 32,
-	.data.f = __conv4_squiggle_dna_W
+	.data.f = __conv4_squiggle_r94_W
 };
-const scrappie_matrix conv4_squiggle_dna_W = &_conv4_squiggle_dna_W;
+const scrappie_matrix conv4_squiggle_r94_W = &_conv4_squiggle_r94_W;
 
-float __conv4_squiggle_dna_b[] = {
+float __conv4_squiggle_r94_b[] = {
 	0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0};
-_Mat _conv4_squiggle_dna_b = {
+_Mat _conv4_squiggle_r94_b = {
 	.nr = 32,
 	.stride = 32,
 	.nrq = 8,
 	.nc = 1,
-	.data.f = __conv4_squiggle_dna_b
+	.data.f = __conv4_squiggle_r94_b
 };
-const scrappie_matrix conv4_squiggle_dna_b = &_conv4_squiggle_dna_b;
+const scrappie_matrix conv4_squiggle_r94_b = &_conv4_squiggle_r94_b;
 
-const int conv4_squiggle_dna_stride = 1;
-const size_t _conv4_squiggle_dna_nfilter = 32;
-const size_t _conv4_squiggle_dna_winlen = 7;
-float __conv5_squiggle_dna_W[7168] = {
+const int conv4_squiggle_r94_stride = 1;
+const size_t _conv4_squiggle_r94_nfilter = 32;
+const size_t _conv4_squiggle_r94_winlen = 7;
+float __conv5_squiggle_r94_W[7168] = {
 	0x1.3adcfap-7, 0x1.adb1a2p-6, 0x1.4671dcp-4, 0x1.03886ap-4, -0x1.7844a6p-4, -0x1.5c15a6p-5, -0x1.e296c8p-8, 0x1.7083cep-4, -0x1.4142c8p-4, 0x1.121c46p-5, -0x1.5fc272p-5, -0x1.a2bb4ap-4, -0x1.9a2b12p-5, 0x1.28b738p-6, -0x1.696d56p-4, -0x1.0ab9bcp-7, 0x1.fc3ebep-5, -0x1.e2fcd6p-4, -0x1.2dd542p-4, -0x1.37dd5p-6, -0x1.4e3ceep-5, 0x1.488608p-4, -0x1.07443ep-4, 0x1.d9fbb2p-4, -0x1.2a7954p-7, 0x1.53c8d8p-5, -0x1.55a412p-4, -0x1.b4367ep-4, -0x1.5b7118p-5, -0x1.11cf4cp-4, -0x1.568bd4p-4, -0x1.ff1e9p-7,
 	0x1.1bd8e4p-4, -0x1.46891p-4, 0x1.e8155ap-8, 0x1.e3fdb4p-3, -0x1.f8fc04p-4, -0x1.7f484ap-5, -0x1.841efep-5, 0x1.0503c8p-4, -0x1.7a96ap-5, -0x1.d3504ep-4, -0x1.9d3922p-4, -0x1.c6e6c2p-4, 0x1.42754p-4, 0x1.03d1d8p-6, -0x1.db61acp-4, -0x1.74e8a4p-6, 0x1.3d9ffcp-5, -0x1.86b57ap-5, -0x1.de23a2p-7, -0x1.45bbdep-5, -0x1.0a349ep-5, 0x1.3f545ap-4, -0x1.8de1dap-2, 0x1.31dcfep-4, -0x1.1c5eb8p-3, 0x1.f934e2p-6, 0x1.88d8aep-5, -0x1.2113f6p-6, -0x1.75fd16p-6, 0x1.256a0ap-7, 0x1.5b4862p-7, -0x1.9247ap-4,
 	0x1.74e29ap-5, -0x1.3f6ec4p-4, -0x1.238bacp-5, 0x1.9b5c5ep-3, -0x1.10976cp-5, -0x1.a330bep-4, -0x1.bb4fe4p-7, 0x1.70093p-5, -0x1.5275ecp-6, 0x1.6e168p-5, -0x1.43c15ap-3, 0x1.24e07cp-4, 0x1.49f67p-4, -0x1.a6d31cp-6, -0x1.de4058p-4, -0x1.23de98p-5, -0x1.9ab4bcp-6, -0x1.a9b0dp-5, -0x1.393d36p-3, 0x1.c54e8cp-4, -0x1.83d5acp-6, 0x1.e58b58p-5, -0x1.7db9bep-3, 0x1.108abcp-3, -0x1.9db20ap-6, 0x1.a0057p-6, -0x1.822974p-5, 0x1.1bdfeap-5, -0x1.3df30ap-5, -0x1.3ef27p-3, 0x1.c0b6c8p-6, 0x1.1ce9fap-5,
@@ -1234,30 +1234,30 @@ float __conv5_squiggle_dna_W[7168] = {
 	0x1.d91f82p-5, 0x1.7f9446p-5, -0x1.0569bep-5, 0x1.ef6864p-6, -0x1.b17932p-5, 0x1.09e7bp-4, -0x1.d79ef4p-6, 0x1.f1ca4ap-7, 0x1.14905p-5, -0x1.4126ep-6, -0x1.0a9a3cp-7, -0x1.470accp-5, -0x1.4426dep-6, -0x1.f1480ap-6, -0x1.8fcd78p-7, 0x1.cfb5d6p-5, -0x1.008382p-5, -0x1.bf5486p-8, -0x1.7e60fcp-6, -0x1.3b8ae8p-7, 0x1.649208p-7, 0x1.484a06p-4, 0x1.378332p-7, 0x1.2b4b4p-5, -0x1.f4dbeap-6, 0x1.09a664p-9, -0x1.e7e0eep-9, 0x1.24068p-5, 0x1.86fe7ep-6, -0x1.df0624p-6, -0x1.322674p-5, -0x1.aee042p-7,
 	-0x1.8c6cfp-7, -0x1.39257ep-9, -0x1.02a51cp-5, 0x1.97741ap-8, 0x1.844c0ep-6, 0x1.5d44fep-8, -0x1.614804p-5, 0x1.d587d4p-6, 0x1.071f9cp-6, 0x1.136396p-6, -0x1.4240ecp-7, 0x1.8520f2p-5, -0x1.44a8bap-6, -0x1.e2774p-6, 0x1.a3991ap-6, 0x1.6833d4p-5, 0x1.5aa118p-6, -0x1.c58fd4p-8, -0x1.e1f3f4p-6, 0x1.e9f0f8p-6, -0x1.68b00cp-8, 0x1.3bd5a8p-7, 0x1.05e782p-5, 0x1.639278p-6, 0x1.f8d54cp-7, 0x1.5a16ap-6, -0x1.81b8acp-6, 0x1.7ba668p-5, 0x1.e786e8p-6, 0x1.6be1d8p-5, 0x1.42732ap-9, -0x1.415e5cp-5,
 	0x1.65d564p-5, 0x1.c96974p-7, 0x1.7b1a62p-9, 0x1.0c3d52p-5, -0x1.6c0d2cp-6, -0x1.942a1cp-7, -0x1.ef6e06p-5, 0x1.0148e6p-6, 0x1.2dc276p-5, -0x1.72edaap-5, -0x1.99089ep-5, 0x1.0bf892p-9, -0x1.379a84p-8, -0x1.3a5a8p-6, 0x1.1b333ap-7, -0x1.0fa70ep-8, -0x1.107c4p-9, 0x1.45b1a2p-7, -0x1.7e4e14p-7, -0x1.e5ec68p-8, -0x1.76a932p-11, -0x1.57ec64p-5, -0x1.41e222p-7, 0x1.0d2b72p-6, 0x1.7790fp-6, -0x1.8dead4p-9, -0x1.7bea0ap-6, 0x1.c8c76p-9, 0x1.6899f2p-10, 0x1.b8a50cp-9, -0x1.209fb8p-6, 0x1.9b75cep-7};
-_Mat _conv5_squiggle_dna_W = {
+_Mat _conv5_squiggle_r94_W = {
 	.nr = 224,
 	.stride = 224,
 	.nrq = 56,
 	.nc = 32,
-	.data.f = __conv5_squiggle_dna_W
+	.data.f = __conv5_squiggle_r94_W
 };
-const scrappie_matrix conv5_squiggle_dna_W = &_conv5_squiggle_dna_W;
+const scrappie_matrix conv5_squiggle_r94_W = &_conv5_squiggle_r94_W;
 
-float __conv5_squiggle_dna_b[] = {
+float __conv5_squiggle_r94_b[] = {
 	-0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, -0x0.p+0, -0x0.p+0, 0x0.p+0, 0x0.p+0};
-_Mat _conv5_squiggle_dna_b = {
+_Mat _conv5_squiggle_r94_b = {
 	.nr = 32,
 	.stride = 32,
 	.nrq = 8,
 	.nc = 1,
-	.data.f = __conv5_squiggle_dna_b
+	.data.f = __conv5_squiggle_r94_b
 };
-const scrappie_matrix conv5_squiggle_dna_b = &_conv5_squiggle_dna_b;
+const scrappie_matrix conv5_squiggle_r94_b = &_conv5_squiggle_r94_b;
 
-const int conv5_squiggle_dna_stride = 1;
-const size_t _conv5_squiggle_dna_nfilter = 32;
-const size_t _conv5_squiggle_dna_winlen = 7;
-float __conv6_squiggle_dna_W[672] = {
+const int conv5_squiggle_r94_stride = 1;
+const size_t _conv5_squiggle_r94_nfilter = 32;
+const size_t _conv5_squiggle_r94_winlen = 7;
+float __conv6_squiggle_r94_W[672] = {
 	0x1.15a08cp-7, -0x1.2a5934p-7, 0x1.6e96fep-6, 0x1.08cc3p-6, -0x1.95c572p-14, 0x1.8e02d4p-8, 0x1.38dc9p-9, -0x1.be665ep-8, -0x1.bbeeap-7, -0x1.346a3cp-5, 0x1.6a769ep-11, -0x1.19420ap-5, 0x1.81b2e2p-5, 0x1.a07792p-6, -0x1.18593cp-6, -0x1.8fc972p-7, 0x1.d75dbcp-8, -0x1.a8a6b8p-10, -0x1.64c3dap-8, -0x1.7a712p-9, 0x1.6f9ceap-8, 0x1.0ef208p-6, 0x1.b1528ep-10, -0x1.485844p-6, -0x1.7993eep-6, 0x1.5ccb8ep-7, -0x1.465856p-7, -0x1.08691ep-7, -0x1.d295fap-7, 0x1.350fap-6, 0x1.7ac658p-6, 0x1.2ed812p-4,
 	0x1.95efb8p-7, -0x1.844f5ap-6, -0x1.e962e2p-8, -0x1.ad928ap-6, -0x1.477c1cp-5, -0x1.0ffc08p-6, 0x1.4a8684p-7, 0x1.51990cp-8, -0x1.df91b2p-5, -0x1.9c1106p-7, -0x1.119af2p-8, 0x1.9f839cp-5, 0x1.7e285cp-6, 0x1.355a0ap-5, -0x1.543282p-7, -0x1.618474p-8, 0x1.035e1p-7, 0x1.5e723p-7, -0x1.a7fa18p-8, -0x1.160d66p-5, 0x1.5d696p-6, 0x1.1c9c6p-6, 0x1.530a74p-6, -0x1.63ff1p-5, -0x1.4c17acp-7, 0x1.22c268p-5, 0x1.ea99dcp-6, -0x1.3ceddcp-5, -0x1.22e7aap-5, 0x1.aa58eep-6, 0x1.7b9886p-5, 0x1.56c04cp-6,
 	-0x1.23139p-9, -0x1.452724p-6, -0x1.2caea2p-7, 0x1.5ad8b2p-7, 0x1.1fb7c6p-7, 0x1.157be2p-4, -0x1.40e336p-9, 0x1.06c506p-5, -0x1.72ba1p-6, -0x1.a2ab44p-6, 0x1.4bed48p-5, 0x1.553d76p-5, -0x1.64a078p-8, -0x1.834d9ep-5, 0x1.65fdaap-5, -0x1.9765c6p-5, -0x1.7d30fcp-6, 0x1.35d448p-5, -0x1.95b92ep-6, -0x1.0ac50cp-5, 0x1.70ee6cp-7, 0x1.7ef43p-7, 0x1.123b42p-4, -0x1.d9853cp-7, -0x1.2cae64p-6, -0x1.78167p-9, -0x1.215774p-7, 0x1.4a3d1ap-5, -0x1.7f0f06p-5, 0x1.23abap-7, 0x1.fcf0cap-5, 0x1.4f68d2p-9,
@@ -1279,28 +1279,28 @@ float __conv6_squiggle_dna_W[672] = {
 	-0x1.18722ep-3, -0x1.3473d2p-5, 0x1.6bc172p-4, -0x1.4c75aep-6, 0x1.b66bd6p-5, -0x1.da8c36p-7, -0x1.766602p-6, -0x1.ef979ep-7, -0x1.a729d6p-7, -0x1.090e54p-5, 0x1.64f47p-8, -0x1.57b2aap-3, 0x1.d93ad4p-6, -0x1.9d135ap-3, -0x1.7d604cp-4, 0x1.87d4cap-7, -0x1.96e5fap-4, 0x1.7a2f58p-7, -0x1.5ae118p-6, -0x1.84710cp-5, 0x1.c7bbc8p-6, -0x1.0e6e3cp-8, 0x1.1e33c6p-6, -0x1.d0268p-8, -0x1.4b6deep-4, -0x1.48741cp-3, 0x1.ba0a92p-7, -0x1.ee48d2p-6, -0x1.040ce8p-4, 0x1.2bd4b4p-5, -0x1.a4a4d2p-5, -0x1.16f992p-9,
 	0x1.b3802ap-5, -0x1.d1273cp-6, 0x1.12bfe4p-4, -0x1.bc0964p-6, 0x1.fa45e8p-12, -0x1.00df44p-9, 0x1.58669ep-6, 0x1.d7cd68p-6, -0x1.29ceaap-4, 0x1.30dafep-4, -0x1.1e1fccp-8, -0x1.9e48a8p-3, 0x1.f860f8p-7, -0x1.c95dacp-3, -0x1.7b99e6p-4, -0x1.4daaa6p-3, -0x1.b4a1bp-9, 0x1.8a129ap-10, -0x1.4d8b84p-6, -0x1.1e0d1ep-4, -0x1.40de3cp-6, 0x1.1f0adp-5, -0x1.06f72ap-5, 0x1.a5efc2p-7, -0x1.19678cp-3, -0x1.af6ed8p-7, 0x1.b0628ep-6, 0x1.3ba42p-9, 0x1.0f4954p-6, 0x1.58f1bep-4, -0x1.48c0ap-6, -0x1.0b9898p-6,
 	0x1.0c71aep-6, 0x1.4d0bep-7, 0x1.87d914p-6, -0x1.820822p-5, 0x1.11302ep-5, -0x1.e35118p-5, 0x1.2ad866p-3, 0x1.55f53cp-7, -0x1.6ca5aap-4, 0x1.317552p-3, -0x1.8714dcp-8, -0x1.e3af52p-3, -0x1.7b305p-7, -0x1.936fccp-3, 0x1.b16286p-6, 0x1.04146ap-3, -0x1.e819aep-6, -0x1.2fcc3p-5, -0x1.74bb98p-9, -0x1.04815cp-4, -0x1.cfec5cp-5, 0x1.e0df28p-6, 0x1.e33ca6p-9, -0x1.5af46ep-4, 0x1.4da5d6p-4, 0x1.0c903ap-8, 0x1.31182ep-4, -0x1.409744p-6, -0x1.cd3fc4p-9, 0x1.23fb8ap-3, -0x1.b7f63ep-5, 0x1.b713a6p-5};
-_Mat _conv6_squiggle_dna_W = {
+_Mat _conv6_squiggle_r94_W = {
 	.nr = 224,
 	.stride = 224,
 	.nrq = 56,
 	.nc = 3,
-	.data.f = __conv6_squiggle_dna_W
+	.data.f = __conv6_squiggle_r94_W
 };
-const scrappie_matrix conv6_squiggle_dna_W = &_conv6_squiggle_dna_W;
+const scrappie_matrix conv6_squiggle_r94_W = &_conv6_squiggle_r94_W;
 
-float __conv6_squiggle_dna_b[] = {
+float __conv6_squiggle_r94_b[] = {
 	0x0.p+0, 0x0.p+0, 0x0.p+0, 0x0.p+0};
-_Mat _conv6_squiggle_dna_b = {
+_Mat _conv6_squiggle_r94_b = {
 	.nr = 3,
 	.stride = 4,
 	.nrq = 1,
 	.nc = 1,
-	.data.f = __conv6_squiggle_dna_b
+	.data.f = __conv6_squiggle_r94_b
 };
-const scrappie_matrix conv6_squiggle_dna_b = &_conv6_squiggle_dna_b;
+const scrappie_matrix conv6_squiggle_r94_b = &_conv6_squiggle_r94_b;
 
-const int conv6_squiggle_dna_stride = 1;
-const size_t _conv6_squiggle_dna_nfilter = 3;
-const size_t _conv6_squiggle_dna_winlen = 7;
+const int conv6_squiggle_r94_stride = 1;
+const size_t _conv6_squiggle_r94_nfilter = 3;
+const size_t _conv6_squiggle_r94_winlen = 7;
 
 #endif /* NANONET_SQUIGGLE_DNA_MODEL_H */

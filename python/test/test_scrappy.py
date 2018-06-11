@@ -134,13 +134,18 @@ class TestScrappy(unittest.TestCase):
                 pass
 
 
-    def test_040_mapping(self):
+    def test_040_squiggle_map_r94(self):
         # Just check mapping runs without fail
-        score, path = scrappy.map_signal_to_squiggle(self.one_signal, self.one_ref)
+        score, path = scrappy.map_signal_to_squiggle(self.one_signal, self.one_ref, model='squiggle_r94')
         self.assertIsInstance(score, float, 'score is float.')
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
         self.assertEqual(len(self.one_signal), len(path), 'Length of path is length of signal.')
 
+    def test_041_squiggle_map_rf14(self):
+        # Just check mapping runs without fail
+        score, path = scrappy.map_signal_to_squiggle(self.one_signal, self.one_ref, model='squiggle_rf14')
+        self.assertIsInstance(score, float, 'score is float.')
+        self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
 
     def test_045_post_forward_mapping(self):
         rt = scrappy.RawTable(self.one_signal)
