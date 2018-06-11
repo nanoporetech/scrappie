@@ -1,0 +1,26 @@
+Metadata-Version: 1.2
+Name: scrappie
+Version: 1.3.3
+Summary: Python bindings to scrappie basecaller
+Home-page: https://github.com/nanoporetech/scrappie
+Author: cwright
+Author-email: cwright@nanoporetech.com
+License: MPL 2.0
+Description: 
+        Scrappy is build with CFFI and exposes only a subset of the abilities of the
+        full scrappie basecalling library. Additional functionality can/will be added
+        as necessary.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)
+Classifier: Natural Language :: English
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Requires-Python: ~=3.4

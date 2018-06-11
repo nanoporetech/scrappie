@@ -22,7 +22,7 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Scrappie squiggler";
 static char args_doc[] = "fasta fast5";
 static struct argp_option options[] = {
-    {"model", '1', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_rf14\""},
+    {"model", '1', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_r10\""},
     {"backprob", 'b', "probability", 0, "Probability of backwards movement"},
     {"localpen", 'l', "float", 0, "Penalty for local matching"},
     {"minscore", 'm', "float", 0, "Minimum possible score for matching emission"},

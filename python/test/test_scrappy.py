@@ -141,9 +141,9 @@ class TestScrappy(unittest.TestCase):
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
         self.assertEqual(len(self.one_signal), len(path), 'Length of path is length of signal.')
 
-    def test_041_squiggle_map_rf14(self):
+    def test_041_squiggle_map_r10(self):
         # Just check mapping runs without fail
-        score, path = scrappy.map_signal_to_squiggle(self.one_signal, self.one_ref, model='squiggle_rf14')
+        score, path = scrappy.map_signal_to_squiggle(self.one_signal, self.one_ref, model='squiggle_r10')
         self.assertIsInstance(score, float, 'score is float.')
         self.assertIsInstance(path, np.ndarray, 'path is ndarray.')
 
