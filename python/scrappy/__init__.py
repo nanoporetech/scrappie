@@ -368,12 +368,14 @@ def _decode_post_crf(post):
 _models_ = {
     'rgrgr_r94': lib.nanonet_rgrgr_r94_posterior,
     'rgrgr_r95': lib.nanonet_rgrgr_r95_posterior,
+    'rgrgr_rf14': lib.nanonet_rgrgr_rf14_posterior,
     'rnnrf_r94': lib.nanonet_rnnrf_r94_transitions,
 }
 
 _decoders_ = {
     'rgrgr_r94': _decode_post,
     'rgrgr_r95': _decode_post,
+    'rgrgr_rf14': _decode_post,
     'rnnrf_r94': _decode_post_crf,
 }
 
