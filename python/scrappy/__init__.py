@@ -368,19 +368,19 @@ def _decode_post_crf(post):
 _models_ = {
     'rgrgr_r94': lib.nanonet_rgrgr_r94_posterior,
     'rgrgr_r95': lib.nanonet_rgrgr_r95_posterior,
-    'rgrgr_rf14': lib.nanonet_rgrgr_rf14_posterior,
+    'rgrgr_r10': lib.nanonet_rgrgr_r10_posterior,
     'rnnrf_r94': lib.nanonet_rnnrf_r94_transitions,
 }
 
 _squiggle_models_ = {
     'squiggle_r94': lib.squiggle_r94,
-    'squiggle_rf14': lib.squiggle_rf14,
+    'squiggle_r10': lib.squiggle_r10,
 }
 
 _decoders_ = {
     'rgrgr_r94': _decode_post,
     'rgrgr_r95': _decode_post,
-    'rgrgr_rf14': _decode_post,
+    'rgrgr_r10': _decode_post,
     'rnnrf_r94': _decode_post_crf,
 }
 

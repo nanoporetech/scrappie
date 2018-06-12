@@ -22,7 +22,7 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Scrappie squiggler";
 static char args_doc[] = "fasta [fasta ...]";
 static struct argp_option options[] = {
-    {"model", 'm', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_rf14\""},
+    {"model", 'm', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_r10\""},
     {"limit", 'l', "nreads", 0,
      "Maximum number of reads to call (0 is unlimited)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
