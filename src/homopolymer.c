@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <math.h>
 #include "homopolymer.h"
-//#define DEBUG
-
 //Note that in Scrappie, index in posteriors is shifted along one step from index
 //in path, so that post[t*post->data.f+j] corresponds to path[t+1]
 #define POSTSHIFT(posterior,t,i) ( posterior->data.f[ ((t-1)*(posterior->stride)) + (i) ]  )
@@ -128,90 +126,6 @@ int findRuns(int *path,int **runstarts,int **runlengths, int **runbases, int pat
     return runcount;
 }
 
-/*Print some stuff to see what the inputs to homopolymer.c are, for debugging purposes*/
-int debugPrint(FILE *stream,scrappie_matrix post, int *viterbipath)
-{
-    fprintf(stream,"Viterbi path:\n");
-    for(int ii=0;ii<500;ii++)
-        fprintf(stream,"%d ",(int)(viterbipath[ii]));
-    fprintf(stream,"\n");
-    //post is a scrappie_matrix
-    fprintf(stream,"post->stride = %d \n",post->stride);
-    fprintf(stream,"nblock = post->nc = %d \n",post->nc);
-    fprintf(stream,"First and last elements of first few rows of post (each ends with stay prob, followed by normalisation check):\n");
-    for(int ii=0;ii<21;ii++)
-        {
-        for(int jj=0;jj<5;jj++)
-            {
-            fprintf(stream,"%.1f ",post->data.f[ii*post->stride+jj] );
-            }
-        fprintf(stream,"....");
-        for(int jj=STAYPOST-4;jj<=STAYPOST;jj++)
-            {
-            fprintf(stream,"%.1f ",post->data.f[ii*post->stride + jj ] );
-            }
-        double sump=0.0;
-        for(int jj=0;jj<=STAYPOST;jj++)
-            sump=sump+exp(post->data.f[ii*post->stride + jj ]);
-        fprintf(stream,": %f\n",sump);
-        }
-    return 0;
-}
-
-/*Print some stuff to the terminal (or whatever stream we're given)
-about a particular homopolymer run - used in debugging*/
-int printRun(FILE *stream,int *path,scrappie_matrix posteriors,int start,int runstate)
-{
-    int pstart = start-2;
-    int pend = start+10;
-    for(int n=pstart;n<pend;n++)
-        fprintf(stream,"%d\t",path[n]);
-    fprintf(stream,"\n");
-    for(int n=pstart;n<pend;n++)
-        if(path[n]==STAYPATH)
-            fprintf(stream,"S\t");
-        else
-            fprintf(stream,"%c\t",BASES[(path[n]%64)/16] );
-    fprintf(stream,"\n");
-    for(int n=pstart;n<pend;n++)
-        if(path[n]==STAYPATH)
-            fprintf(stream,"S\t");
-        else
-        {
-            int s = path[n];
-            fprintf(stream,"%c%c%c%c%c\t",basefromint(s,4),basefromint(s,3),basefromint(s,2),basefromint(s,1),basefromint(s,0) );
-        }
-    fprintf(stream,"\nS");//Stay probabilities (not normalised)
-    for(int n=pstart;n<pend;n++)
-        fprintf(stream,"%.2f\t",expf(POSTSHIFT(posteriors,n,STAYPOST)));
-    fprintf(stream,"\nR");//Repeat block probabilities (not normalised)
-    for(int n=pstart;n<pend;n++)
-        fprintf(stream,"%.2f\t",expf(POSTSHIFT(posteriors,n,runstate)));
-        
-    fprintf(stream,"\n");
-    return 0;
-}
-
-/*Go through a posterior matrix at the given time, printing all elements whose probabilities are
-larger than the given threshold. Used for debugging*/
-int printSignificantPosts(FILE * stream,scrappie_matrix post,double threshold,int timeloc,double checkTemp)
-{
-    double sump=0.0;
-    double fullsump=0.0;
-    double pstay = exp(post->data.f[ timeloc * post->stride + STAYPOST]);
-    for(int j=0;j<=STAYPOST;j++)
-    {
-        double p = exp(post->data.f[ timeloc * post->stride + j]  );
-        if(p>threshold)
-        {
-            fprintf(stream,"%d:%.4f (p/ps)^1/%.2f=%.4f  ",j,p,checkTemp,pow(p/pstay,1.0/checkTemp));
-            sump=sump+p;
-        }
-        fullsump=fullsump+p;
-    }
-    fprintf(stream,"[sum=%.4f,fullsum=%.4f]\n",sump,fullsump);
-    return 0;
-}
 
 
 /*Do a temperature change according to the recipe suggested by
@@ -224,13 +138,6 @@ int printSignificantPosts(FILE * stream,scrappie_matrix post,double threshold,in
 int change_temperature(double temperature,scrappie_matrix post)
 {
     const int nblock = post->nc;//Number of locations in read
-    #ifdef DEBUG
-    fprintf(stderr,"Doing temperature change with temp=%.4f\n",temperature);
-    double thresh = 0.01;
-    int debugloc=nblock/2;
-    fprintf(stderr,"Posts at time %d > %.3f before T change:\n",debugloc,thresh);
-    printSignificantPosts(stderr,post,thresh,debugloc,temperature);
-    #endif
     for(int t=0;t<nblock;t++)
     {
         double sump=0.0;
@@ -243,10 +150,6 @@ int change_temperature(double temperature,scrappie_matrix post)
         for(int k=0;k<=STAYPOST;k++)
             PP(post,t,k)=PP(post,t,k)-logz;
     }
-    #ifdef DEBUG
-    fprintf(stderr,"Posts at time %d > %.3f after T change:\n",debugloc,thresh);
-    printSignificantPosts(stderr,post,thresh,debugloc,1.0);
-    #endif
     return 0;
 }
 #undef PP
@@ -263,25 +166,12 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath, int pathCalculation
 {
     if(pathCalculationFlag == HOMOPOLYMER_NOCHANGE)
     {
-        #ifdef DEBUG
-        fprintf(stderr,"No calculation in homopolymer.c\n");
-        #endif
         return 0;
     }
     if(pathCalculationFlag != HOMOPOLYMER_MEAN)
     {
-        #ifdef DEBUG
-        fprintf(stderr,"homopolymer path calculations (homopolymer.c): only HOMOPOLYMER_MEAN implemented so far\n");
-        #endif
         return 1;
     }
-    #ifdef DEBUG
-    fprintf(stderr,"Doing mean homopolymer path calculation in homopolymer.c\n");
-    #endif
-
-    #ifdef DEBUG
-    debugPrint(stderr,post,viterbipath);//Print some stuff for debugging
-    #endif
     const int nblock = post->nc;//Number of locations in read
     int *runstarts;   //Location of start (first ambiguous location) in each homopol run
     int *runlengths;  //Length of ambiguous section
@@ -311,17 +201,6 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath, int pathCalculation
                 if(viterbipath[i]==runstate) nviterbi = nviterbi + 1;
             }
             int newn = (int)(nmean+0.5); //nmean is a float so need to round
-            #ifdef DEBUG
-            //The count of repeat blocks in the Viterbi path should agree with the Viterbi
-            //calculation in this function. If not, then output a warning.
-            //Sometimes there is disagreement because probabilities differ by
-            //tiny amounts - but lots of error messages like this indicate trouble
-            if(ncalcviterbi!=nviterbi)
-                fprintf(stderr,"************Run %d has viterbi ambig count = %d , calc viterbi ambig count = %d\n",nrun,nviterbi,ncalcviterbi);
-            fprintf(stderr,"Run %d : start %d  len %d base %c\n",nrun,ambigfrom,runlength,BASES[runbases[nrun]]);
-            fprintf(stderr,"Viterbi nonstays %d, calc vit nonstays %d, mean nonstays %f\n",nviterbi,ncalcviterbi,nmean);
-            printRun(stderr,viterbipath,post,ambigfrom,runstate);
-            #endif
             //Make modification to the path if necessary
             if(newn!=nviterbi)
             {
@@ -332,20 +211,10 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath, int pathCalculation
                     if(i<newn)
                     {
                         viterbipath[i+ambigfrom]=runstate; 
-                        #ifdef DEBUG
-                        fprintf(stderr,"i=%d->%d;",i,runstate);
-                        #endif
                     }
                     else viterbipath[i+ambigfrom]=STAYPATH;
                 }
-            #ifdef DEBUG
-            fprintf(stderr,"**********************DIFFERENCE***********************\n");
-            printRun(stderr,viterbipath,post,ambigfrom,runstate);
-            #endif
             }
-        #ifdef DEBUG
-        fprintf(stderr,"\n");
-        #endif
         }
     free(runstarts);
     free(runlengths);
