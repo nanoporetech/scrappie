@@ -5,8 +5,9 @@
 #    include "scrappie_matrix.h"
 #    include "scrappie_structures.h"
 //Modes of operation (to be sent to the input pathCalculationFlag)
-#    define HOMOPOLYMER_NOCHANGE 0
-#    define HOMOPOLYMER_MEAN 1
-int homopolymer_path(scrappie_matrix post, int *viterbipath, int pathCalculationFlag);
-int change_temperature(double temperature,scrappie_matrix post);
+enum homopolymer_calculation{
+    HOMOPOLYMER_NOCHANGE,
+    HOMOPOLYMER_MEAN};
+    
+int homopolymer_path(const scrappie_matrix post, int *viterbipath, enum homopolymer_calculation pathCalculationFlag);
 #endif
