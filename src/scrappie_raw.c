@@ -51,7 +51,7 @@ static struct argp_option options[] = {
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-    {"model", 5, "name", 0, "Raw model to use: \"raw_r94\", \"rgr_r94\", \"rgrgr_r94\", \"rgrgr_r95\", \"rgrgr_rf14\", \"rnnrf_r94\", \"rgrgr_resgru\", \"rgrgr_reslstm\""},
+    {"model", 5, "name", 0, "Raw model to use: \"raw_r94\", \"rgr_r94\", \"rgrgr_r94\", \"rgrgr_r95\", \"rgrgr_r10\", \"rnnrf_r94\", \"rgrgr_resgru\", \"rgrgr_reslstm\""},
     // Currently disabled
     //{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},
@@ -59,8 +59,8 @@ static struct argp_option options[] = {
     {"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
-    {"homopolymer", 'h',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},    
-    {"temperature", 'T',"temperature", 0, "Temperature to apply to posteriors according to recipe in Guo arXiv:1706.04599. Not implemented for CRF."},    
+    {"homopolymer", 'h',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},
+    {"temperature", 'T',"temperature", 0, "Temperature to apply to posteriors according to recipe in Guo arXiv:1706.04599. Not implemented for CRF."},
 #if defined(_OPENMP)
     {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
@@ -113,7 +113,7 @@ static struct arguments args = {
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
-    .model_type = SCRAPPIE_MODEL_RGRGR_R94,
+    .model_type = SCRAPPIE_MODEL_RGRGR_R9_4,
     .files = NULL,
     .homopolymer = HOMOPOLYMER_NOCHANGE,
     .temperature = 1.0
@@ -285,7 +285,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
 
     float score = NAN;
     char * basecall = NULL;
-    if(SCRAPPIE_MODEL_RNNRF_R94 != model){
+    if(SCRAPPIE_MODEL_RNNRF_R9_4 != model){
         const int nstate = post->nr;
         if(args.temperature>1.00001 || args.temperature <0.9999)
             change_temperature(args.temperature,post);

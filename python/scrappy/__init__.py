@@ -368,12 +368,19 @@ def _decode_post_crf(post):
 _models_ = {
     'rgrgr_r94': lib.nanonet_rgrgr_r94_posterior,
     'rgrgr_r95': lib.nanonet_rgrgr_r95_posterior,
+    'rgrgr_r10': lib.nanonet_rgrgr_r10_posterior,
     'rnnrf_r94': lib.nanonet_rnnrf_r94_transitions,
+}
+
+_squiggle_models_ = {
+    'squiggle_r94': lib.squiggle_r94,
+    'squiggle_r10': lib.squiggle_r10,
 }
 
 _decoders_ = {
     'rgrgr_r94': _decode_post,
     'rgrgr_r95': _decode_post,
+    'rgrgr_r10': _decode_post,
     'rnnrf_r94': _decode_post_crf,
 }
 
@@ -421,10 +428,11 @@ def basecall_raw(data, model='rgrgr_r94', with_base_probs=False, **kwargs):
     return seq, score, pos, raw.start, raw.end, base_probs
 
 
-def sequence_to_squiggle(sequence, rescale=False):
+def sequence_to_squiggle(sequence, model='squiggle_r94', rescale=False):
     """Simulate a squiggle from a base sequence.
 
     :param sequence: base sequence to model.
+    :param model: model to use in simulating squiggle.
     :param rescale:
     :param as_numpy: return a numpy array rather than a `scrappie_matrix`.
 
@@ -437,18 +445,25 @@ def sequence_to_squiggle(sequence, rescale=False):
     if seq is None:
         raise RuntimeError('An unknown error occurred whilst encoding sequence.')
 
-    squiggle = _none_if_null(lib.dna_squiggle(seq, seq_len, rescale))
+    try:
+        squiggle_model = _squiggle_models_[model]
+    except KeyError:
+        raise KeyError("Squiggle model type '{}' not recognised.".format(model))
+    else:
+        squiggle = _none_if_null(squiggle_model(seq, seq_len, rescale))
     if squiggle is None:
         raise RuntimeError('An unknown error occurred whilst generating squiggle.')
 
     return ScrappyMatrix(squiggle)
 
 
-def map_signal_to_squiggle(data, sequence, back_prob=0.0, local_pen=2.0, min_score=5.0):
+def map_signal_to_squiggle(data, sequence, model='squiggle_r94',
+                           back_prob=0.0, local_pen=2.0, min_score=5.0):
     """Align a squiggle to a sequence using a simulated squiggle.
 
     :param data: `ndarray` containing raw signal data.
     :param sequence: base sequence to which to align data.
+    :param model: model to use in simulating squiggle.
     :param back_prob: probability of backward movement.
     :param local_pen: penalty for local alignment.
     :param min_score: floor on match score.
@@ -458,7 +473,7 @@ def map_signal_to_squiggle(data, sequence, back_prob=0.0, local_pen=2.0, min_sco
     raw = RawTable(data)
     raw.trim().scale()
 
-    squiggle = sequence_to_squiggle(sequence)
+    squiggle = sequence_to_squiggle(sequence, model=model)
 
     path = np.ascontiguousarray(np.zeros(raw._rt.n, dtype=np.int32))
     p_path = ffi.cast("int32_t *", ffi.from_buffer(path))

@@ -22,6 +22,7 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Scrappie squiggler";
 static char args_doc[] = "fasta fast5";
 static struct argp_option options[] = {
+    {"model", '1', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_r10\""},
     {"backprob", 'b', "probability", 0, "Probability of backwards movement"},
     {"localpen", 'l', "float", 0, "Penalty for local matching"},
     {"minscore", 'm', "float", 0, "Minimum possible score for matching emission"},
@@ -36,6 +37,7 @@ static struct argp_option options[] = {
 
 
 struct arguments {
+    enum squiggle_model_type model_type;
     float backprob;
     float localpen;
     float minscore;
@@ -51,6 +53,7 @@ struct arguments {
 };
 
 static struct arguments args = {
+    .model_type = SCRAPPIE_SQUIGGLE_MODEL_R9_4,
     .backprob = 0.0f,
     .localpen = 2.0f,
     .minscore = 5.0f,
@@ -69,6 +72,12 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
     switch (key) {
         int ret = 0;
         char * next_tok = NULL;
+    case 1:
+        args.model_type = get_squiggle_model(arg);
+        if(SCRAPPIE_SQUIGGLE_MODEL_INVALID == args.model_type){
+            errx(EXIT_FAILURE, "Invalid squiggle model name \"%s\"", arg);
+        }
+        break;
     case 'b':
         args.backprob = atof(arg);
         if(args.backprob < 0.0 && args.backprob >= 1.0){
@@ -139,13 +148,15 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_arg, args_doc, doc };
 
 
-static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale){
+static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, bool rescale, enum squiggle_model_type squiggle_model){
     RETURN_NULL_IF(NULL == base_seq, NULL);
 
     int * sequence = encode_bases_to_integers(base_seq, n, 1);
     RETURN_NULL_IF(NULL == sequence, NULL);
 
-    scrappie_matrix squiggle = dna_squiggle(sequence, n, rescale);
+    squiggle_function_ptr squiggle_function = get_squiggle_function(squiggle_model);
+
+    scrappie_matrix squiggle = squiggle_function(sequence, n, rescale);
     free(sequence);
 
     return squiggle;
@@ -195,7 +206,7 @@ int main_mappy(int argc, char *argv[]) {
 
 
 
-    scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false);
+    scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false, args.model_type);
 	if(NULL != squiggle){
         int * path = map_signal_to_squiggle(rt, squiggle, args.backprob, args.localpen, args.minscore);
         if(NULL != path){

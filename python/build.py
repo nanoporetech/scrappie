@@ -8,7 +8,14 @@ if 'MANYLINUX' in os.environ:
     libraries=['openblas']
     library_dirs=['/usr/local/lib/']
 else:
-    src_dir = os.path.join('..', 'src')
+    if os.path.isfile(os.path.join('..', 'src','decode.h')):
+        # assume the git repo
+        src_dir = os.path.join('..', 'src')
+    elif os.path.isfile(os.path.join('src','decode.h')):
+        # else we're from an sdist
+        src_dir = 'src'
+    else:
+        raise IOError('Cannot find scrappie C sources.')
     # this might want to be cblas on some systems
     libraries=['blas']
     library_dirs=[]
@@ -85,6 +92,7 @@ ffibuilder.cdef("""
   // Transducer basecalling
   scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);
   scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, bool return_log);
+  scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_prob, bool return_log);
   float decode_transducer(
     const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen, int *seq, bool allow_slip
   );
@@ -97,7 +105,8 @@ ffibuilder.cdef("""
   scrappie_matrix posterior_crf(const_scrappie_matrix trans);
 
   // Squiggle generation
-  scrappie_matrix dna_squiggle(int const * sequence, size_t n, bool transform_units);
+  scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_units);
+  scrappie_matrix squiggle_r10(int const * sequence, size_t n, bool transform_units);
 
   // Scrappy Mappy
   float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
