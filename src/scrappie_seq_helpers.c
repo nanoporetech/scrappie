@@ -60,8 +60,7 @@ int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len){
             int newbase = base_to_int(seq[i + j], true);
             if(-1 == newbase){
                 free(iseq);
-                iseq = NULL;
-                break;
+                return NULL;
             }
 
             ib *= nbase;
