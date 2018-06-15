@@ -385,7 +385,7 @@ scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
         gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     }
 
-    tmp = free_scrappie_matrix(tmp);
+    free_scrappie_matrix(tmp);
 
     assert(validate_scrappie_matrix
            (ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -435,7 +435,7 @@ scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
         gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
     }
 
-    tmp = free_scrappie_matrix(tmp);
+    free_scrappie_matrix(tmp);
 
     assert(validate_scrappie_matrix
            (ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -537,7 +537,7 @@ scrappie_matrix grumod_forward(const_scrappie_matrix X, const_scrappie_matrix sW
         grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
     }
 
-    tmp = free_scrappie_matrix(tmp);
+    free_scrappie_matrix(tmp);
 
     assert(validate_scrappie_matrix
            (ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -583,7 +583,7 @@ scrappie_matrix grumod_backward(const_scrappie_matrix X, const_scrappie_matrix s
         grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
     }
 
-    tmp = free_scrappie_matrix(tmp);
+    free_scrappie_matrix(tmp);
 
     assert(validate_scrappie_matrix
            (ostate, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -686,8 +686,8 @@ scrappie_matrix lstm_forward(const_scrappie_matrix Xaffine,
         lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
     }
 
-    state = free_scrappie_matrix(state);
-    state = free_scrappie_matrix(tmp);
+    free_scrappie_matrix(state);
+    free_scrappie_matrix(tmp);
 
     assert(validate_scrappie_matrix
            (output, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
@@ -739,8 +739,8 @@ scrappie_matrix lstm_backward(const_scrappie_matrix Xaffine,
         lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
     }
 
-    state = free_scrappie_matrix(state);
-    tmp = free_scrappie_matrix(tmp);
+    free_scrappie_matrix(state);
+    free_scrappie_matrix(tmp);
 
     assert(validate_scrappie_matrix
            (output, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));

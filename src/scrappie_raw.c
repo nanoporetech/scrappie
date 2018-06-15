@@ -262,7 +262,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     }
 
     free(path);
-    post = free_scrappie_matrix(post);
+    free_scrappie_matrix(post);
     const size_t basecall_len = strlen(basecall);
 
     return (struct _raw_basecall_info) {

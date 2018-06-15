@@ -51,8 +51,8 @@ int init_test_signal(void) {
  **/
 int clean_test_signal(void) {
     free(normsig_arr);
-    (void)free_scrappie_matrix(normsignal);
-    (void)free_scrappie_matrix(trimsignal);
+    free_scrappie_matrix(normsignal);
+    free_scrappie_matrix(trimsignal);
     return 0;
 }
 
@@ -87,7 +87,7 @@ void test_trim_signal(void) {
 
     CU_ASSERT_TRUE(equality_scrappie_matrix(mat_trim, trimsignal, 1e-4));
 
-    (void)free_scrappie_matrix(mat_trim);
+    free_scrappie_matrix(mat_trim);
     free(rt.raw);
 }
 

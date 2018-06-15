@@ -226,7 +226,7 @@ int main_mappy(int argc, char *argv[]) {
             }
             free(path);
         }
-		squiggle = free_scrappie_matrix(squiggle);
+		free_scrappie_matrix(squiggle);
 	}
 
 

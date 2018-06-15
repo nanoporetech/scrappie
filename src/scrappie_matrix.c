@@ -44,7 +44,7 @@ scrappie_matrix make_scrappie_matrix(int nr, int nc) {
 scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc) {
     // Could be made more efficient when there is sufficent memory already allocated
     if ((NULL == M) || (M->nr != nr) || (M->nc != nc)) {
-        M = free_scrappie_matrix(M);
+        free_scrappie_matrix(M);
         M = make_scrappie_matrix(nr, nc);
     }
     return M;
@@ -127,12 +127,11 @@ void fprint_scrappie_matrix(FILE * fh, const char *header,
     }
 }
 
-scrappie_matrix free_scrappie_matrix(scrappie_matrix mat) {
+void free_scrappie_matrix(scrappie_matrix mat) {
     if (NULL != mat) {
         free(mat->data.v);
         free(mat);
     }
-    return NULL;
 }
 
 bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
@@ -291,7 +290,7 @@ scrappie_imatrix make_scrappie_imatrix(int nr, int nc) {
 scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc) {
     // Could be made more efficient when there is sufficent memory already allocated
     if ((NULL == M) || (M->nr != nr) || (M->nc != nc)) {
-        M = free_scrappie_imatrix(M);
+        free_scrappie_imatrix(M);
         M = make_scrappie_imatrix(nr, nc);
     }
     return M;
@@ -305,12 +304,11 @@ scrappie_imatrix copy_scrappie_imatrix(const_scrappie_imatrix M){
     return C;
 }
 
-scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat) {
+void free_scrappie_imatrix(scrappie_imatrix mat) {
     if (NULL != mat) {
         free(mat->data.v);
         free(mat);
     }
-    return NULL;
 }
 
 void zero_scrappie_imatrix(scrappie_imatrix M) {

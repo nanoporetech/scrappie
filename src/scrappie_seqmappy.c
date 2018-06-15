@@ -197,7 +197,7 @@ int main_seqmappy(int argc, char *argv[]) {
 
 
     free(states);
-    logpost = free_scrappie_matrix(logpost);
+    free_scrappie_matrix(logpost);
     free(seq.seq);
     free(seq.name);
 

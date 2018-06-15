@@ -355,11 +355,11 @@ float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float ski
     assert(validate_ivector(seq, nblock, -1, nhistory - 1, __FILE__, __LINE__));
 
 cleanup:
-    traceback = free_scrappie_imatrix(traceback);
-    itmp = free_scrappie_imatrix(itmp);
-    tmp = free_scrappie_matrix(tmp);
-    prev_score = free_scrappie_matrix(prev_score);
-    score = free_scrappie_matrix(score);
+    free_scrappie_imatrix(traceback);
+    free_scrappie_imatrix(itmp);
+    free_scrappie_matrix(tmp);
+    free_scrappie_matrix(prev_score);
+    free_scrappie_matrix(score);
 
     return logscore;
 }
@@ -884,7 +884,7 @@ float decode_crf(const_scrappie_matrix trans, int * path){
         path[blk - 1] = tb->data.f[offset + path[blk]];
     }
 
-    tb = free_scrappie_imatrix(tb);
+    free_scrappie_imatrix(tb);
     free(mem);
 
     return score;
@@ -1352,7 +1352,7 @@ float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, flo
         }
     }
 
-    traceback = free_scrappie_imatrix(traceback);
+    free_scrappie_imatrix(traceback);
     free(pscore);
     free(cscore);
 

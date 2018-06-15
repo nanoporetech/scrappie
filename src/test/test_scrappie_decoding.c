@@ -50,7 +50,7 @@ void test_decode_equivalent_helper(float stay_pen, float skip_pen, float local_p
 
     free(path_original);
     free(path_vectorised);
-    (void)free_scrappie_matrix(post);
+    free_scrappie_matrix(post);
 }
 
 
@@ -93,8 +93,8 @@ void test_decode_equivalent_to_sloika(void) {
 
     free(path_sloika);
     free(path_original);
-    (void)free_scrappie_matrix(path);
-    (void)free_scrappie_matrix(post);
+    free_scrappie_matrix(path);
+    free_scrappie_matrix(post);
 }
 
 static test_with_description tests[] = {
