@@ -119,13 +119,14 @@ scrappie_matrix embedding(int const * index, size_t n, const_scrappie_matrix E, 
 scrappie_matrix window(const_scrappie_matrix input, int w, int stride) {
     RETURN_NULL_IF(NULL == input, NULL);
     assert(w > 0);
-    const int wh = (w + 1) / 2;
+    const size_t wh = (w + 1) / 2;
 
     scrappie_matrix output = make_scrappie_matrix(input->nr * w,
                                                   (int)ceilf(input->nc /
                                                              (float)stride));
+    RETURN_NULL_IF(NULL == output, NULL);
 
-    for (int col = 0; col < output->nc; col++) {
+    for (size_t col = 0; col < output->nc; col++) {
         // First and last columns are special cases
         const size_t out_offset = col * output->stride;
         const int icol = col * stride;

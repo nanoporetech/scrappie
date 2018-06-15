@@ -87,7 +87,7 @@ ffibuilder.cdef("""
   typedef _Mat const *const_scrappie_matrix;
 
   scrappie_matrix mat_from_array(const float * x, int nr, int nc);
-  scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
+  void free_scrappie_matrix(scrappie_matrix mat);
 
   // Transducer basecalling
   scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, bool return_log);

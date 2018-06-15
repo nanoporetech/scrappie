@@ -848,6 +848,7 @@ float decode_crf(const_scrappie_matrix trans, int * path){
     const size_t nblk = trans->nc;
 
     scrappie_imatrix tb = make_scrappie_imatrix(nstate, nblk);
+    RETURN_NULL_IF(NULL==tb, NAN);
 
 
     //  Forwards Viterbi pass

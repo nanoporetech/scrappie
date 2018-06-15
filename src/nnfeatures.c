@@ -72,9 +72,12 @@ void studentise_features_kahan(scrappie_matrix features) {
 
 scrappie_matrix nanonet_features_from_events(const event_table et,
                                              bool normalise) {
+    RETURN_NULL_IF(NULL == et.event, NULL);
     const size_t nevent = et.end - et.start;
     const size_t offset = et.start;
     scrappie_matrix features = make_scrappie_matrix(4, nevent);
+    RETURN_NULL_IF(NULL == features, NULL);
+
     for (size_t ev = 0; ev < nevent - 1; ev++) {
         features->data.v[ev] = _mm_setr_ps(et.event[ev + offset].mean,
                                            et.event[ev + offset].stdv,
