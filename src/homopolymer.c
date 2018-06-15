@@ -10,11 +10,6 @@
 #include <math.h>
 #include <assert.h>
 #include "homopolymer.h"
-// Note that in Scrappie, and for 5-mer blocks,
-// index in posteriors is shifted along one step from index
-// in path, so that post[t*post->data.f+j] corresponds to path[t+1]
-// (Homopolymer path calculations are implemented only for 5-mer blocks)
-#define POSTSHIFT(posterior,t,i) ( posterior->data.f[ ((t-1)*(posterior->stride)) + (i) ]  )
 
 const int STAYPATH = -1;        //integer used to represent stay in path
 
@@ -195,8 +190,11 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath,
         int ambigto = ambigfrom + runlength - 1;        //location of the last ambiguous block
         //Calculate normalised stay probabilities for each of the ambiguous locations
         for (int i = ambigfrom; i <= ambigto; i++) {
-            double psu = expf(POSTSHIFT(post, i, staystate));   //Stay probability (un-normalised) - note posts are logged in Scrappie and shifted one step
-            double pru = expf(POSTSHIFT(post, i, runstate));    //Repeat block probability (un-normalised)
+            // Note that in Scrappie,
+            // index in posteriors is shifted along one step from index
+            // in path, so that post[t*post->data.f+j] corresponds to path[t+1]
+            double psu = expf(post->data.f[(i-1)*post->stride+staystate]);   //Stay probability (un-normalised) - note posts are logged in Scrappie and shifted one step
+            double pru = expf(post->data.f[(i-1)*post->stride+runstate ]);    //Repeat block probability (un-normalised)
             double pr = pru / (pru + psu);      //Normalised repeat block probability
             nmean = nmean + pr;
             if (pr > 0.5)
