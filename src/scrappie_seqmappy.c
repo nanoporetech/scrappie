@@ -162,14 +162,19 @@ int main_seqmappy(int argc, char *argv[]) {
     }
 
     const size_t state_len = 5;
-    int * states = encode_bases_to_integers(seq.seq, seq.n, state_len);
     const size_t nstate = seq.n - state_len + 1;
+    int * states = encode_bases_to_integers(seq.seq, seq.n, state_len);
+    if(NULL == states){
+        warnx("Memory allocation failure");
+        return EXIT_FAILURE;
+    }
 
     //  Read raw signal and normalise
     raw_table rt = read_raw(args.fast5_file, true);
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     if(NULL == rt.raw){
         warnx("Failed to open \"%s\" for input and trim signal.\n", args.fasta_file);
+        free(states);
         return EXIT_FAILURE;
     }
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
@@ -178,7 +183,8 @@ int main_seqmappy(int argc, char *argv[]) {
     scrappie_matrix logpost = nanonet_rgrgr_r94_posterior(rt, args.min_prob, true);
     if(NULL == logpost){
         warnx("Failed to calculate posterior for \"%s\" ", args.fasta_file);
-        return EXIT_SUCCESS;
+        free(states);
+        return EXIT_FAILURE;
     }
 
     const size_t nblock = logpost->nc;

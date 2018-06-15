@@ -166,7 +166,7 @@ void test_viterbi_with_path_map_to_sequence(void){
     float score = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, path);
     CU_ASSERT_NOT_EQUAL(score, NAN);
 
-    fputs("Viterbi mapping path\n",stdout);
+    (void)fputs("Viterbi mapping path\n",stdout);
     fprintf(stdout,"%d",path[0]);
     for(size_t blk=1 ; blk < nblock ; blk++){
         printf(", %d", path[blk]);

@@ -6,6 +6,7 @@
 
 #include "kseq.h"
 #include "scrappie_seq_helpers.h"
+#include "scrappie_stdlib.h"
 
 static int nbase = 4;
 KSEQ_INIT(int, read);
@@ -52,6 +53,7 @@ int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len){
     const size_t nstate = n - state_len + 1;
 
     int * iseq = calloc(nstate, sizeof(int));
+    RETURN_NULL_IF(NULL == iseq, NULL);
     for(size_t i=0 ; i < nstate ; i++){
         int ib = 0;
         for(size_t j=0 ; j < state_len ; j++){
