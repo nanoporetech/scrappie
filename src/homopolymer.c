@@ -20,19 +20,45 @@ const int STAYPATH = -1;        //integer used to represent stay in path
 
 /**  Calculate the 4^p digit in the base-4 representation of the integer x
  *
- *   (for example, b4(3,0)=3, b4(64,3)=1 )
+ *   (for example, base4(3,0)=3, base4(64,3)=1 )
  *
- *   @param x          integer representing a kmer state (-1 to 1023 if k=5)
+ *   @param x          integer 
  *   @param position   position 0 is the right-hand (least sig) digit
  *
  *   @return an integer in the range 0,1,2,3 representing a base (ACTG)
  **/
 int base4(int x, int position) {
-    int y = x;
     for (int i = 0; i < position; i++)
-        y = y / 4;
-    return y % 4;
+        x = x / 4;           //passed by value so OK to do this
+    return x % 4;
 }
+
+/**  Calculate an int that represents b repeated nrep times in base 4
+ *
+ *   (for example, repeatblock(1,1) = 1
+ *                 repeatblock(2,3) = 2 + 4x2 + 16x2  = 44
+ *
+ *   @param b          integer in range 0 to 3 inclusive representing base
+ *   @param reps       number of repeats
+ *
+ *   @return           int representing b repeated nrep times in base 4
+ **/
+int repeatblock(int b,int nrep){
+    int y=0;
+    for(int n = 0; n < nrep; n++)
+        y = y * 4 + b;
+    return y;
+}
+
+/**  Four to the power n
+ * 
+ *   @param n          integer
+ *
+ *   @return           4^n
+ **/
+int fourTo(int n){
+    return 1 << (2*n);} 
+
 
 /**  Find candidate homopolymer runs
  *   findRunsByBase returns vectors containing the
@@ -61,31 +87,33 @@ int base4(int x, int position) {
  *   @return number of homopolymer runs found
  **/
 int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
-             int pathlength) {
-    //Allocate half this length to each of runstarts, runlengths, runbases.
+             int pathlength, int kmerlength) {
+    //Allocate half path length to each of runstarts, runlengths, runbases.
     //We'll reduce this size before passing back to caller.
-    int vecsize = pathlength / 2;
-    *runstarts = (int *)malloc(vecsize * sizeof(int));
+    const int vecsize = pathlength / 2;
+    const int fkm1 = fourTo(kmerlength-1);  //Numbers that will be needed repeatedly in calculations
+    const int fkm2 = fourTo(kmerlength-2);
+    *runstarts  = (int *)malloc(vecsize * sizeof(int));
     *runlengths = (int *)malloc(vecsize * sizeof(int));
-    *runbases = (int *)malloc(vecsize * sizeof(int));
+    *runbases   = (int *)malloc(vecsize * sizeof(int));
     int runcount = 0;
     for (int base = 0; base < 4; base++)        //Bases ACGT=0123
     {
-        int repeat5 = base * 341;       //Index of base repeated 5x
-        int repeat4 = base * 85;        //Repeated 4x
-        int repeat3 = base * 21;        //3x
-        for (int i = 1; i < pathlength - 2; i++)        //Location of start in path
+        int repeatk   = repeatblock(base,kmerlength);          //Index of base repeated k times where k is kmer length
+        int repeatkm1 = repeatblock(base,kmerlength-1);        //Repeated (k-1) times
+        int repeatkm2 = repeatblock(base,kmerlength-2);        //Repeated (k-2) times
+        for (int i = 1; i < pathlength - 2; i++)               //Location of start in path
         {
             int p = path[i - 1];        //Just to provide shorthand
             int q = path[i];
             //Search for elements that go (XYYYY followed by YYYYY or stay) - 1a above
             //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT            
-            if ((p % 256 == repeat4) && (p != repeat5) && (p != STAYPATH)
-                && ((q == STAYPATH) || (q == repeat5))) {
-                //Hunt for the first location that isn't stay or repeat5: this is the end of the run
+            if ((p % fkm1 == repeatkm1) && (p != repeatk) && (p != STAYPATH)
+                && ((q == STAYPATH) || (q == repeatk))) {
+                //Hunt for the first location that isn't stay or repeatk: this is the end of the run
                 int e = i + 1;
                 while (e < pathlength
-                       && (path[e] == STAYPATH || path[e] == repeat5))
+                       && (path[e] == STAYPATH || path[e] == repeatk))
                     e++;
                 (*runstarts)[runcount] = i;     //Location of start of run
                 (*runlengths)[runcount] = e - i;
@@ -94,19 +122,19 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
             }
             //Search for elements that go (ZXYYY followed by zero or more stays then YYYYY) - 1bc above
             //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT            
-            if ((p % 64 == repeat3) && (p % 256 != repeat4) && (p != STAYPATH)
-                && ((q == STAYPATH) || (q == repeat5))) {
+            if ((p % fkm2 == repeatkm2) && (p % fkm1 != repeatkm1) && (p != STAYPATH)
+                && ((q == STAYPATH) || (q == repeatk))) {
                 //Hunt for the first location that isn't stay after (not including) (i-1)
                 int j = i;
                 while (j < pathlength && path[j] == STAYPATH)
                     j++;
                 //So far we have (ZXYYY followed by zero or more stays then something)
                 //If the something is YYYYY and we still have any space left before the end...
-                if (path[j] == repeat5 && j < pathlength - 1) {
+                if (path[j] == repeatk && j < pathlength - 1) {
                     //Hunt for the first location that isn't stay or repeat5: this is the end of the run
                     int e = j + 1;
                     while (e < pathlength
-                           && (path[e] == -1 || path[e] == repeat5))
+                           && (path[e] == -1 || path[e] == repeatk))
                         e++;
                     (*runstarts)[runcount] = j; //Location of start of run: note this is j not i
                     (*runlengths)[runcount] = e - j;
@@ -117,9 +145,9 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
         }
     }
     //We allocated the arrays at the start using far too much space: reallocate to what we need
-    *runstarts = (int *)realloc(*runstarts, runcount * sizeof(int));
+    *runstarts  = (int *)realloc(*runstarts,  runcount * sizeof(int));
     *runlengths = (int *)realloc(*runlengths, runcount * sizeof(int));
-    *runbases = (int *)realloc(*runbases, runcount * sizeof(int));
+    *runbases   = (int *)realloc(*runbases,   runcount * sizeof(int));
     return runcount;
 }
 
@@ -144,22 +172,15 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath,
     if (pathCalculationFlag == HOMOPOLYMER_NOCHANGE) {
         return 0;
     }
-    if ((int)(post->nr) != 1025) {
-        fprintf(stderr,
-                "Homopolymer path calculations not implemented for kmer lengths other than 5: nr=%d\n",post->nr);
-        assert((int)(post->nr) == 1025);
-    }
-    if (pathCalculationFlag != HOMOPOLYMER_MEAN) {
-        return 1;
-    }
     const int nblock = post->nc;        //Number of locations in read
     const int staystate = post->nr-1;     //index of the stay in posterior vectors (also the last element)
+    const int kmerlength = (int) (logf((float)(post->nr)) / logf(4.0f)); // base 4 log of nblock gives us kmer length
     int *runstarts;             //Location of start (first ambiguous location) in each homopol run
     int *runlengths;            //Length of ambiguous section
     int *runbases;              //Integer 0-3 representing the base which repeats in the homopol run
     //Find homopolymer runs
     int runcount =
-        findRuns(viterbipath, &runstarts, &runlengths, &runbases, nblock);
+        findRuns(viterbipath, &runstarts, &runlengths, &runbases, nblock, kmerlength);
 
     for (int nrun = 0; nrun < runcount; nrun++) //For each homopolymer run...
     {
