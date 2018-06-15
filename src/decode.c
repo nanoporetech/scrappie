@@ -837,18 +837,19 @@ float decode_crf(const_scrappie_matrix trans, int * path){
     RETURN_NULL_IF(NULL == trans, NAN);
     RETURN_NULL_IF(NULL == path, NAN);
 
+    const size_t nblk = trans->nc;
     const size_t nstate = roundf(sqrtf((float)trans->nr));
     assert(nstate * nstate == trans->nr);
     float * mem = calloc(2 * nstate, sizeof(float));
-    RETURN_NULL_IF(NULL==mem, NAN);
+    scrappie_imatrix tb = make_scrappie_imatrix(nstate, nblk);
+    if(NULL == mem || NULL == tb){
+        free_scrappie_imatrix(tb);
+        free(mem);
+        return NAN;
+    }
 
     float * curr = mem;
     float * prev = mem + nstate;
-
-    const size_t nblk = trans->nc;
-
-    scrappie_imatrix tb = make_scrappie_imatrix(nstate, nblk);
-    RETURN_NULL_IF(NULL==tb, NAN);
 
 
     //  Forwards Viterbi pass
@@ -1266,7 +1267,8 @@ float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, flo
     float * cscore = calloc(nseqstate, sizeof(float));
     float * pscore = calloc(nseqstate, sizeof(float));
     scrappie_imatrix traceback = make_scrappie_imatrix(nseqstate, nblock);
-    if(NULL == cscore || NULL == pscore){
+    if(NULL == cscore || NULL == pscore || NULL == traceback){
+        free_scrappie_imatrix(traceback);
         free(pscore);
         free(cscore);
         return logscore;
