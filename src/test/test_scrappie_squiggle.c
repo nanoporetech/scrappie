@@ -36,7 +36,6 @@ void test_short_squiggle_original_units(void) {
     fprint_scrappie_matrix(stdout, "#  Squiggle with network parameters", squiggle, 0, 0, false);
 
     squiggle = free_scrappie_matrix(squiggle);
-    CU_ASSERT_PTR_NULL(squiggle);
 }
 
 void test_short_squiggle_transformed_units(void) {
@@ -45,7 +44,6 @@ void test_short_squiggle_transformed_units(void) {
     fprint_scrappie_matrix(stdout, "#  Squiggle with transformed parameters", squiggle, 0, 0, false);
 
     squiggle = free_scrappie_matrix(squiggle);
-    CU_ASSERT_PTR_NULL(squiggle);
 }
 
 static test_with_description tests[] = {

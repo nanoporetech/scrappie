@@ -119,6 +119,7 @@ static struct arguments args = {
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     int ret = 0;
     char * next_tok = NULL;
+
     switch(key){
     case 'f':
         if(0 == strcasecmp("FASTA", arg)){
