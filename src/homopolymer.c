@@ -6,44 +6,27 @@
 // 'mean' in order to invoke the mean homopolymer length calculation
 // setting the option to 'nochange' (the default) does nothing.
 
-#include <stdio.h>
-#include <math.h>
 #include <assert.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 #include "homopolymer.h"
+#include "scrappie_seq_helpers.h"
+#include "scrappie_stdlib.h"
 
 const int STAYPATH = -1;        //integer used to represent stay in path
 
-/**  Calculate the 4^p digit in the base-4 representation of the integer x
- *
- *   (for example, base4(3,0)=3, base4(64,3)=1 )
- *
- *   @param x          integer 
- *   @param position   position 0 is the right-hand (least sig) digit
- *
- *   @return an integer in the range 0,1,2,3 representing a base (ACTG)
- **/
-int base4(int x, int position) {
-    for (int i = 0; i < position; i++)
-        x = x / 4;           //passed by value so OK to do this
-    return x % 4;
+enum homopolymer_calculation get_homopolymer_calculation(const char * calcstr){
+    if(0 == strcmp(calcstr, "nochange")){
+        return HOMOPOLYMER_NOCHANGE;
+    }
+    if(0 == strcmp(calcstr, "mean")){
+        return HOMOPOLYMER_MEAN;
+    }
+    return HOMOPOLYMER_INVALID;
 }
 
-/**  Calculate an int that represents b repeated nrep times in base 4
- *
- *   (for example, repeatblock(1,1) = 1
- *                 repeatblock(2,3) = 2 + 4x2 + 16x2  = 44
- *
- *   @param b          integer in range 0 to 3 inclusive representing base
- *   @param reps       number of repeats
- *
- *   @return           int representing b repeated nrep times in base 4
- **/
-int repeatblock(int b,int nrep){
-    int y=0;
-    for(int n = 0; n < nrep; n++)
-        y = y * 4 + b;
-    return y;
-}
+
 
 /**  Four to the power n
  * 
@@ -79,7 +62,7 @@ int fourTo(int n){
  *   @param runbases      similarly points to array giving the bases that repeat (coded as integers 0123 = ACGT)
  *   @param pathlength    length of the array 'path'
  *
- *   @return number of homopolymer runs found
+ *   @return number of homopolymer runs found or -1 in case of failure
  **/
 int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
              int pathlength, int kmerlength) {
@@ -89,14 +72,15 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
     const int fkm1 = fourTo(kmerlength-1);  //Numbers that will be needed repeatedly in calculations
     const int fkm2 = fourTo(kmerlength-2);
     void *p;
-    p = malloc( vecsize * sizeof(int) );
-    if(p == NULL) return -1;
+    RETURN_NULL_IF(NULL == path, -1);
+    p = calloc( vecsize, sizeof(int) );
+    if(NULL == p) return -1;
     *runstarts = (int *)p;
-    p = malloc(vecsize * sizeof(int));
-    if(p == NULL) return -1;
+    p = calloc(vecsize, sizeof(int));
+    if(NULL == p) return -1;
     *runlengths = (int *)p;
-    p = malloc(vecsize * sizeof(int));
-    if(p == NULL) return -1;                 
+    p = calloc(vecsize, sizeof(int));
+    if(NULL == p) return -1;                 
     *runbases   = (int *)p;
     int runcount = 0;
     for (int base = 0; base < 4; base++)        //Bases ACGT=0123
@@ -111,11 +95,11 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
             //Search for elements that go (XYYYY followed by YYYYY or stay) - 1a above
             //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT            
             if ((p % fkm1 == repeatkm1) && (p != repeatk) && (p != STAYPATH)
-                && ((q == STAYPATH) || (q == repeatk))) {
+                && ((STAYPATH == q) || (q == repeatk))) {
                 //Hunt for the first location that isn't stay or repeatk: this is the end of the run
                 int e = i + 1;
                 while (e < pathlength
-                       && (path[e] == STAYPATH || path[e] == repeatk))
+                       && ( STAYPATH == path[e] || path[e] == repeatk))
                     e++;
                 (*runstarts)[runcount] = i;     //Location of start of run
                 (*runlengths)[runcount] = e - i;
@@ -124,11 +108,11 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
             }
             //Search for elements that go (ZXYYY followed by zero or more stays then YYYYY) - 1bc above
             //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT            
-            if ((p % fkm2 == repeatkm2) && (p % fkm1 != repeatkm1) && (p != STAYPATH)
-                && ((q == STAYPATH) || (q == repeatk))) {
+            if ((p % fkm2 == repeatkm2) && (p % fkm1 != repeatkm1) && (STAYPATH != p)
+                && ((STAYPATH == q) || (q == repeatk))) {
                 //Hunt for the first location that isn't stay after (not including) (i-1)
                 int j = i;
-                while (j < pathlength && path[j] == STAYPATH)
+                while (j < pathlength && STAYPATH == path[j])
                     j++;
                 //So far we have (ZXYYY followed by zero or more stays then something)
                 //If the something is YYYYY and we still have any space left before the end...
@@ -148,13 +132,13 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
     }
     //We allocated the arrays at the start using far too much space: reallocate to what we need
     p = realloc(*runstarts,  runcount * sizeof(int));
-    if(p == NULL) return -1;
+    if(NULL == p) return -1;
     *runstarts  = (int *)p;
     p = realloc(*runlengths, runcount * sizeof(int));
-    if(p == NULL) return -1;
+    if(NULL == p) return -1;
     *runlengths = (int *)p;
     p = realloc(*runbases,   runcount * sizeof(int));
-    if(p == NULL) return -1;
+    if(NULL == p) return -1;
     *runbases   = (int *)p;
     return runcount;
 }
@@ -175,21 +159,23 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
  *
  *   @return 
  **/
-int homopolymer_path(scrappie_matrix post, int *viterbipath,
+int homopolymer_path(const_scrappie_matrix post, int *viterbipath,
                      enum homopolymer_calculation pathCalculationFlag) {
-    if (pathCalculationFlag == HOMOPOLYMER_NOCHANGE) {
+    if (pathCalculationFlag != HOMOPOLYMER_MEAN) {
         return 0;
     }
-    const int nblock = post->nc;        //Number of locations in read
-    const int staystate = post->nr-1;     //index of the stay in posterior vectors (also the last element)
-    const int kmerlength = (int) (logf((float)(post->nr)) / logf(4.0f)); // base 4 log of nblock gives us kmer length
+    const int nsamples = (int)(post->nc);        //Number of locations (samples) in read
+    const int staystate = (int)(post->nr-1);     //index of the stay in posterior vectors (also the last element)
+    const int kmerlength = kmerlength_fromnblocks(post->nr);
     int *runstarts;             //Location of start (first ambiguous location) in each homopol run
     int *runlengths;            //Length of ambiguous section
     int *runbases;              //Integer 0-3 representing the base which repeats in the homopol run
+    RETURN_NULL_IF(NULL == post, -1);
+    RETURN_NULL_IF(NULL == viterbipath, -1);
     //Find homopolymer runs
     int runcount =
-        findRuns(viterbipath, &runstarts, &runlengths, &runbases, nblock, kmerlength);
-    if(runcount <0) //Signals memory allocation failure
+        findRuns(viterbipath, &runstarts, &runlengths, &runbases, nsamples, kmerlength);
+    if(runcount <0) //Signals failure
         return runcount;
     for (int nrun = 0; nrun < runcount; nrun++) //For each homopolymer run...
     {

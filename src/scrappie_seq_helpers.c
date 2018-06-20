@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <err.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -99,4 +100,40 @@ scrappie_seq_t read_sequence_from_fasta(char const * filename){
 
     return seq;
 }
+
+
+/**  Calculate an int that represents b repeated nrep times in base 4
+ *
+ *   (for example, repeatblock(1,1) = 1
+ *                 repeatblock(2,3) = 2 + 4x2 + 16x2  = 44
+ *
+ *   @param b          integer in range 0 to 3 inclusive representing base
+ *   @param reps       number of repeats
+ *
+ *   @return           int representing b repeated nrep times in base 4
+ **/
+int repeatblock(int b, int nrep){
+    int y = 0;
+    for(int n = 0; n < nrep; n++)
+        y = y * 4 + b;
+    return y;
+}
+
+
+/**  Calculate the kmer length from the number of blocks
+ *
+ *   (for example, if we have a scrappie_matrix x then
+ *                 kmerlength_fromnblocks(post->nr) gives the kmer length).
+ *
+ *   @param n          Number of blocks (.e.g. 1025 for 5-mer)
+ *
+ *   @return           kmer length
+ **/
+int kmerlength_fromnblocks(int n){
+    return (int) (logf((float)n) / logf(4.0f)); // base 4 log of nblock gives us kmer length
+}
+
+
+
+
 

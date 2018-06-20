@@ -59,7 +59,7 @@ static struct argp_option options[] = {
     {"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
-    {"homopolymer", 'h',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},
+    {"homopolymer", 'H',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},
 #if defined(_OPENMP)
     {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
@@ -166,13 +166,11 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         args.stay_pen = atof(arg);
         assert(isfinite(args.stay_pen));
         break;
-    case 'h':
-        if(0 == strcasecmp("mean", arg))
-            args.homopolymer = HOMOPOLYMER_MEAN;
-        else if(0 == strcasecmp("nochange", arg))
-            args.homopolymer = HOMOPOLYMER_NOCHANGE;
-        else
-            errx(EXIT_FAILURE, "Homopolymer option %s not recognised.", arg);
+    case 'H':
+        args.homopolymer = get_homopolymer_calculation(arg);
+        if(HOMOPOLYMER_INVALID == args.homopolymer){
+            errx(EXIT_FAILURE, "Invalid homopolymer calculation \"%s\"", arg);
+        }
         break;
     case 1:
         args.use_slip = true;
