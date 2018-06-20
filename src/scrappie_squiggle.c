@@ -163,7 +163,7 @@ int main_squiggle(int argc, char *argv[]) {
                             squiggle->data.f[offset + 1],
                             squiggle->data.f[offset + 2]);
                 }
-                free_scrappie_matrix(squiggle);
+                squiggle = free_scrappie_matrix(squiggle);
             }
         }
 

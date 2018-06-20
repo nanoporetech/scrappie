@@ -111,7 +111,7 @@ int init_test_convolution(void) {
     }
     mat_even = mat_from_array(_xrange_even, 1, 10);
     if (NULL == mat_even) {
-        free_scrappie_matrix(mat_odd);
+        mat_odd = free_scrappie_matrix(mat_odd);
         return 1;
     }
     return 0;
@@ -123,8 +123,8 @@ int init_test_convolution(void) {
  *   @returns 0 on success, non-zero on failure
  **/
 int clean_test_convolution(void) {
-    free_scrappie_matrix(mat_even);
-    free_scrappie_matrix(mat_odd);
+    mat_even = free_scrappie_matrix(mat_even);
+    mat_odd = free_scrappie_matrix(mat_odd);
     return 0;
 }
 
@@ -381,7 +381,7 @@ void compare_convolution_to_baseline(const_scrappie_matrix input,
     }
 
     free(res_odd_base.elt);
-    free_scrappie_matrix(res_odd);
+    res_odd = free_scrappie_matrix(res_odd);
 }
 
 void test_scrappie_convolution_f1s1(void) {

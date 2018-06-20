@@ -31,7 +31,7 @@ typedef _iMat const *const_scrappie_imatrix;
 scrappie_matrix make_scrappie_matrix(int nr, int nc);
 scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc);
 scrappie_matrix copy_scrappie_matrix(const_scrappie_matrix mat);
-void free_scrappie_matrix(scrappie_matrix mat);
+scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 void zero_scrappie_matrix(scrappie_matrix M);
 scrappie_matrix mat_from_array(const float *x, int nr, int nc);
 float * array_from_scrappie_matrix(const_scrappie_matrix mat);
@@ -48,7 +48,7 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
 scrappie_imatrix make_scrappie_imatrix(int nr, int nc);
 scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc);
 scrappie_imatrix copy_scrappie_imatrix(const_scrappie_imatrix mat);
-void free_scrappie_imatrix(scrappie_imatrix mat);
+scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat);
 void zero_scrappie_imatrix(scrappie_imatrix M);
 
 scrappie_matrix affine_map(const_scrappie_matrix X, const_scrappie_matrix W,

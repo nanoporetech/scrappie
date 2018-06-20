@@ -111,7 +111,7 @@ scrappie_matrix read_scrappie_matrix_from_handle(FILE * fh) {
         warnx
             ("Read incorrect number of elements. Got %d but expecteding %d x %d\n",
              nelt, nr, nc);
-        free_scrappie_matrix(mat);
+        mat = free_scrappie_matrix(mat);
         return NULL;
     }
 

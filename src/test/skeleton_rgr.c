@@ -26,30 +26,30 @@ int main(int argc, char * argv[]){
     write_scrappie_matrix("convolution.crp", conv);
 
 
-    free_scrappie_matrix(raw_mat);
+    raw_mat = free_scrappie_matrix(raw_mat);
 
     //  First GRU layer
     scrappie_matrix gruB1 =
         gru_backward(conv, gruB1_rgr_iW, gruB1_rgr_sW, gruB1_rgr_sW2,
                      gruB1_rgr_b, NULL);
     write_scrappie_matrix("gruB1.crp", gruB1);
-    free_scrappie_matrix(conv);
+    conv = free_scrappie_matrix(conv);
     //  Second GRU layer
     scrappie_matrix gruF2 =
         gru_forward(gruB1, gruF2_rgr_iW, gruF2_rgr_sW, gruF2_rgr_sW2,
                     gruF2_rgr_b, NULL);
     write_scrappie_matrix("gruF2.crp", gruF2);
-    free_scrappie_matrix(gruB1);
+    gruB1 = free_scrappie_matrix(gruB1);
     //  Thrid GRU layer
     scrappie_matrix gruB3 =
         gru_backward(gruF2, gruB3_rgr_iW, gruB3_rgr_sW, gruB3_rgr_sW2,
                      gruB3_rgr_b, NULL);
     write_scrappie_matrix("gruB3.crp", gruB3);
-    free_scrappie_matrix(gruF2);
+    gruF2 = free_scrappie_matrix(gruF2);
 
     scrappie_matrix post = softmax(gruB3, FF_rgr_W, FF_rgr_b, NULL);
     write_scrappie_matrix("softmax.crp", post);
-    free_scrappie_matrix(gruB3);
+    gruB3 = free_scrappie_matrix(gruB3);
 
-    free_scrappie_matrix(post);
+    post = free_scrappie_matrix(post);
 }

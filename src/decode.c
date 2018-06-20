@@ -355,11 +355,11 @@ float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float ski
     assert(validate_ivector(seq, nblock, -1, nhistory - 1, __FILE__, __LINE__));
 
 cleanup:
-    free_scrappie_imatrix(traceback);
-    free_scrappie_imatrix(itmp);
-    free_scrappie_matrix(tmp);
-    free_scrappie_matrix(prev_score);
-    free_scrappie_matrix(score);
+    traceback = free_scrappie_imatrix(traceback);
+    itmp = free_scrappie_imatrix(itmp);
+    tmp = free_scrappie_matrix(tmp);
+    prev_score = free_scrappie_matrix(prev_score);
+    score = free_scrappie_matrix(score);
 
     return logscore;
 }
@@ -824,7 +824,7 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
         logscore = viterbi_local_backtrace(cscore, nhst, traceback, seq);
     }
 
-    free_scrappie_imatrix(traceback);
+    traceback = free_scrappie_imatrix(traceback);
     free(skip_idx);
     free(step_idx);
     free(pscore);
@@ -843,7 +843,7 @@ float decode_crf(const_scrappie_matrix trans, int * path){
     float * mem = calloc(2 * nstate, sizeof(float));
     scrappie_imatrix tb = make_scrappie_imatrix(nstate, nblk);
     if(NULL == mem || NULL == tb){
-        free_scrappie_imatrix(tb);
+        tb = free_scrappie_imatrix(tb);
         free(mem);
         return NAN;
     }
@@ -886,7 +886,7 @@ float decode_crf(const_scrappie_matrix trans, int * path){
         path[blk - 1] = tb->data.f[offset + path[blk]];
     }
 
-    free_scrappie_imatrix(tb);
+    tb = free_scrappie_imatrix(tb);
     free(mem);
 
     return score;
@@ -1268,7 +1268,7 @@ float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, flo
     float * pscore = calloc(nseqstate, sizeof(float));
     scrappie_imatrix traceback = make_scrappie_imatrix(nseqstate, nblock);
     if(NULL == cscore || NULL == pscore || NULL == traceback){
-        free_scrappie_imatrix(traceback);
+        traceback = free_scrappie_imatrix(traceback);
         free(pscore);
         free(cscore);
         return logscore;
@@ -1355,7 +1355,7 @@ float map_to_sequence_viterbi(const_scrappie_matrix logpost, float stay_pen, flo
         }
     }
 
-    free_scrappie_imatrix(traceback);
+    traceback = free_scrappie_imatrix(traceback);
     free(pscore);
     free(cscore);
 

@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     scrappie_matrix mat = random_scrappie_matrix(nr, nc, -1.0, 1.0);
     int ret = write_scrappie_matrix(stdout, mat);
     assert(mat->nr * mat->nc == ret);
-    free_scrappie_matrix(mat);
+    mat = free_scrappie_matrix(mat);
 
     return EXIT_SUCCESS;
 }

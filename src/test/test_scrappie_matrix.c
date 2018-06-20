@@ -34,7 +34,7 @@ void test_rownormalise_scrappie_matrix_helper(int nr) {
     for(int i=0 ; i < nr ; i++){
         CU_ASSERT_DOUBLE_EQUAL(mat->data.f[i], expected, 1e-5);
     }
-    free_scrappie_matrix(mat);
+    mat = free_scrappie_matrix(mat);
 }
 
 void test_rownormalise_nr08scrappie_matrix(void){

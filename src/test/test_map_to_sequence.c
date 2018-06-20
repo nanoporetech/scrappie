@@ -140,7 +140,7 @@ void test_viterbi_map_to_sequence(void){
     float score = map_to_sequence_viterbi(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len, NULL);
     CU_ASSERT_NOT_EQUAL(score, NAN);
 
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 void test_forward_map_to_sequence(void){
@@ -151,7 +151,7 @@ void test_forward_map_to_sequence(void){
     float score = map_to_sequence_forward(logpost, 0.0f, 0.0f, BIG_VAL, mapping_target, mapping_target_len);
     CU_ASSERT_NOT_EQUAL(score, NAN);
 
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 void test_viterbi_with_path_map_to_sequence(void){
@@ -176,7 +176,7 @@ void test_viterbi_with_path_map_to_sequence(void){
     }
 
     free(path);
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 void test_forward_better_than_viterbi_map_to_sequence(void){
@@ -189,7 +189,7 @@ void test_forward_better_than_viterbi_map_to_sequence(void){
     printf("vit = %f fwd = %f\n", score_vit, score_fwd);
     CU_ASSERT_TRUE(score_fwd >= score_vit);
 
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 void test_full_band_viterbi_map_to_sequence(void){
@@ -216,7 +216,7 @@ void test_full_band_viterbi_map_to_sequence(void){
 
     free(poshigh);
     free(poslow);
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 void test_full_band_forward_map_to_sequence(void){
@@ -243,7 +243,7 @@ void test_full_band_forward_map_to_sequence(void){
 
     free(poshigh);
     free(poslow);
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 
@@ -272,7 +272,7 @@ void test_relaxed_band_helper(float local_pen, int32_t band){
 
     free(poshigh);
     free(poslow);
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 
@@ -333,7 +333,7 @@ void test_tight_band_forward_map_to_sequence(void){
     CU_ASSERT_TRUE(score_fwd > score_fwdB);
 
     free(tighthigh);
-    free_scrappie_matrix(logpost);
+    logpost = free_scrappie_matrix(logpost);
 }
 
 

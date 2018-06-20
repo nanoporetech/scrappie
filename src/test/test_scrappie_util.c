@@ -62,7 +62,7 @@ int clean_test_scrappie_util(void) {
     int ret = fclose(infile);
     ret |= fclose(outfile);
     ret |= remove(scrappie_matrix_tmpfile_name);
-    free_scrappie_matrix(mat);
+    mat = free_scrappie_matrix(mat);
     return ret;
 }
 
@@ -71,7 +71,7 @@ void test_read_matrix_scrappie_util(void) {
     CU_ASSERT_FATAL(NULL != mat_in);
     CU_ASSERT(validate_scrappie_matrix
               (mat_in, -1.0, 1.0, 0.0, true, __FILE__, __LINE__));
-    free_scrappie_matrix(mat_in);
+    mat_in = free_scrappie_matrix(mat_in);
 }
 
 void test_write_matrix_scrappie_util(void) {
@@ -85,14 +85,14 @@ void test_roundtrip_matrix_scrappie_util(void) {
     scrappie_matrix mat_in = read_scrappie_matrix_from_handle(outfile);
     CU_ASSERT_FATAL(NULL != mat_in);
     CU_ASSERT(equality_scrappie_matrix(mat_in, mat, 0.0));
-    free_scrappie_matrix(mat_in);
+    mat_in = free_scrappie_matrix(mat_in);
 }
 
 void test_copy_matrix_scrappie_util(void) {
     scrappie_matrix mat_cpy = copy_scrappie_matrix(mat);
     CU_ASSERT_FATAL(NULL != mat_cpy);
     CU_ASSERT(equality_scrappie_matrix(mat_cpy, mat, 0.0));
-    free_scrappie_matrix(mat_cpy);
+    mat_cpy = free_scrappie_matrix(mat_cpy);
 }
 
 void test_tofrom_array_scrappie_util(void) {
@@ -101,7 +101,7 @@ void test_tofrom_array_scrappie_util(void) {
     scrappie_matrix mat_cpy = mat_from_array(array, mat->nr, mat->nc);
     CU_ASSERT_FATAL(NULL != mat_cpy);
     CU_ASSERT(equality_scrappie_matrix(mat_cpy, mat, 0.0));
-    free_scrappie_matrix(mat_cpy);
+    mat_cpy = free_scrappie_matrix(mat_cpy);
     free(array);
 }
 
