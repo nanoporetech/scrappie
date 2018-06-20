@@ -54,8 +54,9 @@ static struct arguments args = {
 };
 
 static error_t parse_arg(int key, char *arg, struct argp_state *state) {
+    int ret = 0;
+
     switch (key) {
-        int ret = 0;
     case 'm':
         args.model_type = get_squiggle_model(arg);
         if(SCRAPPIE_SQUIGGLE_MODEL_INVALID == args.model_type){

@@ -115,8 +115,9 @@ static struct arguments args = {
 };
 
 static error_t parse_arg(int key, char *arg, struct argp_state *state) {
+    int ret = 0;
+
     switch (key) {
-        int ret = 0;
     case 'f':
         if (0 == strcasecmp("FASTA", arg)) {
             args.outformat = FORMAT_FASTA;
