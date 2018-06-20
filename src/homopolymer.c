@@ -184,7 +184,7 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath,
         int nviterbi = 0;
         int ncalcviterbi = 0;
         double nmean = 0.0;
-        int runstate = runbases[nrun] * 341;    //index of a fivemer with the repeat base repeated 5x
+        int runstate = repeatblock(runbases[nrun],kmerlength);  //index of a fivemer with the repeat base repeated 5x
         int runlength = runlengths[nrun];
         int ambigfrom = runstarts[nrun];        //location of the first ambiguous block in the homopol run
         int ambigto = ambigfrom + runlength - 1;        //location of the last ambiguous block
