@@ -281,7 +281,8 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     if(SCRAPPIE_MODEL_RNNRF_R9_4 != model){
         const int nstate = post->nr;
         score = decode_transducer(post, args.stay_pen, args.skip_pen, args.local_pen, path, args.use_slip);
-        homopolymer_path(post,path,args.homopolymer);//Last arg is flag to decide which version of calculation to do - see homopolymer.h
+        int runcount = homopolymer_path(post,path,args.homopolymer);//Last arg is flag to decide which version of calculation to do - see homopolymer.h
+        RETURN_NULL_IF( runcount < 0 , (struct _raw_basecall_info){0} ); //signals memory allocation error
         basecall = overlapper(path, nblock + 1, nstate - 1, pos);
     } else{
 

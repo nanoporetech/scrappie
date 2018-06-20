@@ -88,9 +88,16 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
     const int vecsize = pathlength / 2;
     const int fkm1 = fourTo(kmerlength-1);  //Numbers that will be needed repeatedly in calculations
     const int fkm2 = fourTo(kmerlength-2);
-    *runstarts  = (int *)malloc(vecsize * sizeof(int));
-    *runlengths = (int *)malloc(vecsize * sizeof(int));
-    *runbases   = (int *)malloc(vecsize * sizeof(int));
+    void *p;
+    p = malloc( vecsize * sizeof(int) );
+    if(p == NULL) return -1;
+    *runstarts = (int *)p;
+    p = malloc(vecsize * sizeof(int));
+    if(p == NULL) return -1;
+    *runlengths = (int *)p;
+    p = malloc(vecsize * sizeof(int));
+    if(p == NULL) return -1;                 
+    *runbases   = (int *)p;
     int runcount = 0;
     for (int base = 0; base < 4; base++)        //Bases ACGT=0123
     {
@@ -140,9 +147,15 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
         }
     }
     //We allocated the arrays at the start using far too much space: reallocate to what we need
-    *runstarts  = (int *)realloc(*runstarts,  runcount * sizeof(int));
-    *runlengths = (int *)realloc(*runlengths, runcount * sizeof(int));
-    *runbases   = (int *)realloc(*runbases,   runcount * sizeof(int));
+    p = realloc(*runstarts,  runcount * sizeof(int));
+    if(p == NULL) return -1;
+    *runstarts  = (int *)p;
+    p = realloc(*runlengths, runcount * sizeof(int));
+    if(p == NULL) return -1;
+    *runlengths = (int *)p;
+    p = realloc(*runbases,   runcount * sizeof(int));
+    if(p == NULL) return -1;
+    *runbases   = (int *)p;
     return runcount;
 }
 
@@ -176,7 +189,8 @@ int homopolymer_path(scrappie_matrix post, int *viterbipath,
     //Find homopolymer runs
     int runcount =
         findRuns(viterbipath, &runstarts, &runlengths, &runbases, nblock, kmerlength);
-
+    if(runcount <0) //Signals memory allocation failure
+        return runcount;
     for (int nrun = 0; nrun < runcount; nrun++) //For each homopolymer run...
     {
         //Calculate Viterbi (as a check against the existing sequence) and mean numbers of non-stays
