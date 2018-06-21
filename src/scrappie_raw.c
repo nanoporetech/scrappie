@@ -17,6 +17,7 @@
 #include "scrappie_licence.h"
 #include "scrappie_stdlib.h"
 #include "util.h"
+#include "homopolymer.h"
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
@@ -45,6 +46,8 @@ static struct argp_option options[] = {
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"local", 6, "penalty", 0, "Penalty for local basecalling"},
+    {"temperature1", 7, "factor", 0, "Temperature for softmax weights"},
+    {"temperature2", 8, "factor", 0, "Temperature for softmax bias"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
@@ -56,6 +59,7 @@ static struct argp_option options[] = {
     {"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
+    {"homopolymer", 'H',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},
 #if defined(_OPENMP)
     {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
@@ -73,6 +77,8 @@ struct arguments {
     float skip_pen;
     float stay_pen;
     float local_pen;
+    float temperature1;
+    float temperature2;
     bool use_slip;
     int trim_start;
     int trim_end;
@@ -83,6 +89,7 @@ struct arguments {
     int compression_chunk_size;
     enum raw_model_type model_type;
     char ** files;
+    enum homopolymer_calculation homopolymer;
 };
 
 static struct arguments args = {
@@ -94,6 +101,8 @@ static struct arguments args = {
     .skip_pen = 0.0f,
     .stay_pen = 0.0f,
     .local_pen = 2.0f,
+    .temperature1 = 1.0f,
+    .temperature2 = 1.0f,
     .use_slip = false,
     .trim_start = 200,
     .trim_end = 10,
@@ -102,8 +111,9 @@ static struct arguments args = {
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
-    .model_type = SCRAPPIE_MODEL_RGRGR_R94,
-    .files = NULL
+    .model_type = SCRAPPIE_MODEL_RGRGR_R9_4,
+    .files = NULL,
+    .homopolymer = HOMOPOLYMER_NOCHANGE
 };
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -156,6 +166,12 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         args.stay_pen = atof(arg);
         assert(isfinite(args.stay_pen));
         break;
+    case 'H':
+        args.homopolymer = get_homopolymer_calculation(arg);
+        if(HOMOPOLYMER_INVALID == args.homopolymer){
+            errx(EXIT_FAILURE, "Invalid homopolymer calculation \"%s\"", arg);
+        }
+        break;
     case 1:
         args.use_slip = true;
         break;
@@ -184,6 +200,14 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 6:
         args.local_pen = atof(arg);
         assert(isfinite(args.local_pen));
+        break;
+    case 7:
+	args.temperature1 = atof(arg);
+	assert(isfinite(args.temperature1) && args.temperature1 > 0.0f);
+        break;
+    case 8:
+	args.temperature2 = atof(arg);
+	assert(isfinite(args.temperature2) && args.temperature2 > 0.0f);
         break;
     case 10:
     case 11:
@@ -240,7 +264,8 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-    scrappie_matrix post = calcpost(rt, args.min_prob, true);
+    scrappie_matrix post = calcpost(rt, args.min_prob, args.temperature1, args.temperature2, true);
+
     if (NULL == post) {
         free(rt.raw);
         return (struct _raw_basecall_info){0};
@@ -251,10 +276,11 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
 
     float score = NAN;
     char * basecall = NULL;
-    if(SCRAPPIE_MODEL_RNNRF_R94 != model){
+    if(SCRAPPIE_MODEL_RNNRF_R9_4 != model){
         const int nstate = post->nr;
-
         score = decode_transducer(post, args.stay_pen, args.skip_pen, args.local_pen, path, args.use_slip);
+        int runcount = homopolymer_path(post,path,args.homopolymer);//Last arg is flag to decide which version of calculation to do - see homopolymer.h
+        RETURN_NULL_IF( runcount < 0 , (struct _raw_basecall_info){0} ); //signals memory allocation error
         basecall = overlapper(path, nblock + 1, nstate - 1, pos);
     } else{
 

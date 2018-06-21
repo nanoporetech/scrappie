@@ -8,5 +8,7 @@
 scrappie_matrix nanonet_features_from_events(const event_table evtbl,
                                              bool normalise);
 scrappie_matrix nanonet_features_from_raw(const raw_table signal);
+scrappie_matrix deltasample_features_from_raw(const raw_table signal, float shift,
+                                              float scale, float sdthresh);
 
-#endif                          /* FEATURES_H */
+#endif /* FEATURES_H */

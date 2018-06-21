@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
+#include "util.h"
 
 /** Studentise features
  *
@@ -97,6 +98,7 @@ scrappie_matrix nanonet_features_from_events(const event_table et,
     return features;
 }
 
+
 scrappie_matrix nanonet_features_from_raw(const raw_table signal) {
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
@@ -105,9 +107,27 @@ scrappie_matrix nanonet_features_from_raw(const raw_table signal) {
     RETURN_NULL_IF(NULL == sigmat, NULL);
 
     const size_t offset = signal.start;
-    for (size_t i = 0; i < nsample; i++) {
+    for (size_t i = 0 ; i < nsample ; i++) {
         // Copy with stride 4 because of required padding for matrix
         sigmat->data.f[i * 4] = signal.raw[i + offset];
     }
+    return sigmat;
+}
+
+
+scrappie_matrix deltasample_features_from_raw(const raw_table signal, float shift, float scale, float sdthresh){
+    RETURN_NULL_IF(0 == signal.n, NULL);
+    RETURN_NULL_IF(NULL == signal.raw, NULL);
+    const size_t nsample = signal.end - signal.start;
+
+    const float sig_mad = madf(signal.raw + signal.start, nsample, NULL);
+
+    scrappie_matrix sigmat = mat_from_array(signal.raw + signal.start, 1, nsample);
+    RETURN_NULL_IF(NULL == sigmat, NULL);
+    
+    difference_matrix_inplace(sigmat, 0.0f);
+    shift_scale_matrix_inplace(sigmat, shift, scale);
+    filter_matrix_inplace(sigmat, 0.0f, sdthresh * sig_mad);
+
     return sigmat;
 }

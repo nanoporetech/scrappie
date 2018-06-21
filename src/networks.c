@@ -11,6 +11,7 @@
 #include "networks.h"
 #include "nnfeatures.h"
 #include "scrappie_stdlib.h"
+#include "util.h"
 
 #include "models/squiggle_r94.h"
 #include "models/squiggle_r10.h"
@@ -23,16 +24,16 @@ enum raw_model_type get_raw_model(const char * modelstr){
         return SCRAPPIE_MODEL_RGR;
     }
     if(0 == strcmp(modelstr, "rgrgr_r94")){
-        return SCRAPPIE_MODEL_RGRGR_R94;
+        return SCRAPPIE_MODEL_RGRGR_R9_4;
     }
     if(0 == strcmp(modelstr, "rgrgr_r95")){
-        return SCRAPPIE_MODEL_RGRGR_R95;
+        return SCRAPPIE_MODEL_RGRGR_R9_5;
     }
     if(0 == strcmp(modelstr, "rgrgr_r10")){
-        return SCRAPPIE_MODEL_RGRGR_RF14;
+        return SCRAPPIE_MODEL_RGRGR_R10;
     }
     if(0 == strcmp(modelstr, "rnnrf_r94")){
-        return SCRAPPIE_MODEL_RNNRF_R94;
+        return SCRAPPIE_MODEL_RNNRF_R9_4;
     }
     if(0 == strcmp(modelstr, "rgrgr_resgru")){
         return SCRAPPIE_MODEL_RGRGR_RESGRU;
@@ -45,10 +46,10 @@ enum raw_model_type get_raw_model(const char * modelstr){
 
 enum squiggle_model_type get_squiggle_model(const char * squigmodelstr){
     if(0 == strcmp(squigmodelstr, "squiggle_r94")){
-        return SCRAPPIE_SQUIGGLE_MODEL_R94;
+        return SCRAPPIE_SQUIGGLE_MODEL_R9_4;
     }
     if(0 == strcmp(squigmodelstr, "squiggle_r10")){
-        return SCRAPPIE_SQUIGGLE_MODEL_RF14;
+        return SCRAPPIE_SQUIGGLE_MODEL_R10;
     }
     return SCRAPPIE_SQUIGGLE_MODEL_INVALID;
 }
@@ -59,13 +60,13 @@ const char * raw_model_string(const enum raw_model_type model){
         return "raw_r94";
     case SCRAPPIE_MODEL_RGR:
         return "rgr_r94";
-    case SCRAPPIE_MODEL_RGRGR_R94:
+    case SCRAPPIE_MODEL_RGRGR_R9_4:
         return "rgrgr_r94";
-    case SCRAPPIE_MODEL_RGRGR_R95:
+    case SCRAPPIE_MODEL_RGRGR_R9_5:
         return "rgrgr_r95";
-    case SCRAPPIE_MODEL_RGRGR_RF14:
+    case SCRAPPIE_MODEL_RGRGR_R10:
         return "rgrgr_r10";
-    case SCRAPPIE_MODEL_RNNRF_R94:
+    case SCRAPPIE_MODEL_RNNRF_R9_4:
         return "rnnrf_r94";
     case SCRAPPIE_MODEL_RGRGR_RESGRU:
         return "rgrgr_resgru";
@@ -82,9 +83,9 @@ const char * raw_model_string(const enum raw_model_type model){
 
 const char * squiggle_model_string(const enum squiggle_model_type squiggle_model){
     switch(squiggle_model){
-    case SCRAPPIE_SQUIGGLE_MODEL_R94:
+    case SCRAPPIE_SQUIGGLE_MODEL_R9_4:
         return "squiggle_r94";
-    case SCRAPPIE_SQUIGGLE_MODEL_RF14:
+    case SCRAPPIE_SQUIGGLE_MODEL_R10:
         return "squiggle_r10";
     case SCRAPPIE_SQUIGGLE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie squiggle model %s:%d", __FILE__, __LINE__);
@@ -101,13 +102,13 @@ int get_raw_model_stride(const enum raw_model_type model){
         return conv_raw_stride;
     case SCRAPPIE_MODEL_RGR:
         return conv_rgr_stride;
-    case SCRAPPIE_MODEL_RGRGR_R94:
+    case SCRAPPIE_MODEL_RGRGR_R9_4:
         return conv_rgrgr_r94_stride;
-    case SCRAPPIE_MODEL_RGRGR_R95:
+    case SCRAPPIE_MODEL_RGRGR_R9_5:
         return conv_rgrgr_r95_stride;
-    case SCRAPPIE_MODEL_RGRGR_RF14:
+    case SCRAPPIE_MODEL_RGRGR_R10:
         return conv_rgrgr_r10_stride;
-    case SCRAPPIE_MODEL_RNNRF_R94:
+    case SCRAPPIE_MODEL_RNNRF_R9_4:
         return conv_rnnrf_r94_stride;
     case SCRAPPIE_MODEL_RGRGR_RESGRU:
         return conv_rgrgr_resgru_stride;
@@ -128,13 +129,13 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model){
         return nanonet_raw_posterior;
     case SCRAPPIE_MODEL_RGR:
         return nanonet_rgr_posterior;
-    case SCRAPPIE_MODEL_RGRGR_R94:
+    case SCRAPPIE_MODEL_RGRGR_R9_4:
         return nanonet_rgrgr_r94_posterior;
-    case SCRAPPIE_MODEL_RGRGR_R95:
+    case SCRAPPIE_MODEL_RGRGR_R9_5:
         return nanonet_rgrgr_r95_posterior;
-    case SCRAPPIE_MODEL_RGRGR_RF14:
+    case SCRAPPIE_MODEL_RGRGR_R10:
         return nanonet_rgrgr_r10_posterior;
-    case SCRAPPIE_MODEL_RNNRF_R94:
+    case SCRAPPIE_MODEL_RNNRF_R9_4:
         return nanonet_rnnrf_r94_transitions;
     case SCRAPPIE_MODEL_RGRGR_RESGRU:
         return nanonet_rgrgr_resgru_posterior;
@@ -151,9 +152,9 @@ posterior_function_ptr get_posterior_function(const enum raw_model_type model){
 
 squiggle_function_ptr get_squiggle_function(const enum squiggle_model_type squiggle_model){
     switch(squiggle_model){
-    case SCRAPPIE_SQUIGGLE_MODEL_R94:
+    case SCRAPPIE_SQUIGGLE_MODEL_R9_4:
         return squiggle_r94;
-    case SCRAPPIE_SQUIGGLE_MODEL_RF14:
+    case SCRAPPIE_SQUIGGLE_MODEL_R10:
         return squiggle_r10;
     case SCRAPPIE_SQUIGGLE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie squiggle model %s:%d", __FILE__, __LINE__);
@@ -165,8 +166,9 @@ squiggle_function_ptr get_squiggle_function(const enum squiggle_model_type squig
 }
 
 scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
-                                  bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+                                  float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == events.n, NULL);
     RETURN_NULL_IF(NULL == events.event, NULL);
 
@@ -202,7 +204,7 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
     lstmF = free_scrappie_matrix(lstmF);
     lstmB = free_scrappie_matrix(lstmB);
 
-    scrappie_matrix post = softmax(lstmFF, FF3_W, FF3_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(lstmFF, FF3_W, FF3_b, tempW, tempb, NULL);
     lstmFF = free_scrappie_matrix(lstmFF);
     RETURN_NULL_IF(NULL == post, NULL);
 
@@ -214,8 +216,9 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
 }
 
 scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
-                                      bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+                                      float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -254,7 +257,7 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
     gruF = free_scrappie_matrix(gruF);
     gruB = free_scrappie_matrix(gruB);
 
-    scrappie_matrix post = softmax(gruFF, FF3_raw_W, FF3_raw_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(gruFF, FF3_raw_W, FF3_raw_b, tempW, tempb, NULL);
     gruFF = free_scrappie_matrix(gruFF);
     RETURN_NULL_IF(NULL == post, NULL);
 
@@ -266,8 +269,9 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
 }
 
 scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
-                                      bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+                                      float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -292,7 +296,7 @@ scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
     scrappie_matrix gruB3 = gru_backward(gruB3in, gruB3_rgr_sW, gruB3_rgr_sW2, NULL);
     gruB3in = free_scrappie_matrix(gruB3in);
 
-    scrappie_matrix post = softmax(gruB3, FF_rgr_W, FF_rgr_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(gruB3, FF_rgr_W, FF_rgr_b, tempW, tempb, NULL);
     gruB3 = free_scrappie_matrix(gruB3);
 
     if (return_log) {
@@ -303,8 +307,9 @@ scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
 }
 
 scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob,
-                                      bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+                                            float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -339,7 +344,7 @@ scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_pr
     scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rgrgr_r94_sW, gruB5_rgrgr_r94_sW2, NULL);
     gruB5in = free_scrappie_matrix(gruB5in);
 
-    scrappie_matrix post = softmax(gruB5, FF_rgrgr_r94_W, FF_rgrgr_r94_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(gruB5, FF_rgrgr_r94_W, FF_rgrgr_r94_b, tempW, tempb, NULL);
     gruB5 = free_scrappie_matrix(gruB5);
 
     if (return_log) {
@@ -350,8 +355,9 @@ scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_pr
 }
 
 scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob,
-                                      bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+                                            float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -386,7 +392,7 @@ scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_pr
     scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rgrgr_r95_sW, gruB5_rgrgr_r95_sW2, NULL);
     gruB5in = free_scrappie_matrix(gruB5in);
 
-    scrappie_matrix post = softmax(gruB5, FF_rgrgr_r95_W, FF_rgrgr_r95_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(gruB5, FF_rgrgr_r95_W, FF_rgrgr_r95_b, tempW, tempb, NULL);
     gruB5 = free_scrappie_matrix(gruB5);
 
     if (return_log) {
@@ -398,8 +404,9 @@ scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_pr
 
 
 scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_prob,
-                                      bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+		                                    float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -434,7 +441,7 @@ scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_pr
     scrappie_matrix gruB5 = gru_backward(gruB5in, gruB5_rgrgr_r10_sW, gruB5_rgrgr_r10_sW2, NULL);
     gruB5in = free_scrappie_matrix(gruB5in);
 
-    scrappie_matrix post = softmax(gruB5, FF_rgrgr_r10_W, FF_rgrgr_r10_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(gruB5, FF_rgrgr_r10_W, FF_rgrgr_r10_b, tempW, tempb, NULL);
     gruB5 = free_scrappie_matrix(gruB5);
 
     if (return_log) {
@@ -559,9 +566,10 @@ scrappie_matrix squiggle_r10(int const * sequence, size_t n, bool transform_unit
 }
 
 scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob,
-                                              bool return_log) {
+                                              float tempW, float tempb,bool return_log) {
     assert(return_log);  // Returning non-log transformed not supported
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -609,8 +617,9 @@ scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_
 
 
 scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min_prob,
-                                               bool return_log) {
-    assert(min_prob >= 0.0 && min_prob <= 1.0);
+                                               float tempW, float tempb, bool return_log) {
+    assert(min_prob >= 0.0f && min_prob <= 1.0f);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -650,7 +659,7 @@ scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min
     gruF4 = free_scrappie_matrix(gruF4);
     gruB5in = free_scrappie_matrix(gruB5in);
 
-    scrappie_matrix post = softmax(gruB5, FF_rgrgr_resgru_W, FF_rgrgr_resgru_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(gruB5, FF_rgrgr_resgru_W, FF_rgrgr_resgru_b, tempW, tempb, NULL);
     gruB5 = free_scrappie_matrix(gruB5);
 
     if (return_log) {
@@ -662,8 +671,9 @@ scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min
 
 
 scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float min_prob,
-                                                bool return_log) {
+                                                float tempW, float tempb, bool return_log) {
     assert(min_prob >= 0.0 && min_prob <= 1.0);
+    assert(tempW > 0.0f && tempb > 0.0f);
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -703,7 +713,7 @@ scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float mi
     lstmF4 = free_scrappie_matrix(lstmF4);
     lstmR5in = free_scrappie_matrix(lstmR5in);
 
-    scrappie_matrix post = softmax(lstmR5, FF_rgrgr_reslstm_W, FF_rgrgr_reslstm_b, NULL);
+    scrappie_matrix post = softmax_with_temperature(lstmR5, FF_rgrgr_reslstm_W, FF_rgrgr_reslstm_b, tempW, tempb, NULL);
     lstmR5 = free_scrappie_matrix(lstmR5);
 
     if (return_log) {

@@ -544,3 +544,104 @@ bool validate_ivector(int *vec, const int n, const int lower, const int upper,
     return true;
 }
 #endif /* NDEBUG */
+
+
+/**  Shift-Scale a matrix elementwise
+ *
+ *   x[i] := (x[i] - shift) / scale
+ *   Matrix updated in-place.
+ *
+ *   @param C     Matrix to transform [in/out]
+ *   @param shift
+ *   @param scale
+ *
+ *   @returns void
+ **/
+void shift_scale_matrix_inplace(scrappie_matrix C, float shift, float scale){
+    RETURN_NULL_IF(NULL == C,);
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride;
+        for(size_t r=0 ; r < C->nr ; r++){
+            C->data.f[offset + r] = (C->data.f[offset + r] - shift) / scale;
+        }
+    }
+}
+
+
+/**  Clip matrix into range
+ *
+ *   Clip elements of matrix into [-thresh, thresh].
+ *   Matrix updated in-place.
+ *
+ *   @param x      Matrix to clip [in/out]
+ *   @param thresh Threshold
+ *
+ *   @returns void
+ **/
+void clip_matrix_inplace(scrappie_matrix C, float thresh){
+    RETURN_NULL_IF(NULL == C,);
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride;
+        for(size_t r=0 ; r < C->nr ; r++){
+            const float obs = C->data.f[offset + r];
+            const float val = fminf(thresh, fabsf(obs));
+            C->data.f[offset + r] = copysign(val, obs);
+        }
+    }
+}
+
+
+/**  Filter absolutely large values from matrix
+ *
+ *   Replaces elements of matrix whose absolute value exceeds a threshhold.
+ *   Matrix updated in-place
+ *
+ *   @param x        Matrix to filter [in/out]
+ *   @param fill_val Value to replace filtered elements by
+ *   @param thresh   Threshold
+ *
+ *   @returns void
+ **/
+void filter_matrix_inplace(scrappie_matrix C, float fill_val, float thresh){
+    RETURN_NULL_IF(NULL == C,);
+
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride;
+        for(size_t r=0 ; r < C->nr ; r++){
+            const float val = fabsf(C->data.f[offset + r]);
+            if(val > thresh){
+                C->data.f[offset + r] = fill_val;
+            }
+        }
+    }
+}
+
+
+/**  Sliding differences across matrix
+ *
+ *   Calculated x[i] := x[i + 1] - x[i]
+ *   Array updated in-place with final element set to `val`
+ *
+ *
+ *   @param x Matrix to difference [in/out]
+ *   @param val Value to pad with
+ *
+ *   @return  void
+ **/
+void difference_matrix_inplace(scrappie_matrix C, float val){
+    RETURN_NULL_IF(NULL == C,);
+
+    for(size_t c=1 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride;
+        const size_t offsetM1 = (c - 1) * C->stride;
+        for(size_t r=0 ; r < C->nr ; r++){
+            C->data.f[offsetM1 + r] = C->data.f[offset + r] - C->data.f[offsetM1 + r];
+        }
+    }
+    {
+        const size_t offset = (C->nc - 1) * C->stride;
+        for(size_t r=0 ; r < C->nr ; r++){
+            C->data.f[offset + r] = val;
+        }
+    }
+}

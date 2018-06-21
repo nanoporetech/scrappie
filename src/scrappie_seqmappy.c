@@ -31,6 +31,8 @@ static struct argp_option options[] = {
     {"skip", 's', "penalty", 0, "Penalty for skipping a base"},
     {"stay", 'y', "penalty", 0, "Penalty for staying"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
+    {"temperature1", 7, "factor", 0, "Temperature for softmax weights"},
+    {"temperature2", 8, "factor", 0, "Temperature for softmax bias"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
     {0}
@@ -42,6 +44,8 @@ struct arguments {
     float min_prob;
     float skip_pen;
     float stay_pen;
+    float temperature1;
+    float temperature2;
     FILE * output;
     char * prefix;
     int trim_start;
@@ -58,6 +62,8 @@ static struct arguments args = {
     .min_prob = 1e-5f,
     .stay_pen = 0.0f,
     .skip_pen = 0.0f,
+    .temperature1 = 1.0f,
+    .temperature2 = 1.0f,
     .output = NULL,
     .prefix = "",
     .trim_start = 200,
@@ -117,6 +123,14 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         args.varseg_thresh = atof(next_tok) / 100.0;
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
+        break;
+    case 7:
+        args.temperature1 = atof(arg);
+        assert(isfinite(args.temperature1) && args.temperature1 > 0.0f);
+        break;
+    case 8:
+        args.temperature2 = atof(arg);
+        assert(isfinite(args.temperature2) && args.temperature2 > 0.0f);
         break;
     case 10:
     case 11:
@@ -180,7 +194,7 @@ int main_seqmappy(int argc, char *argv[]) {
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
 
-    scrappie_matrix logpost = nanonet_rgrgr_r94_posterior(rt, args.min_prob, true);
+    scrappie_matrix logpost = nanonet_rgrgr_r94_posterior(rt, args.min_prob, args.temperature1, args.temperature2, true);
     if(NULL == logpost){
         warnx("Failed to calculate posterior for \"%s\" ", args.fasta_file);
         free(states);

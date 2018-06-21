@@ -53,7 +53,7 @@ struct arguments {
 };
 
 static struct arguments args = {
-    .model_type = SCRAPPIE_SQUIGGLE_MODEL_R94,
+    .model_type = SCRAPPIE_SQUIGGLE_MODEL_R9_4,
     .backprob = 0.0f,
     .localpen = 2.0f,
     .minscore = 5.0f,

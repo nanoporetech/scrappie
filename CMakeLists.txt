@@ -67,7 +67,7 @@ endif()
 ##
 #   Set up what is to be built
 ##
-add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/layers.c src/networks.c src/nnfeatures.c src/scrappie_common.c src/scrappie_matrix.c src/scrappie_seq_helpers.c src/util.c)
+add_library (scrappie_objects OBJECT src/decode.c src/event_detection.c src/layers.c src/networks.c src/nnfeatures.c src/scrappie_common.c src/scrappie_matrix.c src/scrappie_seq_helpers.c src/util.c src/homopolymer.c)
 set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)

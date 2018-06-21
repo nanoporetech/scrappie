@@ -272,7 +272,7 @@ def _scrappie_to_numpy(matrix, sloika=True):
     return np_matrix
 
 
-def calc_post(rt, model='rgrgr_r94', min_prob=1e-6, log=True):
+def calc_post(rt, model='rgrgr_r94', min_prob=1e-6, log=True, tempW=1.0, tempb=1.0):
     """Run a network network to obtain class probabilities.
 
     :param rt: a `RawTable`.
@@ -291,7 +291,7 @@ def calc_post(rt, model='rgrgr_r94', min_prob=1e-6, log=True):
     except KeyError:
         raise KeyError("Model type '{}' not recognised.".format(model))
     else:
-        matrix = _none_if_null(network(rt.data(), min_prob, log))
+        matrix = _none_if_null(network(rt.data(), tempW, tempb, min_prob, log))
         if matrix is None:
             raise RuntimeError('An unknown error occurred during posterior calculation.')
         else:

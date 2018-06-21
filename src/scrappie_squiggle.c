@@ -45,7 +45,7 @@ struct arguments {
 };
 
 static struct arguments args = {
-    .model_type = SCRAPPIE_SQUIGGLE_MODEL_R94,
+    .model_type = SCRAPPIE_SQUIGGLE_MODEL_R9_4,
     .limit = 0,
     .output = NULL,
     .prefix = "",

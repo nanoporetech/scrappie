@@ -30,6 +30,9 @@ scrappie_matrix residual(const_scrappie_matrix X, const_scrappie_matrix fX,
 void residual_inplace(const_scrappie_matrix X, scrappie_matrix fX);
 scrappie_matrix softmax(const_scrappie_matrix X, const_scrappie_matrix W,
                         const_scrappie_matrix b, scrappie_matrix C);
+scrappie_matrix softmax_with_temperature(scrappie_matrix X, const_scrappie_matrix W,
+                                         const_scrappie_matrix b, float tempW, float tempb,
+                                         scrappie_matrix C);
 
 scrappie_matrix feedforward2_tanh(const_scrappie_matrix Xf,
                                   const_scrappie_matrix Xb,
