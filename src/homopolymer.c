@@ -71,17 +71,22 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
     const int vecsize = pathlength / 2;
     const int fkm1 = fourTo(kmerlength-1);  //Numbers that will be needed repeatedly in calculations
     const int fkm2 = fourTo(kmerlength-2);
-    void *p;
+    *runstarts = NULL;  //To avoid misbehaviour if we have to free it due to allocation failure
+    *runlengths = NULL;
+    *runbases = NULL; 
     RETURN_NULL_IF(NULL == path, -1);
-    p = calloc( vecsize, sizeof(int) );
-    if(NULL == p) return -1;
-    *runstarts = (int *)p;
-    p = calloc(vecsize, sizeof(int));
-    if(NULL == p) return -1;
-    *runlengths = (int *)p;
-    p = calloc(vecsize, sizeof(int));
-    if(NULL == p) return -1;                 
-    *runbases   = (int *)p;
+    *runstarts  = (int *)calloc( vecsize, sizeof(int) );
+    *runlengths = (int *)calloc( vecsize, sizeof(int) );
+    *runbases   = (int *)calloc( vecsize, sizeof(int) );
+    if((NULL == *runstarts) || (NULL == *runlengths) || (NULL == runbases)){
+        free(*runstarts);
+        free(*runlengths);
+        free(*runbases);
+        *runstarts = NULL;
+        *runlengths = NULL;
+        *runbases = NULL;
+        return -1;
+    }
     int runcount = 0;
     for (int base = 0; base < 4; base++)        //Bases ACGT=0123
     {
@@ -131,15 +136,18 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
         }
     }
     //We allocated the arrays at the start using far too much space: reallocate to what we need
-    p = realloc(*runstarts,  runcount * sizeof(int));
-    if(NULL == p) return -1;
-    *runstarts  = (int *)p;
-    p = realloc(*runlengths, runcount * sizeof(int));
-    if(NULL == p) return -1;
-    *runlengths = (int *)p;
-    p = realloc(*runbases,   runcount * sizeof(int));
-    if(NULL == p) return -1;
-    *runbases   = (int *)p;
+    *runstarts  = (int *)realloc(*runstarts,  runcount * sizeof(int));
+    *runlengths = (int *)realloc(*runlengths, runcount * sizeof(int));
+    *runbases   = (int *)realloc(*runbases,   runcount * sizeof(int));
+    if((NULL == *runstarts) || (NULL == *runlengths) || (NULL == runbases)){
+        free(*runstarts);
+        free(*runlengths);
+        free(*runbases);
+        *runstarts = NULL;
+        *runlengths = NULL;
+        *runbases = NULL;
+        return -1;
+    }
     return runcount;
 }
 
