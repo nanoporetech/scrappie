@@ -282,8 +282,10 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
         int runcount = homopolymer_path(post, path, args.homopolymer);
         if(runcount < 0){
             // On error, clean up and return
+            free(pos);
             free(path);
             post = free_scrappie_matrix(post);
+            free(rt.raw);
             return (struct _raw_basecall_info){0};
         }
         basecall = overlapper(path, nblock + 1, nstate - 1, pos);
