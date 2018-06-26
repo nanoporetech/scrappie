@@ -24,6 +24,7 @@ static char args_doc[] = "fasta fast5";
 static struct argp_option options[] = {
     {"model", '1', "name", 0, "Squiggle model to use: \"squiggle_r94\", \"squiggle_r10\""},
     {"backprob", 'b', "probability", 0, "Probability of backwards movement"},
+    {"skippen", 'k', "float", 0, "Penalty for skipping position"},
     {"localpen", 'l', "float", 0, "Penalty for local matching"},
     {"minscore", 'm', "float", 0, "Minimum possible score for matching emission"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
@@ -39,6 +40,7 @@ static struct argp_option options[] = {
 struct arguments {
     enum squiggle_model_type model_type;
     float backprob;
+    float skippen;
     float localpen;
     float minscore;
     FILE * output;
@@ -55,6 +57,7 @@ struct arguments {
 static struct arguments args = {
     .model_type = SCRAPPIE_SQUIGGLE_MODEL_R9_4,
     .backprob = 0.0f,
+    .skippen = 5000.0f,
     .localpen = 2.0f,
     .minscore = 5.0f,
     .output = NULL,
@@ -84,6 +87,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         if(args.backprob < 0.0 && args.backprob >= 1.0){
             errx(EXIT_FAILURE, "Backwards probability must be in [0, 1). Got %f", args.backprob);
         }
+        break;
+    case 'k':
+        args.skippen = atof(arg);
         break;
     case 'l':
         args.localpen = atof(arg);
@@ -169,14 +175,14 @@ static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, boo
  *   @returns array
  **/
 static int * map_signal_to_squiggle(const raw_table signal, const_scrappie_matrix squiggle,
-                                    float backprob, float localpen, float minscore){
+                                    float backprob, float localpen, float skippen, float minscore){
     RETURN_NULL_IF(NULL == signal.raw, NULL);
     RETURN_NULL_IF(NULL == squiggle, NULL);
 
     int32_t * path = calloc(signal.n, sizeof(int32_t));
     RETURN_NULL_IF(NULL == path, NULL);
 
-    (void)squiggle_match_viterbi(signal, squiggle, backprob, localpen, minscore, path);
+    (void)squiggle_match_viterbi(signal, squiggle, backprob, localpen, skippen, minscore, path);
 
     return path;
 }
@@ -209,7 +215,7 @@ int main_mappy(int argc, char *argv[]) {
 
     scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false, args.model_type);
 	if(NULL != squiggle){
-        int * path = map_signal_to_squiggle(rt, squiggle, args.backprob, args.localpen, args.minscore);
+        int * path = map_signal_to_squiggle(rt, squiggle, args.backprob, args.localpen, args.skippen, args.minscore);
         if(NULL != path){
             fprintf(args.output, "# %s to %s\n", args.fast5_file, args.fasta_file);
             fprintf(args.output, "sample\tpos\tbase\tcurrent\tsd\tdwell\n");

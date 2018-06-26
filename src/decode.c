@@ -1031,7 +1031,7 @@ static float LARGE_VAL = 1e30f;
  *   @returns score
  **/
 float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
-                             float prob_back, float localpen, float minscore,
+                             float prob_back, float localpen, float skippen, float minscore,
                              int32_t * path_padded){
     RETURN_NULL_IF(NULL == signal.raw, NAN);
     RETURN_NULL_IF(NULL == params, NAN);
@@ -1124,6 +1124,14 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
             if(step_score > fwd[fwd_curr_off + st]){
                 fwd[fwd_curr_off + st] = step_score;
                 traceback[tr_off + st] = st - 1;
+            }
+        }
+        for(size_t st=2 ; st < nfstate ; st++){
+            //  Skip to next position
+            const float skip_score = fwd[fwd_prev_off + st - 2] + move_pen[st - 2] - skippen;
+            if(skip_score > fwd[fwd_curr_off + st]){
+                fwd[fwd_curr_off + st] = skip_score;
+                traceback[tr_off + st] = st - 2;
             }
         }
         for(size_t destpos=1 ; destpos < npos ; destpos++){
