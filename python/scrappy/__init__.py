@@ -291,7 +291,7 @@ def calc_post(rt, model='rgrgr_r94', min_prob=1e-6, log=True, tempW=1.0, tempb=1
     except KeyError:
         raise KeyError("Model type '{}' not recognised.".format(model))
     else:
-        matrix = _none_if_null(network(rt.data(), tempW, tempb, min_prob, log))
+        matrix = _none_if_null(network(rt.data(), min_prob, tempW, tempb, log))
         if matrix is None:
             raise RuntimeError('An unknown error occurred during posterior calculation.')
         else:
