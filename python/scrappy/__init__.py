@@ -479,7 +479,8 @@ def map_signal_to_squiggle(data, sequence, model='squiggle_r94',
     path = np.ascontiguousarray(np.zeros(raw._rt.n, dtype=np.int32))
     p_path = ffi.cast("int32_t *", ffi.from_buffer(path))
 
-    score = lib.squiggle_match_viterbi(raw.data(), squiggle.data(), back_prob, local_pen, skip_pen, min_score, p_path)
+    score = lib.squiggle_match_viterbi(raw.data(), squiggle.data(), back_prob,
+                                       local_pen, skip_pen, min_score, p_path)
 
     return score, path
 
