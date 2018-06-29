@@ -111,8 +111,8 @@ ffibuilder.cdef("""
 
   // Scrappy Mappy
   float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
-                               float prob_back, float localpen, float minscore,
-                               int32_t * path_padded);
+                               float prob_back, float local_pen, float skip_pen,
+                               float minscore, int32_t * path_padded);
 
   // Block-based mapping
   bool are_bounds_sane(int const * low, int const * high,
