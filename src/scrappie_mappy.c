@@ -163,23 +163,6 @@ static scrappie_matrix sequence_to_squiggle(char const * base_seq, size_t n, boo
     return squiggle;
 }
 
-/**  Map signal to a predicted squiggle
- *
- *
- *   @returns array
- **/
-static int * map_signal_to_squiggle(const raw_table signal, const_scrappie_matrix squiggle,
-                                    float backprob, float localpen, float minscore){
-    RETURN_NULL_IF(NULL == signal.raw, NULL);
-    RETURN_NULL_IF(NULL == squiggle, NULL);
-
-    int32_t * path = calloc(signal.n, sizeof(int32_t));
-    RETURN_NULL_IF(NULL == path, NULL);
-
-    (void)squiggle_match_viterbi(signal, squiggle, backprob, localpen, minscore, path);
-
-    return path;
-}
 
 
 int main_mappy(int argc, char *argv[]) {
@@ -208,10 +191,11 @@ int main_mappy(int argc, char *argv[]) {
 
 
     scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false, args.model_type);
-	if(NULL != squiggle){
-        int * path = map_signal_to_squiggle(rt, squiggle, args.backprob, args.localpen, args.minscore);
+    if(NULL != squiggle){
+        int * path = calloc(rt.n, sizeof(int32_t));
         if(NULL != path){
-            fprintf(args.output, "# %s to %s\n", args.fast5_file, args.fasta_file);
+            float score = squiggle_match_viterbi(rt, squiggle, args.backprob, args.localpen, args.minscore, path);
+            fprintf(args.output, "# %s to %s  (score = %f)\n", args.fast5_file, args.fasta_file, score);
             fprintf(args.output, "sample\tpos\tbase\tcurrent\tsd\tdwell\n");
             for(size_t i=0 ; i < rt.n ; i++){
                 const int32_t pos = path[i];
@@ -227,8 +211,8 @@ int main_mappy(int argc, char *argv[]) {
             }
             free(path);
         }
-		squiggle = free_scrappie_matrix(squiggle);
-	}
+        squiggle = free_scrappie_matrix(squiggle);
+    }
 
 
     free(seq.seq);
