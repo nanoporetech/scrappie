@@ -1023,7 +1023,8 @@ static float LARGE_VAL = 1e30f;
  *   @param signal `raw_table` containing signal to map
  *   @param params `scrappie_matrix` containing predicted squiggle
  *   @param prob_back Probability of a backward movement.
- *   @param localpen
+ *   @param local_pen Penalty for local mapping (stay in start or ends state)
+ *   @param skip_pen  Penalty for skipping
  *   @param minscore Minimum possible emission for
  *   @param path [OUT] An array containing path.  Length equal to that of FULL signal
  *   @param fwd [OUT]
@@ -1031,7 +1032,7 @@ static float LARGE_VAL = 1e30f;
  *   @returns score
  **/
 float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
-                             float prob_back, float localpen, float skippen, float minscore,
+                             float prob_back, float local_pen, float skip_pen, float minscore,
                              int32_t * path_padded){
     RETURN_NULL_IF(NULL == signal.raw, NAN);
     RETURN_NULL_IF(NULL == params, NAN);
@@ -1128,7 +1129,7 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
         }
         for(size_t st=2 ; st < nfstate ; st++){
             //  Skip to next position
-            const float skip_score = fwd[fwd_prev_off + st - 2] + move_pen[st - 2] - skippen;
+            const float skip_score = fwd[fwd_prev_off + st - 2] + move_pen[st - 2] - skip_pen;
             if(skip_score > fwd[fwd_curr_off + st]){
                 fwd[fwd_curr_off + st] = skip_score;
                 traceback[tr_off + st] = st - 2;
@@ -1137,7 +1138,7 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
         for(size_t destpos=1 ; destpos < npos ; destpos++){
             const size_t destst = destpos + 1;
             //  Move from start into sequence
-            const float score = fwd[fwd_prev_off] + move_pen[0] - localpen * destpos;
+            const float score = fwd[fwd_prev_off] + move_pen[0] - local_pen * destpos;
             if(score > fwd[fwd_curr_off + destst]){
                 fwd[fwd_curr_off + destst] = score;
                 traceback[tr_off + destst] = 0;
@@ -1148,7 +1149,7 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
             const size_t origst = origpos + 1;
             const size_t deltapos = npos - 1 - origpos;
             //  Move from sequence into end
-            const float score = fwd[fwd_prev_off + origst] + move_pen[origst] - localpen * deltapos;
+            const float score = fwd[fwd_prev_off + origst] + move_pen[origst] - local_pen * deltapos;
             if(score > fwd[fwd_curr_off + destst]){
                 fwd[fwd_curr_off + destst] = score;
                 traceback[tr_off + destst] = origst;
@@ -1183,8 +1184,8 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
         }
 
         // Score for start and end states
-        fwd[fwd_curr_off + 0] -= localpen;
-        fwd[fwd_curr_off + nfstate - 1] -= localpen;
+        fwd[fwd_curr_off + 0] -= local_pen;
+        fwd[fwd_curr_off + nfstate - 1] -= local_pen;
 
     }
 
