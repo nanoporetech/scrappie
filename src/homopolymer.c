@@ -29,13 +29,13 @@ enum homopolymer_calculation get_homopolymer_calculation(const char * calcstr){
 
 
 /**  Four to the power n
- * 
+ *
  *   @param n          integer
  *
  *   @return           4^n
  **/
 int fourTo(int n){
-    return 1 << (2*n);} 
+    return 1 << (2*n);}
 
 
 /**  Find candidate homopolymer runs
@@ -66,6 +66,11 @@ int fourTo(int n){
  **/
 int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
              int pathlength, int kmerlength) {
+    RETURN_NULL_IF(NULL == path, -1);
+    RETURN_NULL_IF(NULL == runstarts, -1);
+    RETURN_NULL_IF(NULL == runlengths, -1);
+    RETURN_NULL_IF(NULL == runbases, -1);
+
     //Allocate half path length to each of runstarts, runlengths, runbases.
     //We'll reduce this size before passing back to caller.
     const int vecsize = pathlength / 2;
@@ -73,12 +78,12 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
     const int fkm2 = fourTo(kmerlength-2);
     *runstarts = NULL;  //To avoid misbehaviour if we have to free it due to allocation failure
     *runlengths = NULL;
-    *runbases = NULL; 
+    *runbases = NULL;
     RETURN_NULL_IF(NULL == path, -1);
     *runstarts  = (int *)calloc( vecsize, sizeof(int) );
     *runlengths = (int *)calloc( vecsize, sizeof(int) );
     *runbases   = (int *)calloc( vecsize, sizeof(int) );
-    if((NULL == *runstarts) || (NULL == *runlengths) || (NULL == runbases)){
+    if((NULL == *runstarts) || (NULL == *runlengths) || (NULL == *runbases)){
         free(*runstarts);
         free(*runlengths);
         free(*runbases);
@@ -98,7 +103,7 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
             int p = path[i - 1];        //Just to provide shorthand
             int q = path[i];
             //Search for elements that go (XYYYY followed by YYYYY or stay) - 1a above
-            //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT            
+            //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT
             if ((p % fkm1 == repeatkm1) && (p != repeatk) && (p != STAYPATH)
                 && ((STAYPATH == q) || (q == repeatk))) {
                 //Hunt for the first location that isn't stay or repeatk: this is the end of the run
@@ -112,7 +117,7 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
                 runcount++;
             }
             //Search for elements that go (ZXYYY followed by zero or more stays then YYYYY) - 1bc above
-            //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT            
+            //Don't include X=Y. Exclude -1 at prev because its remainder is the same as TTTT
             if ((p % fkm2 == repeatkm2) && (p % fkm1 != repeatkm1) && (STAYPATH != p)
                 && ((STAYPATH == q) || (q == repeatk))) {
                 //Hunt for the first location that isn't stay after (not including) (i-1)
@@ -139,7 +144,7 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
     *runstarts  = (int *)realloc(*runstarts,  runcount * sizeof(int));
     *runlengths = (int *)realloc(*runlengths, runcount * sizeof(int));
     *runbases   = (int *)realloc(*runbases,   runcount * sizeof(int));
-    if((NULL == *runstarts) || (NULL == *runlengths) || (NULL == runbases)){
+    if((NULL == *runstarts) || (NULL == *runlengths) || (NULL == *runbases)){
         free(*runstarts);
         free(*runlengths);
         free(*runbases);
@@ -165,7 +170,7 @@ int findRuns(int *path, int **runstarts, int **runlengths, int **runbases,
  *   @param viterbipath              vector of ints representing path
  *   @param pathCalculationFlag      set to HOMOPOLYMER_NOCHANGE or HOMOPOLYMER_MEAN - see docstring above
  *
- *   @return 
+ *   @return
  **/
 int homopolymer_path(const_scrappie_matrix post, int *viterbipath,
                      enum homopolymer_calculation pathCalculationFlag) {
