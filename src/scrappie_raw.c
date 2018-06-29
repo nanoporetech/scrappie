@@ -113,7 +113,7 @@ static struct arguments args = {
     .compression_chunk_size = 200,
     .model_type = SCRAPPIE_MODEL_RGRGR_R9_4,
     .files = NULL,
-    .homopolymer = HOMOPOLYMER_NOCHANGE
+    .homopolymer = HOMOPOLYMER_MEAN
 };
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
