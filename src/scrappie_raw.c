@@ -60,6 +60,8 @@ static struct argp_option options[] = {
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
     {"homopolymer", 'H',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},
+    {"uuid", 14, 0, 0, "Output UUID"},
+    {"no-uuid", 15, 0, OPTION_ALIAS, "Output read file"},
 #if defined(_OPENMP)
     {"threads", '#', "nparallel", 0, "Number of reads to call in parallel"},
 #endif
@@ -90,6 +92,7 @@ struct arguments {
     enum raw_model_type model_type;
     char ** files;
     enum homopolymer_calculation homopolymer;
+    bool uuid;
 };
 
 static struct arguments args = {
@@ -113,7 +116,8 @@ static struct arguments args = {
     .compression_chunk_size = 200,
     .model_type = SCRAPPIE_MODEL_RGRGR_R9_4,
     .files = NULL,
-    .homopolymer = HOMOPOLYMER_MEAN
+    .homopolymer = HOMOPOLYMER_MEAN,
+    .uuid = false
 };
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
@@ -222,6 +226,12 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         args.compression_chunk_size = atoi(arg);
         assert(args.compression_chunk_size > 0);
         break;
+    case 14:
+        args.uuid = true;
+        break;
+    case 15:
+        args.uuid = false;
+        break;
     #if defined(_OPENMP)
     case '#':
         {
@@ -268,6 +278,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
 
     if (NULL == post) {
         free(rt.raw);
+        free(rt.uuid);
         return (struct _raw_basecall_info){0};
     }
     const int nblock = post->nc;
@@ -286,6 +297,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum raw_model_
             free(path);
             post = free_scrappie_matrix(post);
             free(rt.raw);
+            free(rt.uuid);
             return (struct _raw_basecall_info){0};
         }
         basecall = overlapper(path, nblock + 1, nstate - 1, pos);
@@ -391,10 +403,10 @@ int main_raw(int argc, char * argv[]){
             {
                 switch(args.outformat){
                 case FORMAT_FASTA:
-                    fprintf_fasta(args.output, basename(filename), args.prefix, res);
+                    fprintf_fasta(args.output, args.uuid ? res.rt.uuid : basename(filename), args.prefix, res);
                     break;
                 case FORMAT_SAM:
-                    fprintf_sam(args.output, basename(filename), args.prefix, res);
+                    fprintf_sam(args.output, args.uuid ? res.rt.uuid : basename(filename), args.prefix, res);
                     break;
                 default:
                     errx(EXIT_FAILURE, "Unrecognised output format");
@@ -406,6 +418,7 @@ int main_raw(int argc, char * argv[]){
                 }
             }
             free(res.rt.raw);
+            free(res.rt.uuid);
             free(res.basecall);
             free(res.pos);
         }

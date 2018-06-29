@@ -22,6 +22,7 @@
 #include <argp.h>
 
 struct _bs {
+    char * uuid;
     float score;
     int nev;
     char *bases;
@@ -29,6 +30,7 @@ struct _bs {
 };
 
 static const struct _bs _bs_null = {
+    .uuid = NULL,
     .score = 0.0f,
     .nev = 0,
     .bases = NULL,
@@ -69,6 +71,8 @@ static struct argp_option options[] = {
 #endif
     {"segmentation", 14, "chunk:percentile", 0,
      "Chunk size and percentile for variance based segmentation"},
+    {"uuid", 15, 0, 0, "Output UUID"},
+    {"no-uuid", 16, 0, OPTION_ALIAS, "Output read file"},
     {0}
 };
 
@@ -94,6 +98,7 @@ struct arguments {
     char *dump;
     int compression_level;
     int compression_chunk_size;
+    bool uuid;
     char **files;
 };
 
@@ -117,6 +122,7 @@ static struct arguments args = {
     .dump = NULL,
     .compression_level = 1,
     .compression_chunk_size = 200,
+    .uuid = false,
     .files = NULL
 };
 
@@ -220,6 +226,12 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
         break;
+    case 15:
+        args.uuid = true;
+        break;
+    case 16:
+        args.uuid = false;
+        break;
 #if defined(_OPENMP)
     case '#':
         {
@@ -263,6 +275,7 @@ static struct _bs calculate_post(char *filename) {
     event_table et = detect_events(rt, event_detection_defaults);
     if (NULL == et.event) {
         free(rt.raw);
+        free(rt.uuid);
         return _bs_null;
     }
 
@@ -270,6 +283,7 @@ static struct _bs calculate_post(char *filename) {
     if (NULL == post) {
         free(et.event);
         free(rt.raw);
+        free(rt.uuid);
         return (struct _bs){0};
     }
     const int nev = post->nc;
@@ -309,7 +323,7 @@ static struct _bs calculate_post(char *filename) {
     free(rt.raw);
 
     return (struct _bs) {
-    score, nev, basecall, et};
+    rt.uuid, score, nev, basecall, et};
 }
 
 static int fprintf_fasta(FILE * fp, const char *readname, const char * prefix, const struct _bs res) {
@@ -399,12 +413,12 @@ int main_events(int argc, char *argv[]) {
                 switch (args.outformat) {
                 case FORMAT_FASTA:
                     fprintf_fasta(args.output,
-                                  basename(filename),
+                                  args.uuid ? res.uuid : basename(filename),
                                   args.prefix, res);
                     break;
                 case FORMAT_SAM:
                     fprintf_sam(args.output,
-                                basename(filename),
+                                args.uuid ? res.uuid : basename(filename),
                                 args.prefix, res);
                     break;
                 default:
@@ -419,6 +433,7 @@ int main_events(int argc, char *argv[]) {
             }
             free(res.et.event);
             free(res.bases);
+            free(res.uuid);
         }
         globfree(&globbuf);
     }

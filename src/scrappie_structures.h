@@ -22,6 +22,7 @@ typedef struct {
 } event_table;
 
 typedef struct {
+    char * uuid;
     size_t n;
     size_t start;
     size_t end;
