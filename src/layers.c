@@ -14,9 +14,9 @@
  **/
 void tanh_activation_inplace(scrappie_matrix C) {
     RETURN_NULL_IF(NULL == C, );
-    for (int c = 0; c < C->nc; ++c) {
+    for (size_t c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; ++r) {
+        for (size_t r = 0; r < C->nrq; ++r) {
             C->data.v[offset + r] = TANHFV(C->data.v[offset + r]);
         }
     }
@@ -29,9 +29,9 @@ void tanh_activation_inplace(scrappie_matrix C) {
  **/
 void exp_activation_inplace(scrappie_matrix C) {
     RETURN_NULL_IF(NULL == C, );
-    for (int c = 0; c < C->nc; ++c) {
+    for (size_t c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; ++r) {
+        for (size_t r = 0; r < C->nrq; ++r) {
             C->data.v[offset + r] = EXPFV(C->data.v[offset + r]);
         }
     }
@@ -45,9 +45,9 @@ void exp_activation_inplace(scrappie_matrix C) {
  **/
 void log_activation_inplace(scrappie_matrix C) {
     RETURN_NULL_IF(NULL == C, );
-    for (int c = 0; c < C->nc; ++c) {
+    for (size_t c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; ++r) {
+        for (size_t r = 0; r < C->nrq; ++r) {
             C->data.v[offset + r] = LOGFV(C->data.v[offset + r]);
         }
     }
@@ -59,9 +59,9 @@ void log_activation_inplace(scrappie_matrix C) {
  **/
 void elu_activation_inplace(scrappie_matrix C) {
     RETURN_NULL_IF(NULL == C, );
-    for (int c = 0; c < C->nc; ++c) {
+    for (size_t c = 0; c < C->nc; ++c) {
         const size_t offset = c * C->nrq;
-        for (int r = 0; r < C->nrq; ++r) {
+        for (size_t r = 0; r < C->nrq; ++r) {
             C->data.v[offset + r] = ELUFV(C->data.v[offset + r]);
         }
     }
@@ -81,12 +81,12 @@ void robustlog_activation_inplace(scrappie_matrix C, float min_prob) {
     assert(min_prob <= 1.0);
     RETURN_NULL_IF(NULL == C, );
 
-    const int nblock = C->nc;
+    const size_t nblock = C->nc;
     const __m128 mpv = _mm_set1_ps(min_prob);
     const __m128 mpvm1 = _mm_set1_ps(1.0f - min_prob);
-    for (int i = 0; i < nblock; i++) {
+    for (size_t i = 0; i < nblock; i++) {
         const size_t offset = i * C->nrq;
-        for (int r = 0; r < C->nrq; r++) {
+        for (size_t r = 0; r < C->nrq; r++) {
             C->data.v[offset + r] =
                 LOGFV(mpv + mpvm1 * C->data.v[offset + r]);
         }
@@ -116,27 +116,27 @@ scrappie_matrix embedding(int const * index, size_t n, const_scrappie_matrix E, 
 }
 
 
-scrappie_matrix window(const_scrappie_matrix input, int w, int stride) {
+scrappie_matrix window(const_scrappie_matrix input, size_t w, size_t stride) {
     RETURN_NULL_IF(NULL == input, NULL);
     assert(w > 0);
     const size_t wh = (w + 1) / 2;
 
     scrappie_matrix output = make_scrappie_matrix(input->nr * w,
-                                                  (int)ceilf(input->nc /
+                                                  (size_t)ceilf(input->nc /
                                                              (float)stride));
     RETURN_NULL_IF(NULL == output, NULL);
 
     for (size_t col = 0; col < output->nc; col++) {
         // First and last columns are special cases
         const size_t out_offset = col * output->stride;
-        const int icol = col * stride;
-        for (int i = 0, w1 = (icol - wh + 1); w1 <= icol + wh; w1++) {
+        const size_t icol = col * stride;
+        for (size_t i = 0, w1 = (icol - wh + 1); w1 <= icol + wh; w1++) {
             if (w1 < 0 || w1 >= input->nc) {
                 i += input->nr;
                 continue;
             }
             const size_t in_offset = w1 * input->stride;
-            for (int row = 0; row < input->nr; row++, i++) {
+            for (size_t row = 0; row < input->nr; row++, i++) {
                 output->data.f[out_offset + i] = input->data.f[in_offset + row];
             }
         }
@@ -157,7 +157,7 @@ scrappie_matrix window(const_scrappie_matrix input, int w, int stride) {
  *  expanded accordingly.
  **/
 scrappie_matrix convolution(const_scrappie_matrix X, const_scrappie_matrix W,
-                            const_scrappie_matrix b, int stride,
+                            const_scrappie_matrix b, size_t stride,
                             scrappie_matrix C) {
     RETURN_NULL_IF(NULL == X, NULL);
     assert(NULL != W);
@@ -166,47 +166,47 @@ scrappie_matrix convolution(const_scrappie_matrix X, const_scrappie_matrix W,
     assert(stride > 0);
     // Window length of filter
     assert((W->nrq % X->nrq) == 0);
-    const int winlen = W->nrq / X->nrq;
-    const int nfilter = W->nc;
+    const size_t winlen = W->nrq / X->nrq;
+    const size_t nfilter = W->nc;
     // Padding -- right-hand side is longer when asymmetric padding is required
-    const int padL = (winlen - 1) / 2;
-    const int padR = winlen / 2;
-    const int ncolC = iceil(X->nc, stride);
+    const size_t padL = (winlen - 1) / 2;
+    const size_t padR = winlen / 2;
+    const size_t ncolC = iceil(X->nc, stride);
     C = remake_scrappie_matrix(C, nfilter, ncolC);
     RETURN_NULL_IF(NULL == C, NULL);
 
     // Matrix strides
-    const int ldC = C->stride;
-    const int ldW = W->stride;
-    const int ldX = X->stride;
-    const int ldFeature = ldX;
+    const size_t ldC = C->stride;
+    const size_t ldW = W->stride;
+    const size_t ldX = X->stride;
+    const size_t ldFeature = ldX;
 
     // Copy bias into result matrix
-    for (int i = 0; i < C->nc; i++) {
+    for (size_t i = 0; i < C->nc; i++) {
         memcpy(C->data.v + i * C->nrq, b->data.v, C->nrq * sizeof(__m128));
     }
 
     // Left-hand side edge case where only part of the filter covers the input
-    for (int w = 0; w < padL; w += stride) {
-        const int offsetW = ldFeature * (padL - w);
-        const int ncol = w / stride;
+    for (size_t w = 0; w < padL; w += stride) {
+        const size_t offsetW = ldFeature * (padL - w);
+        const size_t ncol = w / stride;
         cblas_sgemv(CblasColMajor, CblasTrans, W->nr - offsetW, W->nc,
                     1.0, W->data.f + offsetW, ldW,
                     X->data.f, 1, 1.0, C->data.f + ldC * ncol, 1);
     }
 
     // Number of columns of X already filled * ldC
-    const int ncolsL_complete = iceil(padL, stride);
-    const int offsetC_L = ldC * ncolsL_complete;
+    const size_t ncolsL_complete = iceil(padL, stride);
+    const size_t offsetC_L = ldC * ncolsL_complete;
     // Because of stride, first valid filter may not start at beginning of X
     //const int shiftX_L = stride - (padL % stride);
-    const int shiftX_L = ncolsL_complete * stride - padL;
-    const int offsetX_L = shiftX_L * ldX;
+    const size_t shiftX_L = ncolsL_complete * stride - padL;
+    const size_t offsetX_L = shiftX_L * ldX;
     // Find multiple of stride greater or equal to winlen
-    const int nstepC = iceil(winlen, stride);
-    const int nstepX = stride * nstepC;
+    const size_t nstepC = iceil(winlen, stride);
+    const size_t nstepX = stride * nstepC;
 
-    for (int w = 0; w < winlen; w += stride) {
+    for (size_t w = 0; w < winlen; w += stride) {
         //  Multiply reshaped X matrix by filter matrix
         //  The rows of X are padded by zeros to make a multiple of 4.
         //  Input matrix 'X'
@@ -215,8 +215,8 @@ scrappie_matrix convolution(const_scrappie_matrix X, const_scrappie_matrix W,
         //   - Ncolumns is (X->nc - w) / nstepX + adjustment if a final window fits
         //  Filter matrix needs to be padded appropriately for the padding of X.
         //
-        const int ncol_processed = ifloor(X->nc - shiftX_L - w, nstepX);
-        const int initial_col = ifloor(w, stride);
+        const size_t ncol_processed = ifloor(X->nc - shiftX_L - w, nstepX);
+        const size_t initial_col = ifloor(w, stride);
         cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, W->nc,
                     ncol_processed, W->nr, 1.0, W->data.f, ldW,
                     X->data.f + ldX * w + offsetX_L, ldX * nstepX, 1.0,
@@ -224,16 +224,16 @@ scrappie_matrix convolution(const_scrappie_matrix X, const_scrappie_matrix W,
     }
 
     // Right-hand side edge case where only part of the filter covers the input
-    const int maxCol_reshape = ifloor(X->nc - shiftX_L, nstepX);
-    const int remainder_reshape = (X->nc - shiftX_L) % nstepX;
-    const int offsetC_R =
+    const size_t maxCol_reshape = ifloor(X->nc - shiftX_L, nstepX);
+    const size_t remainder_reshape = (X->nc - shiftX_L) % nstepX;
+    const size_t offsetC_R =
         offsetC_L + ldC * nstepC * (maxCol_reshape - 1) +
         ldC * (remainder_reshape / stride) + ldC;
-    const int offsetX_R = (X->nc - winlen + 1) * ldX;
+    const size_t offsetX_R = (X->nc - winlen + 1) * ldX;
     // How far into padding is first block
     const int startR = stride - (padL + X->nc - winlen) % stride - 1;
-    for (int w = startR; w < padR; w += stride) {
-        const int offsetW = ldFeature * (w + 1);
+    for (size_t w = startR; w < padR; w += stride) {
+        const size_t offsetW = ldFeature * (w + 1);
         cblas_sgemv(CblasColMajor, CblasTrans, W->nr - offsetW, W->nc, 1.0,
                     W->data.f, ldW,
                     X->data.f + offsetX_R + ldX * w, 1, 1.0,
@@ -334,14 +334,14 @@ scrappie_matrix softmax(const_scrappie_matrix X, const_scrappie_matrix W,
  *
  *    Calculates softmax( A x / tempW + b / tempb ) as
  *    softmax( (A (x * tempb / tempW ) + b) / tempb )
- *    
- *    @returns matrix containing softmax 
+ *
+ *    @returns matrix containing softmax
  **/
 scrappie_matrix softmax_with_temperature(scrappie_matrix X, const_scrappie_matrix W,
                                          const_scrappie_matrix b, float tempW, float tempb,
                                          scrappie_matrix C) {
     RETURN_NULL_IF(NULL == X, NULL);
-    
+
     shift_scale_matrix_inplace(X, 0.0f, tempW / tempb);
 
     C = feedforward_linear(X, W, b, C);
@@ -377,8 +377,8 @@ scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
     assert(NULL != sW);
     assert(NULL != sW2);
 
-    const int bsize = X->nc;
-    const int size = sW2->nc;
+    const size_t bsize = X->nc;
+    const size_t size = sW2->nc;
     assert(X->nr == 3 * size);
     assert(sW->nr == size);
     assert(sW2->nr == size);
@@ -405,7 +405,7 @@ scrappie_matrix gru_forward(const_scrappie_matrix X, const_scrappie_matrix sW,
     sCol1.data.v = ostate->data.v + ostate->nrq;
     sCol2.data.v = ostate->data.v;
     gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
-    for (int i = 1; i < bsize; i++) {
+    for (size_t i = 1; i < bsize; i++) {
         xCol.data.v = X->data.v + i * X->nrq;
         sCol1.data.v = ostate->data.v + (i - 1) * ostate->nrq;
         sCol2.data.v = ostate->data.v + i * ostate->nrq;
@@ -425,8 +425,8 @@ scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
     assert(NULL != sW);
     assert(NULL != sW2);
 
-    const int size = sW2->nc;
-    const int bsize = X->nc;
+    const size_t size = sW2->nc;
+    const size_t bsize = X->nc;
     assert(X->nr == 3 * size);
     assert(sW->nr == size);
     assert(sW2->nr == size);
@@ -454,8 +454,8 @@ scrappie_matrix gru_backward(const_scrappie_matrix X, const_scrappie_matrix sW,
     sCol1.data.v = ostate->data.v;
     sCol2.data.v = ostate->data.v + (ostate->nc - 1) * ostate->nrq;
     gru_step(&xCol, &sCol1, sW, sW2, tmp, &sCol2);
-    for (int i = 1; i < bsize; i++) {
-        const int index = bsize - i - 1;
+    for (size_t i = 1; i < bsize; i++) {
+        const size_t index = bsize - i - 1;
         xCol.data.v = X->data.v + index * X->nrq;
         sCol1.data.v = ostate->data.v + (index + 1) * ostate->nrq;
         sCol2.data.v = ostate->data.v + index * ostate->nrq;
@@ -485,10 +485,10 @@ void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
     assert(NULL != x);
     assert(NULL != sW);
     assert(NULL != sW2);
-    const int size = istate->nr;
+    const size_t size = istate->nr;
     assert(x->nr == 3 * size);
     assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
-    const int sizeq = size / 4;
+    const size_t sizeq = size / 4;
     assert(size == sW->nr);
     assert(2 * size == sW->nc);
     assert(size == sW2->nr);
@@ -504,24 +504,24 @@ void gru_step(const_scrappie_matrix x, const_scrappie_matrix istate,
      */
     cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f,
                 sW->stride, istate->data.f, 1, 1.0, xF->data.f, 1);
-    for (int i = 0; i < (sizeq +sizeq); i++) {
+    for (size_t i = 0; i < (sizeq +sizeq); i++) {
         xF->data.v[i] = LOGISTICFV(xF->data.v[i]);
     }
 
     const __m128 *z = xF->data.v;
     __m128 *r = xF->data.v + sizeq;
     __m128 *hbar = xF->data.v + sizeq + sizeq;
-    for (int i = 0; i < sizeq; i++) {
+    for (size_t i = 0; i < sizeq; i++) {
         r[i] *= istate->data.v[i];
     }
     cblas_sgemv(CblasColMajor, CblasTrans, sW2->nr, sW2->nc, 1.0, sW2->data.f,
                 sW2->stride, (float *)r, 1, 1.0, (float *)hbar, 1);
-    for (int i = 0; i < sizeq; i++) {
+    for (size_t i = 0; i < sizeq; i++) {
         hbar[i] = TANHFV(hbar[i]);
     }
 
     const __m128 ones = _mm_set1_ps(1.0f);
-    for (int i = 0; i < sizeq ; i++) {
+    for (size_t i = 0; i < sizeq ; i++) {
         ostate->data.v[i] = z[i] * istate->data.v[i] + (ones - z[i]) * hbar[i];
     }
 }
@@ -532,8 +532,8 @@ scrappie_matrix grumod_forward(const_scrappie_matrix X, const_scrappie_matrix sW
 
     assert(NULL != sW);
 
-    const int bsize = X->nc;
-    const int size = sW->nr;
+    const size_t bsize = X->nc;
+    const size_t size = sW->nr;
     assert(X->nr == 3 * size);
     assert(sW->nc == 3 * size);
 
@@ -557,7 +557,7 @@ scrappie_matrix grumod_forward(const_scrappie_matrix X, const_scrappie_matrix sW
     sCol1.data.v = ostate->data.v + ostate->nrq;
     sCol2.data.v = ostate->data.v;
     grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
-    for (int i = 1; i < bsize; i++) {
+    for (size_t i = 1; i < bsize; i++) {
         xCol.data.v = X->data.v + i * X->nrq;
         sCol1.data.v = ostate->data.v + (i - 1) * ostate->nrq;
         sCol2.data.v = ostate->data.v + i * ostate->nrq;
@@ -576,8 +576,8 @@ scrappie_matrix grumod_backward(const_scrappie_matrix X, const_scrappie_matrix s
     RETURN_NULL_IF(NULL == X, NULL);
     assert(NULL != sW);
 
-    const int size = sW->nr;
-    const int bsize = X->nc;
+    const size_t size = sW->nr;
+    const size_t bsize = X->nc;
     assert(X->nr == 3 * size);
     assert(sW->nc == 3 * size);
 
@@ -602,8 +602,8 @@ scrappie_matrix grumod_backward(const_scrappie_matrix X, const_scrappie_matrix s
     sCol1.data.v = ostate->data.v;
     sCol2.data.v = ostate->data.v + (ostate->nc - 1) * ostate->nrq;
     grumod_step(&xCol, &sCol1, sW, tmp, &sCol2);
-    for (int i = 1; i < bsize; i++) {
-        const int index = bsize - i - 1;
+    for (size_t i = 1; i < bsize; i++) {
+        const size_t index = bsize - i - 1;
         xCol.data.v = X->data.v + index * X->nrq;
         sCol1.data.v = ostate->data.v + (index + 1) * ostate->nrq;
         sCol2.data.v = ostate->data.v + index * ostate->nrq;
@@ -632,10 +632,10 @@ void grumod_step(const_scrappie_matrix x, const_scrappie_matrix istate,
      */
     assert(NULL != x);
     assert(NULL != sW);
-    const int size = istate->nr;
+    const size_t size = istate->nr;
     assert(x->nr == 3 * size);
     assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
-    const int sizeq = size / 4;
+    const size_t sizeq = size / 4;
     assert(size == sW->nr);
     assert(3 * size == sW->nc);
     assert(3 * size == xF->nr);
@@ -650,22 +650,22 @@ void grumod_step(const_scrappie_matrix x, const_scrappie_matrix istate,
      */
     cblas_sgemv(CblasColMajor, CblasTrans, sW->nr, sW->nc, 1.0, sW->data.f,
                 sW->stride, istate->data.f, 1, 1.0, xF->data.f, 1);
-    for (int i = 0; i < (sizeq + sizeq); i++) {
+    for (size_t i = 0; i < (sizeq + sizeq); i++) {
         xF->data.v[i] = LOGISTICFV(xF->data.v[i]);
     }
 
     const __m128 *z = xF->data.v;
     const __m128 *r = xF->data.v + sizeq;
     __m128 *hbar = xF->data.v + sizeq + sizeq;
-    for (int i = 0; i < sizeq; i++) {
+    for (size_t i = 0; i < sizeq; i++) {
         hbar[i] = r[i] * hbar[i] + x->data.v[sizeq + sizeq + i];
     }
-    for (int i = 0; i < sizeq; i++) {
+    for (size_t i = 0; i < sizeq; i++) {
         hbar[i] = TANHFV(hbar[i]);
     }
 
     const __m128 ones = _mm_set1_ps(1.0f);
-    for (int i = 0; i < sizeq ; i++) {
+    for (size_t i = 0; i < sizeq ; i++) {
         ostate->data.v[i] = z[i] * istate->data.v[i] + (ones - z[i]) * hbar[i];
     }
 }
@@ -677,8 +677,8 @@ scrappie_matrix lstm_forward(const_scrappie_matrix Xaffine,
     assert(NULL != sW);
     assert(NULL != p);
 
-    const int size = sW->nr;
-    const int bsize = Xaffine->nc;
+    const size_t size = sW->nr;
+    const size_t bsize = Xaffine->nc;
     assert(Xaffine->nr == 4 * size);
     assert(p->nr == 3 * size);
     assert(sW->nc == 4 * size);
@@ -706,7 +706,7 @@ scrappie_matrix lstm_forward(const_scrappie_matrix Xaffine,
     sCol1.data.v = output->data.v + output->nrq;
     sCol2.data.v = output->data.v;
     lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
-    for (int i = 1; i < bsize; i++) {
+    for (size_t i = 1; i < bsize; i++) {
         xCol.data.v = Xaffine->data.v + i * Xaffine->nrq;
         sCol1.data.v = output->data.v + (i - 1) * output->nrq;
         sCol2.data.v = output->data.v + i * output->nrq;
@@ -728,8 +728,8 @@ scrappie_matrix lstm_backward(const_scrappie_matrix Xaffine,
     assert(NULL != sW);
     assert(NULL != p);
 
-    const int size = sW->nr;
-    const int bsize = Xaffine->nc;
+    const size_t size = sW->nr;
+    const size_t bsize = Xaffine->nc;
     assert(Xaffine->nr == 4 * size);
     assert(sW->nc == 4 * size);
     assert(p->nr == 3 * size);
@@ -758,8 +758,8 @@ scrappie_matrix lstm_backward(const_scrappie_matrix Xaffine,
     sCol1.data.v = output->data.v;
     sCol2.data.v = output->data.v + (bsize - 1) * output->nrq;
     lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
-    for (int i = 1; i < bsize; i++) {
-        const int index = bsize - i - 1;
+    for (size_t i = 1; i < bsize; i++) {
+        const size_t index = bsize - i - 1;
         xCol.data.v = Xaffine->data.v + index * Xaffine->nrq;
         sCol1.data.v = output->data.v + (index + 1) * output->nrq;
         sCol2.data.v = output->data.v + index * output->nrq;
@@ -794,7 +794,7 @@ void lstm_step(const_scrappie_matrix xAffine, const_scrappie_matrix out_prev,
     assert(NULL != xF);
     assert(NULL != state);
     assert(NULL != output);
-    const int size = state->nr;
+    const size_t size = state->nr;
     assert(xAffine->nr == 4 * size);
     assert(size == out_prev->nr);
     assert(size == sW->nr);
@@ -810,8 +810,8 @@ void lstm_step(const_scrappie_matrix xAffine, const_scrappie_matrix out_prev,
                 sW->stride, out_prev->data.f, 1, 1.0, xF->data.f, 1);
 
     assert(size % 4 == 0);  // Vectorisation assumes size divisible by 4
-    const int sizeq = size / 4;
-    for (int i = 0; i < sizeq; i++) {
+    const size_t sizeq = size / 4;
+    for (size_t i = 0; i < sizeq; i++) {
         // Forget gate
         __m128 forget = LOGISTICFV(xF->data.v[2 * sizeq + i]
                                    + state->data.v[i] * peep->data.v[sizeq + i])

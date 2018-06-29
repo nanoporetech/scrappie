@@ -19,21 +19,21 @@
  *
  *  @returns Number of elements written
  **/
-int write_scrappie_matrix_to_handle(FILE * fh, const_scrappie_matrix mat) {
+size_t write_scrappie_matrix_to_handle(FILE * fh, const_scrappie_matrix mat) {
     if (NULL == fh || NULL == mat) {
         return 0;
     }
 
-    fprintf(fh, "%d\t%d\n", mat->nr, mat->nc);
+    fprintf(fh, "%zu\t%zu\n", mat->nr, mat->nc);
 
-    int nelt = 0;
-    for (int c = 0; c < mat->nc; ++c) {
-        const int offset = c * mat->stride;
+    size_t nelt = 0;
+    for (size_t c = 0; c < mat->nc; ++c) {
+        const size_t offset = c * mat->stride;
         int ret = fprintf(fh, "%a", mat->data.f[offset + 0]);
         if (ret > 0) {
             nelt += 1;
         }
-        for (int r = 1; r < mat->nr; ++r) {
+        for (size_t r = 1; r < mat->nr; ++r) {
             ret = fprintf(fh, "\t%a", mat->data.f[offset + r]);
             if (ret > 0) {
                 nelt += 1;
@@ -46,7 +46,7 @@ int write_scrappie_matrix_to_handle(FILE * fh, const_scrappie_matrix mat) {
     return nelt;
 }
 
-int write_scrappie_matrix(const char * fn, const_scrappie_matrix mat) {
+size_t write_scrappie_matrix(const char * fn, const_scrappie_matrix mat) {
     if(NULL == fn){
         return 0;
     }
@@ -56,7 +56,7 @@ int write_scrappie_matrix(const char * fn, const_scrappie_matrix mat) {
         return 0;
     }
 
-    int res = write_scrappie_matrix_to_handle(fh, mat);
+    size_t res = write_scrappie_matrix_to_handle(fh, mat);
     fclose(fh);
 
     return res;
@@ -71,20 +71,23 @@ int write_scrappie_matrix(const char * fn, const_scrappie_matrix mat) {
 scrappie_matrix read_scrappie_matrix_from_handle(FILE * fh) {
     RETURN_NULL_IF(NULL == fh, NULL);
 
-    int nr, nc;
-    int ret = fscanf(fh, "%d\t%d\n", &nr, &nc);
+    int inr, inc;
+    int ret = fscanf(fh, "%d\t%d\n", &inr, &inc);
     if (2 != ret) {
         warnx("Invalid header line.\n");
         return NULL;
     }
-    if (nr <= 0 || nc <= 0) {
-        warnx("Number of rows or columns invalid (got %d %d).\n", nr, nc);
+    if (inr <= 0 || inc <= 0) {
+        warnx("Number of rows or columns invalid (got %d %d).\n", inr, inc);
         return NULL;
     }
-    if (nr > CRP_MAX_ROW || nc > CRP_MAX_COL) {
-        warnx("Number of rows or columns too large (got %d %d).\n", nr, nc);
+    if (inr > CRP_MAX_ROW || inc > CRP_MAX_COL) {
+        warnx("Number of rows or columns too large (got %d %d).\n", inr, inc);
         return NULL;
     }
+
+    size_t nr = inr;
+    size_t nc = inc;
 
     scrappie_matrix mat = make_scrappie_matrix(nr, nc);
     if (NULL == mat) {
@@ -92,14 +95,14 @@ scrappie_matrix read_scrappie_matrix_from_handle(FILE * fh) {
         return NULL;
     }
 
-    int nelt = 0;
-    for (int c = 0; c < nc; ++c) {
-        const int offset = c * mat->stride;
+    size_t nelt = 0;
+    for (size_t c = 0; c < nc; ++c) {
+        const size_t offset = c * mat->stride;
         ret = fscanf(fh, "%a", &mat->data.f[offset]);
         if (ret > 0) {
             nelt += 1;
         }
-        for (int r = 1; r < nr; ++r) {
+        for (size_t r = 1; r < nr; ++r) {
             ret = fscanf(fh, "\t%a", &mat->data.f[offset + r]);
             if (ret > 0) {
                 nelt += 1;
@@ -109,7 +112,7 @@ scrappie_matrix read_scrappie_matrix_from_handle(FILE * fh) {
 
     if (nelt != nr * nc) {
         warnx
-            ("Read incorrect number of elements. Got %d but expecteding %d x %d\n",
+            ("Read incorrect number of elements. Got %zu but expecteding %zu x %zu\n",
              nelt, nr, nc);
         mat = free_scrappie_matrix(mat);
         return NULL;
@@ -154,7 +157,7 @@ float scrappie_random_uniform(float lower, float upper) {
  *
  *  @returns Matrix filled with random data, or NULL on error
  **/
-scrappie_matrix random_scrappie_matrix(int nr, int nc, float lower, float upper) {
+scrappie_matrix random_scrappie_matrix(size_t nr, size_t nc, float lower, float upper) {
     assert(nr > 0);
     assert(nc > 0);
     assert(upper >= lower);
@@ -162,9 +165,9 @@ scrappie_matrix random_scrappie_matrix(int nr, int nc, float lower, float upper)
     scrappie_matrix mat = make_scrappie_matrix(nr, nc);
     RETURN_NULL_IF(NULL == mat, NULL);
 
-    for (int c = 0; c < mat->nc; ++c) {
-        const int offset = c * mat->stride;
-        for (int r = 0; r < mat->nr; ++r) {
+    for (size_t c = 0; c < mat->nc; ++c) {
+        const size_t offset = c * mat->stride;
+        for (size_t r = 0; r < mat->nr; ++r) {
             mat->data.f[offset + r] = scrappie_random_uniform(lower, upper);
         }
     }

@@ -385,7 +385,7 @@ int main_raw(int argc, char * argv[]){
             }
         }
         #pragma omp parallel for schedule(dynamic)
-        for(int fn2=0 ; fn2 < globbuf.gl_pathc ; fn2++){
+        for(size_t fn2=0 ; fn2 < globbuf.gl_pathc ; fn2++){
             if(reads_limit > 0 && reads_started >= reads_limit){
                 continue;
             }

@@ -8,7 +8,7 @@
 #    include <stdio.h>
 
 typedef struct {
-    unsigned int nr, nrq, nc, stride;
+    size_t nr, nrq, nc, stride;
     union {
         __m128 *v;
         float *f;
@@ -16,7 +16,7 @@ typedef struct {
 } _Mat;
 
 typedef struct {
-    unsigned int nr, nrq, nc, stride;
+    size_t nr, nrq, nc, stride;
     union {
         __m128i *v;
         int32_t *f;
@@ -28,15 +28,15 @@ typedef _iMat *scrappie_imatrix;
 typedef _Mat const *const_scrappie_matrix;
 typedef _iMat const *const_scrappie_imatrix;
 
-scrappie_matrix make_scrappie_matrix(int nr, int nc);
-scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc);
+scrappie_matrix make_scrappie_matrix(size_t nr, size_t nc);
+scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, size_t nr, size_t nc);
 scrappie_matrix copy_scrappie_matrix(const_scrappie_matrix mat);
 scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 void zero_scrappie_matrix(scrappie_matrix M);
-scrappie_matrix mat_from_array(const float *x, int nr, int nc);
+scrappie_matrix mat_from_array(const float *x, size_t nr, size_t nc);
 float * array_from_scrappie_matrix(const_scrappie_matrix mat);
 void fprint_scrappie_matrix(FILE * fh, const char *header,
-                            const_scrappie_matrix mat, int nr, int nc,
+                            const_scrappie_matrix mat, size_t nr, size_t nc,
                             bool include_padding);
 bool equality_scrappie_matrix(const_scrappie_matrix mat1,
                               const_scrappie_matrix mat2, const float tol);
@@ -45,8 +45,8 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
                               const bool only_finite, const char *file,
                               const int line);
 
-scrappie_imatrix make_scrappie_imatrix(int nr, int nc);
-scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc);
+scrappie_imatrix make_scrappie_imatrix(size_t nr, size_t nc);
+scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, size_t nr, size_t nc);
 scrappie_imatrix copy_scrappie_imatrix(const_scrappie_imatrix mat);
 scrappie_imatrix free_scrappie_imatrix(scrappie_imatrix mat);
 void zero_scrappie_imatrix(scrappie_imatrix M);
@@ -61,10 +61,10 @@ void row_normalise_inplace(scrappie_matrix C);
 float min_scrappie_matrix(const_scrappie_matrix mat);
 float max_scrappie_matrix(const_scrappie_matrix mat);
 
-bool validate_ivector(int *vec, const int n, const int lower,
+bool validate_ivector(int *vec, const size_t n, const int lower,
                       const int upper, const char *file, const int line);
 
-bool validate_vector(float *vec, const float n, const float lower,
+bool validate_vector(float *vec, const size_t n, const float lower,
                      const float upper, const char *file, const int line);
 
 void shift_scale_matrix_inplace(scrappie_matrix sigmat, float shift, float scale);

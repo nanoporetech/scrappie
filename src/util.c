@@ -6,14 +6,14 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-int argmaxf(const float *x, int n) {
+int argmaxf(const float *x, size_t n) {
     assert(n > 0);
     if (NULL == x) {
         return -1;
     }
-    int imax = 0;
+    size_t imax = 0;
     float vmax = x[0];
-    for (int i = 1; i < n; i++) {
+    for (size_t i = 1; i < n; i++) {
         if (x[i] > vmax) {
             vmax = x[i];
             imax = i;
@@ -22,14 +22,14 @@ int argmaxf(const float *x, int n) {
     return imax;
 }
 
-int argminf(const float *x, int n) {
+int argminf(const float *x, size_t n) {
     assert(n > 0);
     if (NULL == x) {
         return -1;
     }
-    int imin = 0;
+    size_t imin = 0;
     float vmin = x[0];
-    for (int i = 1; i < n; i++) {
+    for (size_t i = 1; i < n; i++) {
         if (x[i] > vmin) {
             vmin = x[i];
             imin = i;
@@ -38,13 +38,13 @@ int argminf(const float *x, int n) {
     return imin;
 }
 
-float valmaxf(const float *x, int n) {
+float valmaxf(const float *x, size_t n) {
     assert(n > 0);
     if (NULL == x) {
         return NAN;
     }
     float vmax = x[0];
-    for (int i = 1; i < n; i++) {
+    for (size_t i = 1; i < n; i++) {
         if (x[i] > vmax) {
             vmax = x[i];
         }
@@ -52,13 +52,13 @@ float valmaxf(const float *x, int n) {
     return vmax;
 }
 
-float valminf(const float *x, int n) {
+float valminf(const float *x, size_t n) {
     assert(n > 0);
     if (NULL == x) {
         return NAN;
     }
     float vmin = x[0];
-    for (int i = 1; i < n; i++) {
+    for (size_t i = 1; i < n; i++) {
         if (x[i] > vmin) {
             vmin = x[i];
         }
@@ -93,11 +93,11 @@ void quantilef(const float *x, size_t nx, float *p, size_t np) {
     if (NULL == p) {
         return;
     }
-    for (int i = 0; i < np; i++) {
+    for (size_t i = 0; i < np; i++) {
         assert(p[i] >= 0.0f && p[i] <= 1.0f);
     }
     if (NULL == x) {
-        for (int i = 0; i < np; i++) {
+        for (size_t i = 0; i < np; i++) {
             p[i] = NAN;
         }
         return;
@@ -105,7 +105,7 @@ void quantilef(const float *x, size_t nx, float *p, size_t np) {
     // Sort array
     float *space = malloc(nx * sizeof(float));
     if (NULL == space) {
-        for (int i = 0; i < np; i++) {
+        for (size_t i = 0; i < np; i++) {
             p[i] = NAN;
         }
         return;
@@ -114,7 +114,7 @@ void quantilef(const float *x, size_t nx, float *p, size_t np) {
     qsort(space, nx, sizeof(float), floatcmp);
 
     // Extract quantiles
-    for (int i = 0; i < np; i++) {
+    for (size_t i = 0; i < np; i++) {
         const size_t idx = p[i] * (nx - 1);
         const float remf = p[i] * (nx - 1) - idx;
         if (idx < nx - 1) {
@@ -198,7 +198,7 @@ void medmad_normalise_array(float *x, size_t n) {
 
     const float xmed = medianf(x, n);
     const float xmad = madf(x, n, &xmed);
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         x[i] = (x[i] - xmed) / xmad;
     }
 }
@@ -220,7 +220,7 @@ void studentise_array_kahan(float *x, size_t n) {
 
     double sum, sumsq, comp, compsq;
     sumsq = sum = comp = compsq = 0.0;
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         double d1 = x[i] - comp;
         double sum_tmp = sum + d1;
         comp = (sum_tmp - sum) - d1;
@@ -239,7 +239,7 @@ void studentise_array_kahan(float *x, size_t n) {
 
     const float sumf = sum;
     const float sumsqf = sumsq;
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         x[i] = (x[i] - sumf) / sumsqf;
     }
 }

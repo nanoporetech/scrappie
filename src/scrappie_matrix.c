@@ -8,11 +8,11 @@
 #include "scrappie_matrix.h"
 #include "scrappie_stdlib.h"
 
-scrappie_matrix make_scrappie_matrix(int nr, int nc) {
+scrappie_matrix make_scrappie_matrix(size_t nr, size_t nc) {
     assert(nr > 0);
     assert(nc > 0);
     // Matrix padded so row length is multiple of 4
-    const int nrq = (int)ceil(nr / 4.0);
+    const size_t nrq = (size_t)ceil(nr / 4.0);
     scrappie_matrix mat = malloc(sizeof(*mat));
     RETURN_NULL_IF(NULL == mat, NULL);
 
@@ -41,7 +41,7 @@ scrappie_matrix make_scrappie_matrix(int nr, int nc) {
     return mat;
 }
 
-scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, int nr, int nc) {
+scrappie_matrix remake_scrappie_matrix(scrappie_matrix M, size_t nr, size_t nc) {
     // Could be made more efficient when there is sufficent memory already allocated
     if ((NULL == M) || (M->nr != nr) || (M->nc != nc)) {
         M = free_scrappie_matrix(M);
@@ -66,11 +66,11 @@ void zero_scrappie_matrix(scrappie_matrix M) {
     memset(M->data.f, 0, M->stride * M->nc * sizeof(float));
 }
 
-scrappie_matrix mat_from_array(const float *x, int nr, int nc) {
+scrappie_matrix mat_from_array(const float *x, size_t nr, size_t nc) {
     scrappie_matrix res = make_scrappie_matrix(nr, nc);
     RETURN_NULL_IF(NULL == res, NULL);
 
-    for (int col = 0; col < nc; col++) {
+    for (size_t col = 0; col < nc; col++) {
         memcpy(res->data.f + col * res->stride, x + col * nr,
                nr * sizeof(float));
     }
@@ -97,11 +97,11 @@ float * array_from_scrappie_matrix(const_scrappie_matrix mat){
 
 
 void fprint_scrappie_matrix(FILE * fh, const char *header,
-                            const_scrappie_matrix mat, int nr, int nc,
+                            const_scrappie_matrix mat, size_t nr, size_t nc,
                             bool include_padding) {
     assert(NULL != fh);
     assert(NULL != mat);
-    const int rlim = include_padding ? mat->stride : mat->nr;
+    const size_t rlim = include_padding ? mat->stride : mat->nr;
 
     if (nr <= 0 || nr > rlim) {
         nr = rlim;
@@ -117,10 +117,10 @@ void fprint_scrappie_matrix(FILE * fh, const char *header,
         }
         fputc('\n', fh);
     }
-    for (int c = 0; c < nc; c++) {
+    for (size_t c = 0; c < nc; c++) {
         const size_t offset = c * mat->stride;
-        fprintf(fh, "%4d : % 12e", c, mat->data.f[offset]);
-        for (int r = 1; r < nr; r++) {
+        fprintf(fh, "%4zu : % 12e", c, mat->data.f[offset]);
+        for (size_t r = 1; r < nr; r++) {
             fprintf(fh, "  % 12e", mat->data.f[offset + r]);
         }
         fputc('\n', fh);
@@ -152,15 +152,15 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
     assert(mat->stride > 0 && mat->stride >= mat->nr);
     assert(mat->nrq * 4 == mat->stride);
 
-    const int nc = mat->nc;
-    const int nr = mat->nr;
-    const int ld = mat->stride;
+    const size_t nc = mat->nc;
+    const size_t nr = mat->nr;
+    const size_t ld = mat->stride;
 
     //  Masked values correct
     if (!isnan(maskval)) {
-        for (int c = 0; c < nc; ++c) {
+        for (size_t c = 0; c < nc; ++c) {
             const size_t offset = c * ld;
-            for (int r = nr; r < ld; ++r) {
+            for (size_t r = nr; r < ld; ++r) {
                 if (maskval != mat->data.f[offset + r]) {
                     warnx
                         ("%s:%d  Matrix entry [%d,%d] = %f violates masking rules\n",
@@ -172,9 +172,9 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
     }
     //  Check finite
     if (only_finite) {
-        for (int c = 0; c < nc; ++c) {
+        for (size_t c = 0; c < nc; ++c) {
             const size_t offset = c * ld;
-            for (int r = 0; r < nr; ++r) {
+            for (size_t r = 0; r < nr; ++r) {
                 if (!isfinite(mat->data.f[offset + r])) {
                     warnx
                         ("%s:%d  Matrix entry [%d,%d] = %f contains a non-finite value\n",
@@ -186,9 +186,9 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
     }
     //  Lower bound
     if (!isnan(lower)) {
-        for (int c = 0; c < nc; ++c) {
+        for (size_t c = 0; c < nc; ++c) {
             const size_t offset = c * ld;
-            for (int r = 0; r < nr; ++r) {
+            for (size_t r = 0; r < nr; ++r) {
                 if (mat->data.f[offset + r] + FLT_EPSILON < lower) {
                     warnx
                         ("%s:%d  Matrix entry [%d,%d] = %f (%e) violates lower bound\n",
@@ -201,9 +201,9 @@ bool validate_scrappie_matrix(scrappie_matrix mat, float lower,
     }
     //  Upper bound
     if (!isnan(upper)) {
-        for (int c = 0; c < nc; ++c) {
+        for (size_t c = 0; c < nc; ++c) {
             const size_t offset = c * ld;
-            for (int r = 0; r < nr; ++r) {
+            for (size_t r = 0; r < nr; ++r) {
                 if (mat->data.f[offset + r] > upper + FLT_EPSILON) {
                     warnx
                         ("%s:%d  Matrix entry [%d,%d] = %f (%e) violates upper bound\n",
@@ -253,9 +253,9 @@ bool equality_scrappie_matrix(const_scrappie_matrix mat1,
     //  Given equal dimensions, the following should alway hold
     assert(mat1->nrq == mat2->nrq);
 
-    for (int c = 0; c < mat1->nc; ++c) {
-        const int offset = c * mat1->stride;
-        for (int r = 0; r < mat1->nr; ++r) {
+    for (size_t c = 0; c < mat1->nc; ++c) {
+        const size_t offset = c * mat1->stride;
+        for (size_t r = 0; r < mat1->nr; ++r) {
             if (fabsf(mat1->data.f[offset + r] - mat2->data.f[offset + r]) >
                 tol) {
                 return false;
@@ -266,11 +266,11 @@ bool equality_scrappie_matrix(const_scrappie_matrix mat1,
     return true;
 }
 
-scrappie_imatrix make_scrappie_imatrix(int nr, int nc) {
+scrappie_imatrix make_scrappie_imatrix(size_t nr, size_t nc) {
     assert(nr > 0);
     assert(nc > 0);
     // Matrix padded so row length is multiple of 4
-    const int nrq = (int)ceil(nr / 4.0);
+    const size_t nrq = (size_t)ceil(nr / 4.0);
     scrappie_imatrix mat = malloc(sizeof(*mat));
     RETURN_NULL_IF(NULL == mat, NULL);
 
@@ -288,7 +288,7 @@ scrappie_imatrix make_scrappie_imatrix(int nr, int nc) {
     return mat;
 }
 
-scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, int nr, int nc) {
+scrappie_imatrix remake_scrappie_imatrix(scrappie_imatrix M, size_t nr, size_t nc) {
     // Could be made more efficient when there is sufficent memory already allocated
     if ((NULL == M) || (M->nr != nr) || (M->nc != nc)) {
         M = free_scrappie_imatrix(M);
@@ -338,7 +338,7 @@ scrappie_matrix affine_map(const_scrappie_matrix X, const_scrappie_matrix W,
     RETURN_NULL_IF(NULL == C, NULL);
 
     /* Copy bias */
-    for (int c = 0; c < C->nc; c++) {
+    for (size_t c = 0; c < C->nc; c++) {
         memcpy(C->data.v + c * C->nrq, b->data.v, C->nrq * sizeof(__m128));
     }
 
@@ -367,7 +367,7 @@ scrappie_matrix affine_map2(const_scrappie_matrix Xf, const_scrappie_matrix Xb,
     RETURN_NULL_IF(NULL == C, NULL);
 
     /* Copy bias */
-    for (int c = 0; c < C->nc; c++) {
+    for (size_t c = 0; c < C->nc; c++) {
         memcpy(C->data.v + c * C->nrq, b->data.v, C->nrq * sizeof(__m128));
     }
 
@@ -387,12 +387,12 @@ void row_normalise_inplace(scrappie_matrix C) {
         // Input NULL due to earlier failure.  Propagate
         return;
     }
-    const int i = C->stride - C->nr;
+    const size_t i = C->stride - C->nr;
     const __m128 mask = _mm_cmpgt_ps(_mm_set_ps(i >= 1, i >= 2, i >= 3, 0), _mm_set1_ps(0.0f));
-    for (int col = 0; col < C->nc; col++) {
+    for (size_t col = 0; col < C->nc; col++) {
         const size_t offset = col * C->nrq;
         __m128 sum = C->data.v[offset];
-        for (int row = 1; row < C->nrq; row++) {
+        for (size_t row = 1; row < C->nrq; row++) {
             sum += C->data.v[offset + row];
         }
         sum -= _mm_and_ps(C->data.v[offset + C->nrq - 1], mask);
@@ -400,7 +400,7 @@ void row_normalise_inplace(scrappie_matrix C) {
         const __m128 tsum = _mm_hadd_ps(psum, psum);
 
         const __m128 tsum_recip = _mm_set1_ps(1.0f) / tsum;
-        for (int row = 0; row < C->nrq; row++) {
+        for (size_t row = 0; row < C->nrq; row++) {
             C->data.v[offset + row] *= tsum_recip;
         }
     }
@@ -412,9 +412,9 @@ float max_scrappie_matrix(const_scrappie_matrix x) {
         return NAN;
     }
     float amax = x->data.f[0];
-    for (int col = 0; col < x->nc; col++) {
+    for (size_t col = 0; col < x->nc; col++) {
         const size_t offset = col * x->stride;
-        for (int r = 0; r < x->nr; r++) {
+        for (size_t r = 0; r < x->nr; r++) {
             if (amax < x->data.f[offset + r]) {
                 amax = x->data.f[offset + r];
             }
@@ -429,9 +429,9 @@ float min_scrappie_matrix(const_scrappie_matrix x) {
         return NAN;
     }
     float amin = x->data.f[0];
-    for (int col = 0; col < x->nc; col++) {
+    for (size_t col = 0; col < x->nc; col++) {
         const size_t offset = col * x->stride;
-        for (int r = 0; r < x->nr; r++) {
+        for (size_t r = 0; r < x->nr; r++) {
             if (amin < x->data.f[offset + r]) {
                 amin = x->data.f[offset + r];
             }
@@ -446,11 +446,11 @@ int argmax_scrappie_matrix(const_scrappie_matrix x) {
         return -1;
     }
     float amax = x->data.f[0];
-    int imax = 0;
+    size_t imax = 0;
 
-    for (int col = 0; col < x->nc; col++) {
+    for (size_t col = 0; col < x->nc; col++) {
         const size_t offset = col * x->stride;
-        for (int r = 0; r < x->nr; r++) {
+        for (size_t r = 0; r < x->nr; r++) {
             if (amax < x->data.f[offset + r]) {
                 amax = x->data.f[offset + r];
                 imax = offset + r;
@@ -466,11 +466,11 @@ int argmin_scrappie_matrix(const_scrappie_matrix x) {
         return -1;
     }
     float amin = x->data.f[0];
-    int imin = 0;
+    size_t imin = 0;
 
-    for (int col = 0; col < x->nc; col++) {
+    for (size_t col = 0; col < x->nc; col++) {
         const size_t offset = col * x->stride;
-        for (int r = 0; r < x->nr; r++) {
+        for (size_t r = 0; r < x->nr; r++) {
             if (amin < x->data.f[offset + r]) {
                 amin = x->data.f[offset + r];
                 imin = offset + r;
@@ -480,7 +480,7 @@ int argmin_scrappie_matrix(const_scrappie_matrix x) {
     return imin;
 }
 
-bool validate_vector(float *vec, const float n, const float lower,
+bool validate_vector(float *vec, const size_t n, const float lower,
                      const float upper, const char *file, const int line) {
 #ifdef NDEBUG
     return true;
@@ -491,7 +491,7 @@ bool validate_vector(float *vec, const float n, const float lower,
     }
     //  Lower bound
     if (!isnan(lower)) {
-        for (int i = 0; i < n; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             if (lower > vec[i]) {
                 warnx("%s:%d  Vector entry %d = %f violates lower bound\n",
                       file, line, i, vec[i]);
@@ -501,7 +501,7 @@ bool validate_vector(float *vec, const float n, const float lower,
     }
     //  Upper bound
     if (!isnan(upper)) {
-        for (int i = 0; i < n; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             if (upper < vec[i]) {
                 warnx("%s:%d  Vector entry %d = %f violates upper bound\n",
                       file, line, i, vec[i]);
@@ -514,7 +514,7 @@ bool validate_vector(float *vec, const float n, const float lower,
 }
 #endif /* NDEBUG */
 
-bool validate_ivector(int *vec, const int n, const int lower, const int upper,
+bool validate_ivector(int *vec, const size_t n, const int lower, const int upper,
                       const char *file, const int line) {
 #ifdef NDEBUG
     return true;
@@ -524,7 +524,7 @@ bool validate_ivector(int *vec, const int n, const int lower, const int upper,
         return false;
     }
     //  Lower bound
-    for (int i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
         if (lower > vec[i]) {
             warnx("%s:%d  Vector entry %d = %d violates lower bound\n", file,
                   line, i, vec[i]);
@@ -533,7 +533,7 @@ bool validate_ivector(int *vec, const int n, const int lower, const int upper,
     }
 
     //  Upper bound
-    for (int i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
         if (upper < vec[i]) {
             warnx("%s:%d  Vector entry %d = %d violates upper bound\n", file,
                   line, i, vec[i]);

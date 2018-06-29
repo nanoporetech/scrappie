@@ -12,9 +12,9 @@ void robustlog_activation_inplace(scrappie_matrix C, float min_prob);
 
 scrappie_matrix embedding(int const * index, size_t n, const_scrappie_matrix E,
                           scrappie_matrix C);
-scrappie_matrix window(const_scrappie_matrix input, int w, int stride);
+scrappie_matrix window(const_scrappie_matrix input, size_t w, size_t stride);
 scrappie_matrix convolution(const_scrappie_matrix X, const_scrappie_matrix W,
-                            const_scrappie_matrix b, int stride,
+                            const_scrappie_matrix b, size_t stride,
                             scrappie_matrix C);
 scrappie_matrix feedforward_linear(const_scrappie_matrix X,
                                    const_scrappie_matrix W,

@@ -238,10 +238,10 @@ static inline __m128 __attribute__ ((__always_inline__)) fast_elufv(__m128 x) {
     return _mm_or_ps(_mm_and_ps(mask, x),  _mm_andnot_ps(mask, y));
 }
 
-int argmaxf(const float *x, int n);
-int argminf(const float *x, int n);
-float valmaxf(const float *x, int n);
-float valminf(const float *x, int n);
+int argmaxf(const float *x, size_t n);
+int argminf(const float *x, size_t n);
+float valmaxf(const float *x, size_t n);
+float valminf(const float *x, size_t n);
 
 static inline int iceil(int x, int y) {
     return (x + y - 1) / y;
