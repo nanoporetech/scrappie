@@ -61,6 +61,7 @@ class RawTable(object):
 
         self._data = np.ascontiguousarray(data.astype(ftype, order='C', copy=True))
         rt = ffi.new('raw_table *')
+        rt.uuid = ffi.NULL
         rt.n = len(self._data)
         rt.start = start
         rt.end = end

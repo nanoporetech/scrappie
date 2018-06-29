@@ -41,6 +41,50 @@ float read_float_attribute(hid_t group, const char *attribute) {
     return val;
 }
 
+char * read_string_attribute(hid_t group, const char * attribute){
+    herr_t err = -1;
+    if (group < 0){
+        warnx("Invalid group passed to %s:%d.", __FILE__, __LINE__);
+        return NULL;
+    }
+    hid_t attr = H5Aopen(group, attribute, H5P_DEFAULT);
+    if (attr < 0) {
+        warnx("Failed to open attribute '%s' for reading.", attribute);
+        return NULL;
+    }
+
+    H5A_info_t info;
+    err = H5Aget_info(attr, &info);
+    if(err < 0){
+        warnx("Error reading info for attribute");
+        goto cleanup;
+    }
+
+
+    char * str = calloc(info.data_size, sizeof(char));
+    if(NULL == str){
+        warnx("Error allocating memory for attribute string");
+        goto cleanup;
+    }
+
+    hid_t atype = H5Aget_type(attr);
+    hid_t atype_mem = H5Tget_native_type(atype, H5T_DIR_ASCEND);
+    err = H5Aread(attr, atype_mem, str);
+    if(err < 0){
+        warnx("Error reading attribute");
+        free(str);
+        str = NULL;
+    }
+    H5Tclose(atype_mem);
+
+cleanup:
+    H5Aclose(attr);
+
+    return str;
+}
+
+
+
 fast5_raw_scaling get_raw_scaling(hid_t hdf5file) {
     // Add 1e-5 to sensible sample rate as a sentinel value
     fast5_raw_scaling scaling = { NAN, NAN, NAN, NAN };
@@ -64,7 +108,7 @@ fast5_raw_scaling get_raw_scaling(hid_t hdf5file) {
 
 raw_table read_raw(const char *filename, bool scale_to_pA) {
     assert(NULL != filename);
-    raw_table rawtbl = { 0, 0, 0, NULL };
+    raw_table rawtbl = { NULL, 0, 0, 0, NULL };
 
     hid_t hdf5file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
     if (hdf5file < 0) {
@@ -86,11 +130,20 @@ raw_table read_raw(const char *filename, bool scale_to_pA) {
     H5Lget_name_by_idx(hdf5file, root, H5_INDEX_NAME, H5_ITER_INC, 0, name,
                        1 + size, H5P_DEFAULT);
 
+    // uuid pat
+    char * dset_path = calloc(rootstr_len + size + 1, sizeof(char));
+    (void)snprintf(dset_path, rootstr_len + size + 1, "%s%s", root, name);
+    hid_t ugroup = H5Gopen(hdf5file, dset_path, H5P_DEFAULT);
+    if(ugroup < 0){
+        warnx("Failed to find read_id under %s.", dset_path);
+        goto cleanup1_1;
+    }
+    char * uuid = read_string_attribute(ugroup, "read_id");
+    H5Gclose(ugroup);
+
     // Create group name
     char *signal_path = calloc(rootstr_len + size + 8, sizeof(char));
-    (void)snprintf(signal_path, rootstr_len + size + 8, "%s%s/Signal", root,
-                   name);
-    free(name);
+    (void)snprintf(signal_path, rootstr_len + size + 8, "%s%s/Signal", root, name);
 
     hid_t dset = H5Dopen(hdf5file, signal_path, H5P_DEFAULT);
     if (dset < 0) {
@@ -112,11 +165,12 @@ raw_table read_raw(const char *filename, bool scale_to_pA) {
         H5Dread(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, rawptr);
     if (status < 0) {
         free(rawptr);
+        free(uuid);
         warnx("Failed to read raw data from dataset %s.", signal_path);
         goto cleanup4;
     }
     rawtbl = (raw_table) {
-    nsample, 0, nsample, rawptr};
+    uuid, nsample, 0, nsample, rawptr};
 
     if (scale_to_pA) {
         const fast5_raw_scaling scaling = get_raw_scaling(hdf5file);
@@ -132,6 +186,9 @@ raw_table read_raw(const char *filename, bool scale_to_pA) {
     H5Dclose(dset);
  cleanup2:
     free(signal_path);
+ cleanup1_1:
+    free(dset_path);
+    free(name);
  cleanup1:
     H5Fclose(hdf5file);
 
