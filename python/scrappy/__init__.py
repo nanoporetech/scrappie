@@ -466,7 +466,7 @@ def map_signal_to_squiggle(data, sequence, model='squiggle_r94',
     :param model: model to use in simulating squiggle.
     :param back_prob: probability of backward movement.
     :param local_pen: penalty for local alignment.
-    :param skipo_pen: penalty for skipping position in sequence.
+    :param skip_pen: penalty for skipping position in sequence.
     :param min_score: floor on match score.
 
     :returns: tuple containing (alignment score, alignment path)
