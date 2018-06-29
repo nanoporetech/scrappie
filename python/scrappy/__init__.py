@@ -458,7 +458,7 @@ def sequence_to_squiggle(sequence, model='squiggle_r94', rescale=False):
 
 
 def map_signal_to_squiggle(data, sequence, model='squiggle_r94',
-                           back_prob=0.0, local_pen=2.0, min_score=5.0):
+                           back_prob=0.0, local_pen=2.0, skip_pen=5000.0, min_score=5.0):
     """Align a squiggle to a sequence using a simulated squiggle.
 
     :param data: `ndarray` containing raw signal data.
@@ -466,6 +466,7 @@ def map_signal_to_squiggle(data, sequence, model='squiggle_r94',
     :param model: model to use in simulating squiggle.
     :param back_prob: probability of backward movement.
     :param local_pen: penalty for local alignment.
+    :param skipo_pen: penalty for skipping position in sequence.
     :param min_score: floor on match score.
 
     :returns: tuple containing (alignment score, alignment path)
@@ -478,7 +479,7 @@ def map_signal_to_squiggle(data, sequence, model='squiggle_r94',
     path = np.ascontiguousarray(np.zeros(raw._rt.n, dtype=np.int32))
     p_path = ffi.cast("int32_t *", ffi.from_buffer(path))
 
-    score = lib.squiggle_match_viterbi(raw.data(), squiggle.data(), back_prob, local_pen, min_score, p_path)
+    score = lib.squiggle_match_viterbi(raw.data(), squiggle.data(), back_prob, local_pen, skip_pen, min_score, p_path)
 
     return score, path
 
