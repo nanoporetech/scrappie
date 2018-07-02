@@ -62,7 +62,7 @@ ffibuilder.set_source("libscrappy",
 )
 
 with open('pyscrap.h', 'r') as fh:
-    pyscrap_interface = fh.read()
+    pyscrap_function_prototypes = fh.read()
 
 ffibuilder.cdef("""
 typedef struct {
@@ -82,7 +82,7 @@ typedef struct {
 } _Mat;
 typedef _Mat *scrappie_matrix;
 typedef _Mat const *const_scrappie_matrix;
-""" + pyscrap_interface)
+""" + pyscrap_function_prototypes)
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose=True)
