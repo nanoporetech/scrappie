@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "decode.h"
 #include "event_detection.h"
 #include "fast5_interface.h"
@@ -18,3 +20,7 @@
 
 #include "../python/pyscrap.h"
 
+
+int main(void){
+    return EXIT_SUCCESS;
+}
