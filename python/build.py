@@ -82,7 +82,7 @@ typedef struct {
 } _Mat;
 typedef _Mat *scrappie_matrix;
 typedef _Mat const *const_scrappie_matrix;
-""" + pyscap_interface)
+""" + pyscrap_interface)
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose=True)
