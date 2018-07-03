@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <fcntl.h>
 #include <glob.h>
 #include <libgen.h>
 #include <math.h>
@@ -7,6 +8,7 @@
 #endif
 #include <stdio.h>
 #include <strings.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #include "decode.h"
@@ -351,10 +353,16 @@ int main_events(int argc, char *argv[]) {
 
     hid_t hdf5out = -1;
     if (NULL != args.dump) {
-        hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
-        if (hdf5out < 0) {
-            hdf5out =
-                H5Fcreate(args.dump, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+        int fd = open(args.dump, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
+        if(fd < 0){
+            hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
+        } else {
+            unlink(args.dump);
+            hdf5out = H5Fcreate(args.dump, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        }
+        if (hdf5out < 0){
+            warnx("Failed to create \"%s\" for dumping.\n", args.dump);
+            args.dump = NULL;
         }
     }
 
