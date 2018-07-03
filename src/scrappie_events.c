@@ -326,17 +326,17 @@ static struct _bs calculate_post(char *filename) {
     rt.uuid, score, nev, basecall, et};
 }
 
-static int fprintf_fasta(FILE * fp, const char *readname, const char * prefix, const struct _bs res) {
+static int fprintf_fasta(FILE * fp, const char * uuid, const char *readname, bool uuid_primary, const char * prefix, const struct _bs res) {
     const int nbase = strlen(res.bases);
     return fprintf(fp,
-                   ">%s%s  { \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n",
-                   prefix, readname, -res.score / res.nev, res.nev, nbase,
+                   ">%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n",
+                   prefix, uuid_primary ? uuid : readname, readname, uuid, -res.score / res.nev, res.nev, nbase,
                    (float)res.nev / (float)nbase, res.bases);
 }
 
-static int fprintf_sam(FILE * fp, const char *readname, const char * prefix, const struct _bs res) {
-    return fprintf(fp, "%s%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", prefix, readname,
-                   res.bases);
+static int fprintf_sam(FILE * fp, const char * uuid, const char *readname, bool uuid_primary, const char * prefix, const struct _bs res) {
+    return fprintf(fp, "%s%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t*\n", prefix,
+                   uuid_primary ? uuid : readname, res.bases);
 }
 
 int main_events(int argc, char *argv[]) {
@@ -412,14 +412,12 @@ int main_events(int argc, char *argv[]) {
             {
                 switch (args.outformat) {
                 case FORMAT_FASTA:
-                    fprintf_fasta(args.output,
-                                  args.uuid ? res.uuid : basename(filename),
-                                  args.prefix, res);
+                    fprintf_fasta(args.output, res.uuid, basename(filename),
+                                  args.uuid, args.prefix, res);
                     break;
                 case FORMAT_SAM:
-                    fprintf_sam(args.output,
-                                args.uuid ? res.uuid : basename(filename),
-                                args.prefix, res);
+                    fprintf_sam(args.output, res.uuid, basename(filename),
+                                args.uuid, args.prefix, res);
                     break;
                 default:
                     errx(EXIT_FAILURE, "Unrecognised output format");
