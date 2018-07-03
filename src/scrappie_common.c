@@ -2,7 +2,7 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-raw_table trim_and_segment_raw(raw_table rt, int trim_start, int trim_end, int varseg_chunk, float varseg_thresh) {
+raw_table trim_and_segment_raw(raw_table rt, size_t trim_start, size_t trim_end, size_t varseg_chunk, float varseg_thresh) {
     RETURN_NULL_IF(NULL == rt.raw, (raw_table){0});
 
     rt = trim_raw_by_mad(rt, varseg_chunk, varseg_thresh);
@@ -36,7 +36,7 @@ raw_table trim_and_segment_raw(raw_table rt, int trim_start, int trim_end, int v
  *
  *  @return A range structure containing new start and end for read
  **/
-raw_table trim_raw_by_mad(raw_table rt, int chunk_size, float perc) {
+raw_table trim_raw_by_mad(raw_table rt, size_t chunk_size, float perc) {
     assert(chunk_size > 1);
     assert(perc >= 0.0 && perc <= 1.0);
 

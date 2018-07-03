@@ -6,7 +6,6 @@
 #    include <stdio.h>
 
 // Helper functions for subcommmads
-static const int scrappie_ncommand = 8;
 enum scrappie_mode {SCRAPPIE_MODE_EVENTS = 0,
                     SCRAPPIE_MODE_HELP,
                     SCRAPPIE_MODE_LICENCE,
@@ -16,6 +15,7 @@ enum scrappie_mode {SCRAPPIE_MODE_EVENTS = 0,
                     SCRAPPIE_MODE_MAPPY,
                     SCRAPPIE_MODE_SEQMAPPY,
                     SCRAPPIE_MODE_INVALID };
+static const enum scrappie_mode scrappie_ncommand = SCRAPPIE_MODE_INVALID;
 
 enum scrappie_mode get_scrappie_mode(const char *modestr);
 const char *scrappie_mode_string(const enum scrappie_mode mode);

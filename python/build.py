@@ -61,84 +61,28 @@ ffibuilder.set_source("libscrappy",
     extra_compile_args=['-std=c99', '-msse3', '-O3']
 )
 
+with open('pyscrap.h', 'r') as fh:
+    pyscrap_function_prototypes = fh.read()
+
 ffibuilder.cdef("""
-  typedef struct {
-    char * uuid;
-    size_t n;
-    size_t start;
-    size_t end;
-    float *raw;
-  } raw_table;
+typedef struct {
+  char * uuid;
+  size_t n;
+  size_t start;
+  size_t end;
+  float *raw;
+} raw_table;
 
-
-  void medmad_normalise_array(float *x, size_t n);
-  raw_table trim_and_segment_raw(raw_table rt,
-    int trim_start, int trim_end, int varseg_chunk, float varseg_thresh
-  );
-  raw_table trim_raw_by_mad(raw_table rt, int chunk_size, float perc);
-
-  typedef struct {
-    unsigned int nr, nrq, nc, stride;
-    union {
-      //__m128 *v; // we don't need this
-      float *f;
-    } data;
-  } _Mat;
-  typedef _Mat *scrappie_matrix;
-  typedef _Mat const *const_scrappie_matrix;
-
-  scrappie_matrix mat_from_array(const float * x, int nr, int nc);
-  scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
-
-  // Transducer basecalling
-  scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob, float tempW, float tempb, bool return_log);
-  scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob, float tempW, float tempb, bool return_log);
-  scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_prob, float tempW, float tempb, bool return_log);
-  float decode_transducer(
-    const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen, int *seq, bool allow_slip
-  );
-  char *overlapper(const int *seq, int n, int nkmer, int *pos);
-
-  // RNN-CRF
-  scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob, float tempW, float tempb, bool return_log);
-  float decode_crf(const_scrappie_matrix trans, int * path);
-  char * crfpath_to_basecall(int const * path, size_t npos, int * pos);
-  scrappie_matrix posterior_crf(const_scrappie_matrix trans);
-
-  // Squiggle generation
-  scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_units);
-  scrappie_matrix squiggle_r10(int const * sequence, size_t n, bool transform_units);
-
-  // Scrappy Mappy
-  float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
-                               float prob_back, float local_pen, float skip_pen,
-                               float minscore, int32_t * path_padded);
-
-  // Block-based mapping
-  bool are_bounds_sane(int const * low, int const * high,
-                       size_t nblock, size_t seqlen);
-  float map_to_sequence_forward(const_scrappie_matrix logpost,
-                                float stay_pen, float skip_pen, float local_pen,
-                                int const *seq, size_t seqlen);
-  float map_to_sequence_forward_banded(const_scrappie_matrix logpost,
-                                       float stay_pen, float skip_pen, float local_pen,
-                                       int const *seq, size_t seqlen,
-                                       int const * poslow, int const * poshigh);
-
-  float map_to_sequence_viterbi(const_scrappie_matrix logpost,
-                                float stay_pen, float skip_pen, float local_pen,
-                                int const *seq, size_t seqlen,
-                                int *path);
-  float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost,
-                                       float stay_pen, float skip_pen, float local_pen,
-                                       int const *seq, size_t seqlen,
-                                       int const * poslow, int const * poshigh);
-
-  // Misc
-  int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len);
-  int get_raw_model_stride_from_string(const char * modelstr);
-
-""")
+typedef struct {
+  size_t nr, nrq, nc, stride;
+  union {
+    //__m128 *v; // we don't need this
+    float *f;
+  } data;
+} _Mat;
+typedef _Mat *scrappie_matrix;
+typedef _Mat const *const_scrappie_matrix;
+""" + pyscrap_function_prototypes)
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose=True)

@@ -10,7 +10,7 @@ static float test_conv_tol = 1e-5;
 
 typedef struct {
     float *elt;
-    int len;
+    size_t len;
 } Vec;
 
 static float _xrange_odd[] =
@@ -25,7 +25,7 @@ bool compare_vecs_for_equality(Vec const x, Vec const y, float tol) {
     if (x.len != y.len) {
         return false;
     }
-    for (int i = 0; i < x.len; ++i) {
+    for (size_t i = 0; i < x.len; ++i) {
         if (fabsf(x.elt[i] - y.elt[i]) > tol) {
             return false;
         }
@@ -41,7 +41,7 @@ bool compare_vecs_for_equality(Vec const x, Vec const y, float tol) {
  *   @returns vector containing filtered data with same length as x
  **/
 Vec simple_convolution(Vec const x, Vec const f) {
-    const int winlen = f.len;
+    const size_t winlen = f.len;
 
     CU_ASSERT_PTR_NOT_NULL_FATAL(x.elt);
     CU_ASSERT(x.len > 0);
@@ -50,8 +50,8 @@ Vec simple_convolution(Vec const x, Vec const f) {
     CU_ASSERT(x.len >= winlen);
 
     // Pad input.
-    const int padL = (winlen - 1) / 2;
-    const int padR = winlen / 2;
+    const size_t padL = (winlen - 1) / 2;
+    const size_t padR = winlen / 2;
     float *xpad = calloc(padL + padR + x.len, sizeof(float));
     CU_ASSERT_PTR_NOT_NULL_FATAL(xpad);
     memcpy(xpad + padL, x.elt, x.len * sizeof(float));
@@ -61,8 +61,8 @@ Vec simple_convolution(Vec const x, Vec const f) {
     y.elt = calloc(x.len, sizeof(float));
     CU_ASSERT_PTR_NOT_NULL_FATAL(y.elt);
 
-    for (int start = 0; start < x.len; ++start) {
-        for (int w = 0; w < winlen; ++w) {
+    for (size_t start = 0; start < x.len; ++start) {
+        for (size_t w = 0; w < winlen; ++w) {
             y.elt[start] += f.elt[w] * xpad[start + w];
         }
     }
@@ -85,12 +85,12 @@ Vec simple_stride(Vec const v, int stride) {
     CU_ASSERT(v.len > 0);
     CU_ASSERT(stride > 0);
 
-    const int newlen = (v.len + stride - 1) / stride;
+    const size_t newlen = (v.len + stride - 1) / stride;
     Vec y = { NULL, newlen };
     y.elt = calloc(newlen, sizeof(float));
     CU_ASSERT_PTR_NOT_NULL_FATAL(y.elt);
 
-    for (int i = 0, j = 0; i < v.len; i += stride, ++j) {
+    for (size_t i = 0, j = 0; i < v.len; i += stride, ++j) {
         y.elt[j] = v.elt[i];
     }
 

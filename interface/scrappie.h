@@ -27,6 +27,7 @@ extern "C" {
     } event_table;
 
     typedef struct {
+        char * uuid;
         size_t n;
         size_t start;
         size_t end;
@@ -35,7 +36,7 @@ extern "C" {
 
 /*  Matrix definitions from scrappie_matrix.h  */
     typedef struct {
-        unsigned int nr, nrq, nc, stride;
+        size_t nr, nrq, nc, stride;
         union {
             __m128 *v;
             float *f;
@@ -44,9 +45,9 @@ extern "C" {
     typedef _Mat *scrappie_matrix;
 
     scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
-                                      bool return_log);
-    scrappie_matrix nanonet_raw_posterior(const raw_table signal,
-                                          float min_prob, bool return_log);
+                                      float tempW, float tempb, bool return_log);
+    scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
+                                          float tempW, float tempb,bool return_log);
 
     scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 

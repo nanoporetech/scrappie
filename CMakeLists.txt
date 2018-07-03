@@ -72,6 +72,7 @@ set_property(TARGET scrappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (scrappie_static STATIC $<TARGET_OBJECTS:scrappie_objects>)
 set_target_properties(scrappie_static PROPERTIES OUTPUT_NAME scrappie CLEAN_DIRECT_OUTPUT 1)
 add_executable (scrappie src/scrappie.c src/scrappie_raw.c src/scrappie_events.c src/scrappie_mappy.c src/scrappie_seqmappy.c src/scrappie_squiggle.c src/scrappie_subcommands.c src/scrappie_help.c src/fast5_interface.c)
+add_executable (test_interface src/test_interface.c)
 
 if (BUILD_SHARED_LIB)
 	if (APPLE)

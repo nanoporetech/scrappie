@@ -12,7 +12,7 @@
 static const char posteriorfile[] = "posterior_trimmed.crp";
 static float BIG_VAL = 1.e30f;
 
-static const int32_t mapping_target[] = {
+static const int mapping_target[] = {
     332, 306, 202, 811, 174, 699, 749, 949, 725, 854,
     364, 432, 704, 771, 15, 61, 245, 980, 851, 335,
     316, 240, 960, 771, 12, 196, 787, 78, 312, 227,
@@ -31,7 +31,7 @@ static const int32_t mapping_target[] = {
     575, 252, 1011, 974, 827, 238, 952, 736, 896, 515,
     15, 253, 980};
 
-static const int32_t tightlow[] = {
+static const size_t tightlow[] = {
     0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3,
     3, 4, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9,
     9, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12,
@@ -103,8 +103,8 @@ int clean_test_map_to_sequence(void) {
 
 static size_t nblock = 5;
 static size_t seqlen = 6;
-static int lower1[] = {0, 1, 2, 3, 3};
-static int upper1[] = {1, 2, 3, 3, 6};
+static size_t lower1[] = {0, 1, 2, 3, 3};
+static size_t upper1[] = {1, 2, 3, 3, 6};
 
 
 void test_bounds_not_null_map_to_sequence(void) {
@@ -118,17 +118,17 @@ void test_bounds_simple_map_to_sequence(void){
 }
 
 void test_bounds_include_zero_map_to_sequence(void){
-    int lower[] = {1, 1, 2, 3, 4};
+    size_t lower[] = {1, 1, 2, 3, 4};
     CU_ASSERT(!are_bounds_sane(lower, upper1, nblock, seqlen));
 }
 
 void test_bounds_include_lastposition_map_to_sequence(void){
-    int upper[] = {0, 1, 2, 3, 4};
+    size_t upper[] = {0, 1, 2, 3, 4};
     CU_ASSERT(!are_bounds_sane(lower1, upper, nblock, seqlen));
 }
 
 void test_bounds_overlap_map_to_sequence(void){
-    int lower[] = {0, 1, 2, 3, 4};
+    size_t lower[] = {0, 1, 2, 3, 4};
     CU_ASSERT(!are_bounds_sane(lower, upper1, nblock, seqlen));
 }
 
@@ -199,9 +199,9 @@ void test_full_band_viterbi_map_to_sequence(void){
 
     const size_t nblock = logpost->nc;
 
-    int32_t * poslow = calloc(nblock, sizeof(int32_t));
+    size_t * poslow = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(poslow);
-    int32_t * poshigh = calloc(nblock, sizeof(int32_t));
+    size_t * poshigh = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(poshigh);
     for(size_t i=0 ; i < nblock ; i++){
         // Set bounds
@@ -226,9 +226,9 @@ void test_full_band_forward_map_to_sequence(void){
 
     const size_t nblock = logpost->nc;
 
-    int32_t * poslow = calloc(nblock, sizeof(int32_t));
+    size_t * poslow = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(poslow);
-    int32_t * poshigh = calloc(nblock, sizeof(int32_t));
+    size_t * poshigh = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(poshigh);
     for(size_t i=0 ; i < nblock ; i++){
         // Set bounds
@@ -255,9 +255,9 @@ void test_relaxed_band_helper(float local_pen, int32_t band){
 
     const size_t nblock = logpost->nc;
 
-    int32_t * poslow = calloc(nblock, sizeof(int32_t));
+    size_t * poslow = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(poslow);
-    int32_t * poshigh = calloc(nblock, sizeof(int32_t));
+    size_t * poshigh = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(poshigh);
     for(size_t i=0 ; i < nblock ; i++){
         // Set bounds
@@ -317,7 +317,7 @@ void test_tight_band_forward_map_to_sequence(void){
     const size_t nblock = logpost->nc;
     CU_ASSERT_EQUAL(nblock, 1000);
 
-    int32_t * tighthigh = calloc(nblock, sizeof(int32_t));
+    size_t * tighthigh = calloc(nblock, sizeof(size_t));
     CU_ASSERT_PTR_NOT_NULL_FATAL(tightlow);
     for(size_t i=0 ; i < nblock ; i++){
         // Set bound

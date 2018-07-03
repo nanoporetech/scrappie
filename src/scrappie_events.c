@@ -24,7 +24,7 @@
 struct _bs {
     char * uuid;
     float score;
-    int nev;
+    size_t nev;
     char *bases;
     event_table et;
 };
@@ -286,8 +286,8 @@ static struct _bs calculate_post(char *filename) {
         free(rt.uuid);
         return (struct _bs){0};
     }
-    const int nev = post->nc;
-    const int nstate = post->nr;
+    const size_t nev = post->nc;
+    const size_t nstate = post->nr;
 
     int *history_state = calloc(nev + 1, sizeof(int));
     float score =
@@ -301,8 +301,8 @@ static struct _bs calculate_post(char *filename) {
     if(NULL != history_state && NULL != pos){
         // Need not explicitly guard here since directly accessing
         // Factor out into separate update events function?
-        const int evoffset = et.start;
-        for (int ev = 0; ev < nev; ev++) {
+        const size_t evoffset = et.start;
+        for (size_t ev = 0; ev < nev; ev++) {
             et.event[ev + evoffset].state = 1 + history_state[ev];
             et.event[ev + evoffset].pos = pos[ev];
         }
@@ -326,8 +326,9 @@ static struct _bs calculate_post(char *filename) {
     rt.uuid, score, nev, basecall, et};
 }
 
+
 static int fprintf_fasta(FILE * fp, const char * uuid, const char *readname, bool uuid_primary, const char * prefix, const struct _bs res) {
-    const int nbase = strlen(res.bases);
+    const size_t nbase = strlen(res.bases);
     return fprintf(fp,
                    ">%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n",
                    prefix, uuid_primary ? uuid : readname, readname, uuid, -res.score / res.nev, res.nev, nbase,
@@ -357,13 +358,13 @@ int main_events(int argc, char *argv[]) {
         }
     }
 
-    int nfile = 0;
+    size_t nfile = 0;
     for (; args.files[nfile]; nfile++) ;
 
-    int reads_started = 0;
-    const int reads_limit = args.limit;
+    size_t reads_started = 0;
+    const size_t reads_limit = args.limit;
 #pragma omp parallel for schedule(dynamic)
-    for (int fn = 0; fn < nfile; fn++) {
+    for (size_t fn = 0; fn < nfile; fn++) {
         if (reads_limit > 0 && reads_started >= reads_limit) {
             continue;
         }
@@ -395,7 +396,7 @@ int main_events(int argc, char *argv[]) {
             }
         }
 #pragma omp parallel for schedule(dynamic)
-        for (int fn2 = 0; fn2 < globbuf.gl_pathc; fn2++) {
+        for (size_t fn2 = 0; fn2 < globbuf.gl_pathc; fn2++) {
             if (reads_limit > 0 && reads_started >= reads_limit) {
                 continue;
             }

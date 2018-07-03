@@ -84,7 +84,7 @@ void test_decode_equivalent_to_sloika(void) {
 
     int * path_sloika = calloc(nblock + 1, sizeof(int));
     CU_ASSERT_PTR_NOT_NULL_FATAL(path_sloika);
-    for(int i=0 ; i < nblock ; i++){
+    for(size_t i=0 ; i < nblock ; i++){
         path_sloika[i] = (int)path->data.f[i * path->stride];
     }
     CU_ASSERT_DOUBLE_EQUAL(score_original, score_expected, 1e-4);

@@ -31,20 +31,20 @@ static inline __m128i __attribute__((__gnu_inline__, __always_inline__)) _mm_mul
 }
 #endif
 
-float viterbi_backtrace(float const *score, int n, const_scrappie_imatrix traceback, int * seq){
+float viterbi_backtrace(float const *score, size_t n, const_scrappie_imatrix traceback, int * seq){
     RETURN_NULL_IF(NULL == score, NAN);
     RETURN_NULL_IF(NULL == seq, NAN);
 
     const size_t nblock = traceback->nc;
-    for(size_t i=0 ; i<nblock ; i++){
+    for(size_t i=0 ; i < nblock ; i++){
         // Initialise entries to stay
         seq[i] = -1;
     }
 
     int last_state = argmaxf(score, n);
     float logscore = score[last_state];
-    for(int i=0 ; i < nblock ; i++){
-        const int ri = nblock - i - 1;
+    for(size_t i=0 ; i < nblock ; i++){
+        const size_t ri = nblock - i - 1;
         const int state = traceback->data.f[ri * traceback->stride + last_state];
         if(state >= 0){
             seq[ri] = last_state;
@@ -55,20 +55,20 @@ float viterbi_backtrace(float const *score, int n, const_scrappie_imatrix traceb
     return logscore;
 }
 
-float viterbi_local_backtrace(float const *score, int n, const_scrappie_imatrix traceback, int * seq){
+float viterbi_local_backtrace(float const *score, size_t n, const_scrappie_imatrix traceback, int * seq){
     RETURN_NULL_IF(NULL == score, NAN);
     RETURN_NULL_IF(NULL == seq, NAN);
 
     const size_t nblock = traceback->nc;
-    for(size_t i=0 ; i<=nblock ; i++){
+    for(size_t i=0 ; i <= nblock ; i++){
         // Initialise entries to stay
         seq[i] = -1;
     }
 
     int last_state = argmaxf(score, n + 2);
     float logscore = score[last_state];
-    for(int i=0 ; i < nblock ; i++){
-        const int ri = nblock - i - 1;
+    for(size_t i=0 ; i < nblock ; i++){
+        const size_t ri = nblock - i - 1;
         const int state = traceback->data.f[ri * traceback->stride + last_state];
         if(state >= 0){
             seq[ri + 1] = last_state;
@@ -78,7 +78,7 @@ float viterbi_local_backtrace(float const *score, int n, const_scrappie_imatrix 
     seq[0] = last_state;
 
     //  Transcode start to stay
-    for(int i=0 ; i < nblock ; i++){
+    for(size_t i=0 ; i < nblock ; i++){
         if(seq[i] == n){
             seq[i] = -1;
         } else {
@@ -381,15 +381,15 @@ int overlap(int k1, int k2, int nkmer) {
     return overlap;
 }
 
-int position_highest_bit(int x) {
-    int i = 0;
+size_t position_highest_bit(size_t x) {
+    size_t i = 0;
     for (; x != 0; i++, x >>= 1) ;
     return i;
 }
 
-int first_nonnegative(const int *seq, int n) {
+size_t first_nonnegative(const int *seq, size_t n) {
     RETURN_NULL_IF(NULL == seq, n);
-    int st;
+    size_t st;
     for (st = 0; st < n && seq[st] < 0; st++) ;
     return st;
 }
@@ -411,14 +411,14 @@ const char base_lookup[4] = { 'A', 'C', 'G', 'T' };
 
 
 // This method assumes a model which outputs single bases
-char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos) {
+char *ctc_remove_stays_and_repeats(const int *seq, size_t n, int *pos) {
     RETURN_NULL_IF(NULL == seq, NULL);
     RETURN_NULL_IF(NULL == pos, NULL);
 
     //  Determine length of final sequence
     int length = 0;
     if (seq[0] >= 0) { length += 1; }
-    for (int blk = 1; blk < n; blk++) {
+    for (size_t blk = 1; blk < n; blk++) {
         if (seq[blk] >= 0 && seq[blk - 1] != seq[blk]) {
             length += 1;
         }
@@ -431,7 +431,7 @@ char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos) {
     int loc = -1;
     int prev = -2;
 
-    for (int blk = 0; blk < n; blk++) {
+    for (size_t blk = 0; blk < n; blk++) {
         int this = seq[blk];
         if (this >= 0 && this != prev) {
             bases[loc] = base_lookup[this];
@@ -446,18 +446,18 @@ char *ctc_remove_stays_and_repeats(const int *seq, int n, int *pos) {
     return bases;
 }
 
-char *overlapper(const int *seq, int n, int nkmer, int *pos) {
+char *overlapper(const int *seq, size_t n, int nkmer, int *pos) {
     RETURN_NULL_IF(NULL == seq, NULL);
-    const int kmer_len = position_highest_bit(nkmer) / 2;
+    const size_t kmer_len = position_highest_bit(nkmer) / 2;
 
     //  Determine length of final sequence
-    int length = kmer_len;
+    size_t length = kmer_len;
     // Find first non-stay
-    const int st = first_nonnegative(seq, n);
+    const size_t st = first_nonnegative(seq, n);
     RETURN_NULL_IF(st == n, NULL);
 
     int kprev = seq[st];
-    for (int k = st + 1; k < n; k++) {
+    for (size_t k = st + 1; k < n; k++) {
         if (seq[k] < 0) {
             // Short-cut stays
             continue;
@@ -473,8 +473,8 @@ char *overlapper(const int *seq, int n, int nkmer, int *pos) {
     RETURN_NULL_IF(NULL == bases, NULL);
 
     // Fill with first kmer
-    for (int kmer = seq[st], k = 1; k <= kmer_len; k++) {
-        int b = kmer & 3;
+    for (size_t kmer = seq[st], k = 1; k <= kmer_len; k++) {
+        size_t b = kmer & 3;
         kmer >>= 2;
         bases[kmer_len - k] = base_lookup[b];
     }
@@ -483,7 +483,7 @@ char *overlapper(const int *seq, int n, int nkmer, int *pos) {
         // Initial pos array if required -- start at beginning
         pos[0] = 0;
     }
-    for (int last_idx = kmer_len - 1, kprev = seq[st], k = st + 1; k < n; k++) {
+    for (size_t last_idx = kmer_len - 1, kprev = seq[st], k = st + 1; k < n; k++) {
         if (seq[k] < 0) {
             // Short-cut stays
             if (NULL != pos) {
@@ -497,8 +497,8 @@ char *overlapper(const int *seq, int n, int nkmer, int *pos) {
         }
         kprev = seq[k];
 
-        for (int kmer = seq[k], i = 0; i < ol; i++) {
-            int b = kmer & 3;
+        for (size_t kmer = seq[k], i = 0; i < ol; i++) {
+            size_t b = kmer & 3;
             kmer >>= 2;
             bases[last_idx + ol - i] = base_lookup[b];
         }
@@ -731,12 +731,12 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
     const size_t nblock = logpost->nc;
     const size_t nst = logpost->nr;
     const size_t nhst = nst - 1;
-    const int nstep = nbase;
-    const int nskip = nbase * nbase;
+    const size_t nstep = nbase;
+    const size_t nskip = nbase * nbase;
     assert(nhst % nstep == 0);
     assert(nhst % nskip == 0);
-    const int step_rem = nhst / nstep;
-    const int skip_rem = nhst / nskip;
+    const size_t step_rem = nhst / nstep;
+    const size_t skip_rem = nhst / nskip;
 
     float * cscore = calloc(nhst + 2, sizeof(float));
     float * pscore = calloc(nhst + 2, sizeof(float));
@@ -751,7 +751,7 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
         cscore[nhst] = 0.0f;
 
         //  Forwards Viterbi
-        for(int i=0 ; i < nblock ; i++){
+        for(size_t i=0 ; i < nblock ; i++){
             const size_t lpoffset = i * logpost->stride;
             const size_t toffset = i * traceback->stride;
             {  // Swap vectors
@@ -766,11 +766,11 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
             colmaxf(pscore, skip_rem, nskip, skip_idx);
 
             // Update score for step and skip
-            for(int hst=0 ; hst < nhst ; hst++){
-                int step_prefix = hst / nstep;
-                int skip_prefix = hst / nskip;
-                int step_hst = step_prefix + step_idx[step_prefix] * step_rem;
-                int skip_hst = skip_prefix + skip_idx[skip_prefix] * skip_rem;
+            for(size_t hst=0 ; hst < nhst ; hst++){
+                size_t step_prefix = hst / nstep;
+                size_t skip_prefix = hst / nskip;
+                size_t step_hst = step_prefix + step_idx[step_prefix] * step_rem;
+                size_t skip_hst = skip_prefix + skip_idx[skip_prefix] * skip_rem;
 
                 float step_score = pscore[step_hst];
                 float skip_score = pscore[skip_hst] - skip_pen;
@@ -786,7 +786,7 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
             }
 
             // Stay
-            for(int hst=0 ; hst < nhst ; hst++){
+            for(size_t hst=0 ; hst < nhst ; hst++){
                 const float score = pscore[hst] + logpost->data.f[lpoffset + nhst] - stay_pen;
                 if(score > cscore[hst]){
                     // Arbitrary assumption here!  Should be >= ?
@@ -799,7 +799,7 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
             cscore[nhst] = pscore[nhst] + fmaxf(-local_pen, logpost->data.f[lpoffset + nhst] - stay_pen);
             traceback->data.f[toffset + nhst] = nhst;
             // Exit start state
-            for(int hst=0 ; hst < nhst ; hst++){
+            for(size_t hst=0 ; hst < nhst ; hst++){
                 const float score = pscore[nhst] + logpost->data.f[lpoffset + hst];
                 if(score > cscore[hst]){
                     cscore[hst] = score;
@@ -811,7 +811,7 @@ float sloika_viterbi(const_scrappie_matrix logpost, float stay_pen, float skip_p
             cscore[nhst + 1] = pscore[nhst + 1] + fmaxf(-local_pen, logpost->data.f[lpoffset + nhst] - stay_pen);
             traceback->data.f[toffset + nhst + 1] = nhst + 1;
             // Enter end state
-            for(int hst=0 ; hst < nhst ; hst++){
+            for(size_t hst=0 ; hst < nhst ; hst++){
                 const float score = pscore[hst] - local_pen;
                 if(score > cscore[nhst + 1]){
                     cscore[nhst + 1] = score;
@@ -1476,7 +1476,7 @@ float map_to_sequence_forward(const_scrappie_matrix logpost, float stay_pen, flo
  *
  *   @returns bool
  **/
-bool are_bounds_sane(int const * low, int const * high, size_t nblock, size_t seqlen){
+bool are_bounds_sane(size_t const * low, size_t const * high, size_t nblock, size_t seqlen){
     bool ret = true;
 
     if(NULL == low || NULL == high){
@@ -1486,49 +1486,49 @@ bool are_bounds_sane(int const * low, int const * high, size_t nblock, size_t se
     }
 
     if(low[0] != 0){
-        warnx("First bound must include 0 (got %d)\n", low[0]);
+        warnx("First bound must include 0 (got %zu)\n", low[0]);
         ret = false;
     }
     if(high[nblock - 1] != seqlen){
-        warnx("Last bound must equal seqlen %zu (got %d)\n", seqlen, high[nblock - 1]);
+        warnx("Last bound must equal seqlen %zu (got %zu)\n", seqlen, high[nblock - 1]);
         ret = false;
     }
     for(size_t i=0 ; i < nblock ; i++){
         if(low[i] < 0){
-            warnx("Low bound for block %zu less than zero (got %d)\n", i, low[i]);
+            warnx("Low bound for block %zu less than zero (got %zu)\n", i, low[i]);
             ret = false;
         }
         if(high[i] < 0){
-            warnx("high bound for block %zu less than zero (got %d)\n", i, high[i]);
+            warnx("high bound for block %zu less than zero (got %zu)\n", i, high[i]);
             ret = false;
         }
         if(low[i] > seqlen){
-            warnx("Low bound for block %zu exceeds length of sequence (got %d but seqlen is %zu)\n", i, low[i], seqlen);
+            warnx("Low bound for block %zu exceeds length of sequence (got %zu but seqlen is %zu)\n", i, low[i], seqlen);
             ret = false;
         }
         if(high[i] > seqlen){
-            warnx("High bound for block %zu exceeds length of sequence (got %d but seqlen is %zu)\n", i, high[i], seqlen);
+            warnx("High bound for block %zu exceeds length of sequence (got %zu but seqlen is %zu)\n", i, high[i], seqlen);
             ret = false;
         }
         if(low[i] > high[i]){
-            warnx("Low bound for block %zu exceeds high bound [%d , %d).\n", i, low[i], high[i]);
+            warnx("Low bound for block %zu exceeds high bound [%zu , %zu).\n", i, low[i], high[i]);
             ret = false;
         }
     }
     for(size_t i=1 ; i < nblock ; i++){
         if(low[i] > high[i - 1]){
             // Allow case where step but not stay is possible (low[i] == high[i-1])
-            warnx("Blocks %zu and %zu don't overlap [%d , %d) -> [%d , %d)\n",
+            warnx("Blocks %zu and %zu don't overlap [%zu , %zu) -> [%zu , %zu)\n",
                   i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
             ret = false;
         }
         if(low[i] < low[i - 1]){
-            warnx("Low bounds for blocks %zu and %zu aren't monotonic [%d , %d) -> [%d , %d)\n",
+            warnx("Low bounds for blocks %zu and %zu aren't monotonic [%zu , %zu) -> [%zu , %zu)\n",
                   i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
             ret = false;
         }
         if(high[i] < high[i - 1]){
-            warnx("High bounds for blocks %zu and %zu aren't monotonic [%d , %d) -> [%d , %d)\n",
+            warnx("High bounds for blocks %zu and %zu aren't monotonic [%zu , %zu) -> [%zu , %zu)\n",
                   i - 1, i , low[i - 1], high[i - 1], low[i], high[i]);
             ret = false;
         }
@@ -1553,7 +1553,7 @@ bool are_bounds_sane(int const * low, int const * high, size_t nblock, size_t se
  *   @returns score
  **/
 float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen,
-                                     int const *seq, size_t seqlen, int const * poslow, int const * poshigh){
+                                     int const *seq, size_t seqlen, size_t const * poslow, size_t const * poshigh){
     float logscore = NAN;
     RETURN_NULL_IF(NULL == logpost, logscore);
     RETURN_NULL_IF(NULL == seq, logscore);
@@ -1636,8 +1636,8 @@ float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_p
             cscore[pos] = pscore[pos] - stay_pen + logpost->data.f[lpoffset + STAY];
         }
 
-        const int min_step_idx = imax(poslow[blk], poslow[blk - 1] + 1);
-        const int max_step_idx = imin(poshigh[blk], poshigh[blk - 1] + 1);
+        const size_t min_step_idx = imax(poslow[blk], poslow[blk - 1] + 1);
+        const size_t max_step_idx = imin(poshigh[blk], poshigh[blk - 1] + 1);
         for(size_t pos=min_step_idx ; pos < max_step_idx ; pos++){
             // step -- pos is position going _to_
             const size_t stepto = seq[pos];
@@ -1645,8 +1645,8 @@ float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_p
             cscore[pos] = fmaxf(step_score, cscore[pos]);
         }
 
-        const int min_skip_idx = imax(poslow[blk], poslow[blk - 1] + 2);
-        const int max_skip_idx = imin(poshigh[blk], poshigh[blk - 1] + 2);
+        const size_t min_skip_idx = imax(poslow[blk], poslow[blk - 1] + 2);
+        const size_t max_skip_idx = imin(poshigh[blk], poshigh[blk - 1] + 2);
         for(size_t pos=min_skip_idx ; pos < max_skip_idx ; pos++){
             // skip -- pos is position going _to_
             const size_t skipto = seq[pos];
@@ -1691,7 +1691,7 @@ float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost, float stay_p
  *   @returns score
  **/
 float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_pen, float skip_pen, float local_pen,
-                                     int const *seq, size_t seqlen, int const * poslow, int const * poshigh){
+                                     int const *seq, size_t seqlen, size_t const * poslow, size_t const * poshigh){
     float logscore = NAN;
     RETURN_NULL_IF(NULL == logpost, logscore);
     RETURN_NULL_IF(NULL == seq, logscore);
@@ -1774,8 +1774,8 @@ float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_p
             cscore[pos] = pscore[pos] - stay_pen + logpost->data.f[lpoffset + STAY];
         }
 
-        const int min_step_idx = imax(poslow[blk], poslow[blk - 1] + 1);
-        const int max_step_idx = imin(poshigh[blk], poshigh[blk - 1] + 1);
+        const size_t min_step_idx = imax(poslow[blk], poslow[blk - 1] + 1);
+        const size_t max_step_idx = imin(poshigh[blk], poshigh[blk - 1] + 1);
         for(size_t pos=min_step_idx ; pos < max_step_idx ; pos++){
             // step -- pos is position going _to_
             const size_t stepto = seq[pos];
@@ -1783,8 +1783,8 @@ float map_to_sequence_forward_banded(const_scrappie_matrix logpost, float stay_p
             cscore[pos] = logsumexpf(step_score, cscore[pos]);
         }
 
-        const int min_skip_idx = imax(poslow[blk], poslow[blk - 1] + 2);
-        const int max_skip_idx = imin(poshigh[blk], poshigh[blk - 1] + 2);
+        const size_t min_skip_idx = imax(poslow[blk], poslow[blk - 1] + 2);
+        const size_t max_skip_idx = imin(poshigh[blk], poshigh[blk - 1] + 2);
         for(size_t pos=min_skip_idx ; pos < max_skip_idx ; pos++){
             // skip -- pos is position going _to_
             const size_t skipto = seq[pos];

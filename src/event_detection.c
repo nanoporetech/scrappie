@@ -134,7 +134,7 @@ size_t *short_long_peak_detector(DetectorPtr short_detector,
 
     size_t peak_count = 0;
     for (size_t i = 0; i < short_detector->signal_length; i++) {
-        for (int k = 0; k < ndetector; k++) {
+        for (size_t k = 0; k < ndetector; k++) {
             DetectorPtr detector = detectors[k];
             //Carry on if we've been masked out
             if (detector->masked_to >= i) {
