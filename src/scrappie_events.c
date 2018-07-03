@@ -10,6 +10,7 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include "decode.h"
 #include "event_detection.h"
