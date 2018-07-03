@@ -63,6 +63,8 @@ scrappie raw reads/read1.fast5 reads/read2.fast5 > basecalls.fa
 tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie raw > basecalls.fa
 #  Using Scrappie in single-threaded mode
 find path/to/reads/ -name \*.fast5 | parallel -P ${OMP_NUM_THREADS} scrappie raw --threads 1 > basecalls.fa
+#  Dump read meta-data to tsv
+scrappie raw --threads 1 path/to/reads/ | tee basecalls.fa | grep '^>' | cut -d ' ' -f 2- | python3 misc/json_to_tsv.py > meta_data.tsv
 #  Run with homopolymer path calculation and temperature changes
 scrappie raw --homopolymer mean --temperature1 1.12 --temperature2 1.6 reads/read1.fast5 > basecalls.fa
 ```
@@ -176,11 +178,15 @@ When the output is set to FASTA (default) then some metadata is stored in the de
   * The sequence ID is the name of the file that was basecalled.
   * The *description* element of the FASTA header is a JSON string containing the following elements:
     *  Events
+      * `filename` Name of fast5 file that read came from (without full path).
+      * `uuid`  UUID for read.
       * `normalised_score` Normalised score (total score / number of events or blocks).
       * `nevents` Number of events processed.
       * `sequence_length` Length of sequence called.
       * `events_per_base` Number of events per base called.
     *  Raw
+      * `filename` Name of fast5 file that read came from (without full path).
+      * `uuid`  UUID for read.
       * `normalised_score` Normalised score (total score / number of events or blocks).
       * `nblock` Number of blocks processed.
       * `sequence_length` Length of sequence called.
