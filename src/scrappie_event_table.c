@@ -62,8 +62,9 @@ static struct arguments args = {
 };
 
 static error_t parse_arg(int key, char *arg, struct argp_state *state) {
+    int ret = 0;
+    char *next_tok = NULL;
     switch (key) {
-        int ret = 0;
     case 'o':
         args.output = fopen(arg, "w");
         if(NULL == args.output){
@@ -72,7 +73,7 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         break;
     case 't':
         args.trim_start = atoi(strtok(arg, ":"));
-        char *next_tok = strtok(NULL, ":");
+        next_tok = strtok(NULL, ":");
         if (NULL != next_tok) {
             args.trim_end = atoi(next_tok);
         } else {
