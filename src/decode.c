@@ -1494,14 +1494,6 @@ bool are_bounds_sane(size_t const * low, size_t const * high, size_t nblock, siz
         ret = false;
     }
     for(size_t i=0 ; i < nblock ; i++){
-        if(low[i] < 0){
-            warnx("Low bound for block %zu less than zero (got %zu)\n", i, low[i]);
-            ret = false;
-        }
-        if(high[i] < 0){
-            warnx("high bound for block %zu less than zero (got %zu)\n", i, high[i]);
-            ret = false;
-        }
         if(low[i] > seqlen){
             warnx("Low bound for block %zu exceeds length of sequence (got %zu but seqlen is %zu)\n", i, low[i], seqlen);
             ret = false;
