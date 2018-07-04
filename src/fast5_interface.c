@@ -42,6 +42,7 @@ float read_float_attribute(hid_t group, const char *attribute) {
 }
 
 char * read_string_attribute(hid_t group, const char * attribute){
+    char * str = NULL;
     herr_t err = -1;
     if (group < 0){
         warnx("Invalid group passed to %s:%d.", __FILE__, __LINE__);
@@ -61,7 +62,7 @@ char * read_string_attribute(hid_t group, const char * attribute){
     }
 
 
-    char * str = calloc(info.data_size, sizeof(char));
+    str = calloc(info.data_size, sizeof(char));
     if(NULL == str){
         warnx("Error allocating memory for attribute string");
         goto cleanup;

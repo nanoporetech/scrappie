@@ -333,7 +333,7 @@ static struct _bs calculate_post(char *filename) {
 static int fprintf_fasta(FILE * fp, const char * uuid, const char *readname, bool uuid_primary, const char * prefix, const struct _bs res) {
     const size_t nbase = strlen(res.bases);
     return fprintf(fp,
-                   ">%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nevent\" : %d,  \"sequence_length\" : %d,  \"events_per_base\" : %f }\n%s\n",
+                   ">%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nevent\" : %zu,  \"sequence_length\" : %zu,  \"events_per_base\" : %f }\n%s\n",
                    prefix, uuid_primary ? uuid : readname, readname, uuid, -res.score / res.nev, res.nev, nbase,
                    (float)res.nev / (float)nbase, res.bases);
 }
@@ -358,6 +358,7 @@ int main_events(int argc, char *argv[]) {
         if(fd < 0){
             hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
         } else {
+            close(fd);
             unlink(args.dump);
             hdf5out = H5Fcreate(args.dump, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
         }

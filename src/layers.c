@@ -129,8 +129,8 @@ scrappie_matrix window(const_scrappie_matrix input, size_t w, size_t stride) {
     for (size_t col = 0; col < output->nc; col++) {
         // First and last columns are special cases
         const size_t out_offset = col * output->stride;
-        const size_t icol = col * stride;
-        for (size_t i = 0, w1 = (icol - wh + 1); w1 <= icol + wh; w1++) {
+        const int icol = (int)(col * stride);
+        for (int i = 0, w1 = (icol - wh + 1); w1 <= icol + wh; w1++) {
             if (w1 < 0 || w1 >= input->nc) {
                 i += input->nr;
                 continue;
