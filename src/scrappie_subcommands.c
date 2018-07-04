@@ -28,6 +28,9 @@ enum scrappie_mode get_scrappie_mode(const char *modestr) {
     if (0 == strcmp(modestr, "seqmappy")){
         return SCRAPPIE_MODE_SEQMAPPY;
     }
+    if (0 == strcmp(modestr, "event_table")){
+        return SCRAPPIE_MODE_EVENT_TABLE;
+    }
 
     return SCRAPPIE_MODE_INVALID;
 }
@@ -50,6 +53,8 @@ const char *scrappie_mode_string(const enum scrappie_mode mode) {
         return "mappy";
     case SCRAPPIE_MODE_SEQMAPPY:
         return "seqmappy";
+    case SCRAPPIE_MODE_EVENT_TABLE:
+        return "event_table";
     case SCRAPPIE_MODE_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie mode\n");
     default:
@@ -77,6 +82,8 @@ const char *scrappie_mode_description(const enum scrappie_mode mode) {
         return "Map signal to approximate squiggle";
     case SCRAPPIE_MODE_SEQMAPPY:
         return "Map signal to sequence via basecall posteriors";
+    case SCRAPPIE_MODE_EVENT_TABLE:
+        return "Output table of events for read";
     case SCRAPPIE_MODE_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie mode\n");
     default:

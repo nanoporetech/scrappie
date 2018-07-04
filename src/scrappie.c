@@ -42,6 +42,8 @@ int main(int argc, char *argv[]) {
         break;
     case SCRAPPIE_MODE_SEQMAPPY:
         ret = main_seqmappy(argc - 1, argv + 1);
+    case SCRAPPIE_MODE_EVENT_TABLE:
+        ret = main_event_table(argc - 1, argv + 1);
         break;
     default:
         ret = EXIT_FAILURE;
