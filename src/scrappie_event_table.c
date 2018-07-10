@@ -149,7 +149,7 @@ int main_event_table(int argc, char *argv[]) {
             continue;
         }
         fprintf(args.output, "# %s\n", args.files[fn]);
-        fputs("#event\tstart\tmean\tstdv\tdwell\n", args.output);
+        fprintf(args.output, "#event\tstart\tmean\tstdv\tdwell\n");
         for(size_t i=0 ; i < et.n ; i++){
             event_t ev = et.event[i];
             fprintf(args.output, "%zu\t%zu\t%f\t%f\t%f\n", i, ev.start, ev.mean, ev.stdv, ev.length);

@@ -7,13 +7,9 @@
 
 enum raw_model_type {
     SCRAPPIE_MODEL_RAW=0,
-    SCRAPPIE_MODEL_RGR,
     SCRAPPIE_MODEL_RGRGR_R9_4,
-    SCRAPPIE_MODEL_RGRGR_R9_5,
     SCRAPPIE_MODEL_RGRGR_R10,
     SCRAPPIE_MODEL_RNNRF_R9_4,
-    SCRAPPIE_MODEL_RGRGR_RESGRU,
-    SCRAPPIE_MODEL_RGRGR_RESLSTM,
     SCRAPPIE_MODEL_INVALID};
 
 enum squiggle_model_type {
@@ -41,20 +37,12 @@ scrappie_matrix nanonet_posterior(const event_table events, float min_prob,
 //  Raw posterior -- for preference, use get_posterior_function
 scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
 		                      float tempW, float tempb, bool return_log);
-scrappie_matrix nanonet_rgr_posterior(const raw_table signal, float min_prob,
-		                      float tempW, float tempb, bool return_log);
 scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob,
-		                            float tempW, float tempb, bool return_log);
-scrappie_matrix nanonet_rgrgr_r95_posterior(const raw_table signal, float min_prob,
 		                            float tempW, float tempb, bool return_log);
 scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_prob,
 		                             float tempW, float tempb, bool return_log);
 scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_prob,
 		                              float tempW, float tempb, bool return_log);
-scrappie_matrix nanonet_rgrgr_resgru_posterior(const raw_table signal, float min_prob,
-		                               float tempW, float tempb, bool return_log);
-scrappie_matrix nanonet_rgrgr_reslstm_posterior(const raw_table signal, float min_prob,
-		                                float tempW, float tempb, bool return_log);
 
 //  Squiggle functions
 scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_units);
