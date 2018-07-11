@@ -10,9 +10,9 @@ from sloika.helpers import objwalk, set_at_path
 
 
 parser = argparse.ArgumentParser('Hack temperature into sloika model')
-parser.add_argument('--temperature1', default=1.0 type=Positive(float),
+parser.add_argument('--temperature1', default=1.0, type=Positive(float),
                     help='Temperature for softmax weights')
-parser.add_argument('--temperature2', default=1.0 type=Positive(float),
+parser.add_argument('--temperature2', default=1.0, type=Positive(float),
                     help='Temperature for softmax bias')
 parser.add_argument('model', action=FileExists, help='Pickled sloika model to upgrade')
 parser.add_argument('output', help='Output file to write to')
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     assert top_level_object_name == 'Serial', top_level_object_name
 
     network = change_softmax(network,
-                             np.reciprocal(args.temperature[0]),
-                             np.reciprocal(args.temperature[1]))
+                             np.reciprocal(args.temperature1),
+                             np.reciprocal(args.temperature2))
 
     with open(args.output, 'wb') as fo:
         pickle.dump(network, fo)
