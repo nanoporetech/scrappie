@@ -8,11 +8,13 @@ from setuptools import setup, find_packages, Extension
 __pkg_name__ = 'scrappy'
 __author__ = 'cwright'
 __description__ = 'Python bindings to scrappie basecaller'
-__long_description = """
-Scrappy is build with CFFI and exposes only a subset of the abilities of the
-full scrappie basecalling library. Additional functionality can/will be added
-as necessary.
-"""
+
+# Use readme as long description and say its github-flavour markdown
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    __long_description__ = f.read()
+__long_description_content_type__ = 'text/markdown'
 
 
 __path__ = os.path.dirname(__file__)
@@ -77,7 +79,8 @@ setup(
     author_email='{}@nanoporetech.com'.format(__author__),
     classifiers=classifiers,
     description=__description__,
-    long_description=__long_description,
+    long_description=__long_description__,
+    long_description_content_type=__long_description_content_type__,
     python_requires='~=3.4',
     license='MPL 2.0',
 

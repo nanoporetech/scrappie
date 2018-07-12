@@ -1,5 +1,6 @@
 include src/*.c
 include src/*.h
+include pyscrap.h
 include src/models/*.h
 include README.md
 include LICENSE.md
