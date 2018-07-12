@@ -368,6 +368,7 @@ def _decode_post_crf(post):
 # Network and decoder functions used above
 _models_ = {
     'rgrgr_r94': lib.nanonet_rgrgr_r94_posterior,
+    'rgrgr_r941': lib.nanonet_rgrgr_r941_posterior,
     'rgrgr_r10': lib.nanonet_rgrgr_r10_posterior,
     'rnnrf_r94': lib.nanonet_rnnrf_r94_transitions,
 }
@@ -379,6 +380,7 @@ _squiggle_models_ = {
 
 _decoders_ = {
     'rgrgr_r94': _decode_post,
+    'rgrgr_r941': _decode_post,
     'rgrgr_r10': _decode_post,
     'rnnrf_r94': _decode_post_crf,
 }

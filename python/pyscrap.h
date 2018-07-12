@@ -10,6 +10,8 @@ scrappie_matrix free_scrappie_matrix(scrappie_matrix mat);
 // Transducer basecalling
 scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob,
                                             float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_rgrgr_r941_posterior(const raw_table signal, float min_prob,
+                                             float tempW, float tempb, bool return_log);
 scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_prob,
                                             float tempW, float tempb, bool return_log);
 float decode_transducer(const_scrappie_matrix logpost, float stay_pen, float skip_pen,
