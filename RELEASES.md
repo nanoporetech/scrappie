@@ -31,7 +31,7 @@ The intention is that behaviour will be stable within a series, with only bug fi
 * 1.4 series: Basecalls for better consensus
     * *release-1.4.0*
         * Direct correction for homopolymers
-        * Temperature adjustment for improved accuracy (rgrgr_r94, rgrgr_r941 and rgrgr_r10 models only).
+        * Temperature adjustment for improved accuracy (rgrgr_r94 and rgrgr_r941 models only).
         * Module to detect event boundaries without calling.
         * Remove some old models
 * 1.3 series: Recurrent Neural Network - Random Fields, Python, and Alignment
