@@ -9,7 +9,6 @@
 #include "networks.h"
 #include "nnfeatures.h"
 #include "scrappie_common.h"
-#include "scrappie_licence.h"
 #include "scrappie_matrix.h"
 #include "scrappie_seq_helpers.h"
 #include "scrappie_stdlib.h"
