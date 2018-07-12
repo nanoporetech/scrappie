@@ -217,3 +217,10 @@ argument.  When this is given, the 'standard deviation' and 'dwell' columns chan
 * Reads with unusual rate metrics (number of events or blocks / bases called) may be unreliable.
 * Scrappie requires HDF5 library compiled with multi-threading support, see [HDF5 concurrent access](https://support.hdfgroup.org/HDF5/hdf5-quest.html#gconc).  If only single-threaded HDF5 library is available then single-threaded Scrappie can be built and parallelized with xargs -- see [Running](#Running) for details.
 * The squiggle prediction is based on Laplace distributed errors.
+
+
+## Methylation and other modifications
+The models underlying Scrappie are trained from PCR'd data.  Methylated 
+bases, and other modifications, will manifest as errors rather than
+the appropriate cannonical base.  Models calling modified bases into
+cannonical bases will be released in future version of Scrappie.
