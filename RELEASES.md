@@ -27,6 +27,13 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 
 # Release history
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
+
+* 1.4 series: Basecalls for better consensus
+    * *release-1.4.0*
+        * Direct correction for homopolymers
+        * Temperature adjustment for improved accuracy (rgrgr_r94, rgrgr_r941 and rgrgr_r10 models only).
+        * Module to detect event boundaries without calling.
+        * Remove some old models
 * 1.3 series: Recurrent Neural Network - Random Fields, Python, and Alignment
     * *release-1.3.3*
         * Alignment of signals to sequences via RNN label scores.

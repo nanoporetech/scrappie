@@ -41,9 +41,10 @@ float read_float_attribute(hid_t group, const char *attribute) {
     return val;
 }
 
+
 char * read_string_attribute(hid_t group, const char * attribute){
     char * str = NULL;
-    herr_t err = -1;
+
     if (group < 0){
         warnx("Invalid group passed to %s:%d.", __FILE__, __LINE__);
         return NULL;
@@ -54,31 +55,50 @@ char * read_string_attribute(hid_t group, const char * attribute){
         return NULL;
     }
 
-    H5A_info_t info;
-    err = H5Aget_info(attr, &info);
-    if(err < 0){
-        warnx("Error reading info for attribute");
-        goto cleanup;
-    }
-
-
-    str = calloc(info.data_size, sizeof(char));
-    if(NULL == str){
-        warnx("Error allocating memory for attribute string");
-        goto cleanup;
-    }
 
     hid_t atype = H5Aget_type(attr);
-    hid_t atype_mem = H5Tget_native_type(atype, H5T_DIR_ASCEND);
-    err = H5Aread(attr, atype_mem, str);
-    if(err < 0){
-        warnx("Error reading attribute");
-        free(str);
-        str = NULL;
+    if(atype < 0){
+        warnx("Failed to get type of attribute '%s'.", attribute);
+        goto cleanup1;
     }
-    H5Tclose(atype_mem);
+    if(H5T_STRING != H5Tget_class (atype)){
+        warnx("Attribute '%s' is not a string.", attribute);
+        goto cleanup2;
+    }
 
-cleanup:
+    if(H5Tis_variable_str(atype) > 0){
+        hid_t space = H5Aget_space (attr);
+        hsize_t len = 0;
+        H5Sget_simple_extent_dims (space, &len, NULL);
+
+        str = calloc(len, sizeof(char));
+
+        hid_t memtype = H5Tcopy (H5T_C_S1);
+        H5Tset_size (memtype, H5T_VARIABLE);
+        herr_t err = H5Aread(attr, atype, &str);
+        if(err < 0){
+            warnx("Failed to copy attribute '%s'.", attribute);
+            free(str);
+            str = NULL;
+        }
+
+        H5Tclose(memtype);
+        H5Sclose(space);
+    } else {
+        // Fixed length
+        size_t asize = H5Tget_size(atype);
+        str = calloc(asize, sizeof(char));
+        herr_t err = H5Aread(attr, atype, str);
+        if(err < 0){
+            warnx("Failed to copy attribute '%s'.", attribute);
+            free(str);
+            str = NULL;
+        }
+    }
+
+cleanup2:
+    H5Tclose(atype);
+cleanup1:
     H5Aclose(attr);
 
     return str;

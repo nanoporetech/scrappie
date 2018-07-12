@@ -65,8 +65,6 @@ tail -n +2 strand_list.txt | sed 's:^:/path/to/reads/:' | xargs scrappie raw > b
 find path/to/reads/ -name \*.fast5 | parallel -P ${OMP_NUM_THREADS} scrappie raw --threads 1 > basecalls.fa
 #  Dump read meta-data to tsv
 scrappie raw --threads 1 path/to/reads/ | tee basecalls.fa | grep '^>' | cut -d ' ' -f 2- | python3 misc/json_to_tsv.py > meta_data.tsv
-#  Run with homopolymer path calculation and temperature changes
-scrappie raw --homopolymer mean --temperature1 1.12 --temperature2 1.6 reads/read1.fast5 > basecalls.fa
 ```
 
 ## Commandline options
@@ -123,9 +121,8 @@ Scrappie basecaller -- basecall from raw signal
       --licence, --license   Print licensing information
       --local=penalty        Penalty for local basecalling
   -m, --min_prob=probability Minimum bound on probability of match
-      --model=name           Raw model to use: "raw_r94", "rgr_r94",
-                             "rgrgr_r94", "rgrgr_r95", "rgrgr_r10",
-                             "rnnrf_r94", "rgrgr_resgru", "rgrgr_reslstm"
+      --model=name           Raw model to use: "raw_r94", "rgrgr_r94"
+                             "rgrgr_r941","rgrgr_r10", "rnnrf_r94"
   -o, --output=filename      Write to file rather than stdout
   -p, --prefix=string        Prefix to append to name of each read
   -s, --skip=penalty         Penalty for skipping a base
