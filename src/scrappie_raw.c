@@ -51,7 +51,7 @@ static struct argp_option options[] = {
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"slip", 1, 0, 0, "Use slipping"},
     {"no-slip", 2, 0, OPTION_ALIAS, "Disable slipping"},
-    {"model", 5, "name", 0, "Raw model to use: \"raw_r94\", \"rgrgr_r94\", \"rgrgr_r10\", \"rnnrf_r94\""},
+    {"model", 5, "name", 0, "Raw model to use: \"raw_r94\", \"rgrgr_r94\", \"rgrgr_r941\", \"rgrgr_r10\", \"rnnrf_r94\""},
     // Currently disabled
     //{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},

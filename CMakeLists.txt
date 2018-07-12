@@ -142,6 +142,7 @@ add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND
 add_test(test_events_call scrappie events ${USE_THREADS} ${READSDIR})
 add_test(test_raw_call scrappie raw --model raw_r94 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrgrgr_r94_call scrappie raw --model rgrgr_r94 ${USE_THREADS} ${READSDIR})
+add_test(test_rawrgrgr_r941_call scrappie raw --model rgrgr_r941 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrgrgr_r10_call scrappie raw --model rgrgr_r10 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrnnrf_r94_call scrappie raw --model rnnrf_r94 ${USE_THREADS} ${READSDIR})
 add_test(test_event_table scrappie event_table ${READSDIR}/${TESTREAD}.fast5)
