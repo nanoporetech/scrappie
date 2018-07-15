@@ -1256,8 +1256,6 @@ clean:
  *   @param local_pen Penalty for local mapping (stay in start or ends state)
  *   @param skip_pen  Penalty for skipping
  *   @param minscore Minimum possible emission for
- *
- *   @returns score
  **/
 float squiggle_match_forward(const raw_table signal, float rate, const_scrappie_matrix params,
                              float prob_back, float local_pen, float skip_pen, float minscore){

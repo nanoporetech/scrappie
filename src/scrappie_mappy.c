@@ -12,6 +12,8 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
+const size_t NCAT = 10;
+
 
 // Doesn't play nice with other headers, include last
 #include <argp.h>
@@ -31,6 +33,7 @@ static struct argp_option options[] = {
     {"prefix", 'p', "string", 0, "Prefix to append to name of read"},
     {"rate",'r', "float", 0, "Translocation rate of read relative to standard squiggle"},
     {"segmentation", 's', "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
+    {"speed", 2, "shape", 0, "Shape for speed distribution"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
@@ -47,6 +50,7 @@ struct arguments {
     float rate;
     FILE * output;
     char * prefix;
+    float shape;
     int trim_start;
     int trim_end;
     int varseg_chunk;
@@ -65,6 +69,7 @@ static struct arguments args = {
     .rate = 1.0f,
     .output = NULL,
     .prefix = "",
+    .shape = 0,
     .trim_start = 200,
     .trim_end = 10,
     .varseg_chunk = 100,
@@ -136,6 +141,12 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
         break;
+    case 2:
+        args.shape = atof(arg);
+        if(args.shape < 0.0){
+            errx(EXIT_FAILURE, "--speed should be positive");
+        }
+        break;
     case 10:
     case 11:
         ret = fputs(scrappie_licence_text, stdout);
@@ -204,29 +215,13 @@ int main_mappy(int argc, char *argv[]) {
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
 
-
     scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false, args.model_type);
     if(NULL != squiggle){
-        int * path = calloc(rt.n, sizeof(int32_t));
-        if(NULL != path){
-            float score = squiggle_match_viterbi(rt, args.rate, squiggle, args.backprob,
-                                                 args.localpen, args.skippen, args.minscore,
-                                                 path);
-            fprintf(args.output, "# %s to %s  (score = %f)\n", args.fast5_file, args.fasta_file, score);
-            fprintf(args.output, "idx\tsignal\tpos\tbase\tcurrent\tsd\tdwell\n");
-            for(size_t i=0 ; i < rt.n ; i++){
-                const int32_t pos = path[i];
-                if(pos >= 0){
-                    const size_t offset = pos * squiggle->stride;
-                    fprintf(args.output, "%zu\t%3.6f\t%d\t%c\t%3.6f\t%3.6f\t%3.6f\n", i, rt.raw[i], pos, seq.seq[pos],
-                            squiggle->data.f[offset + 0],
-                            expf(squiggle->data.f[offset + 1]),
-                            expf(-squiggle->data.f[offset + 2]));
-                } else {
-                    fprintf(args.output, "%zu\t%3.6f\t%d\tN\tnan\tnan\tnan\n", i, (i >= rt.start && i < rt.end) ? rt.raw[i] : NAN, pos);
-                }
-            }
-            free(path);
+        for(size_t i=0 ; i < NCAT ; i++){
+            float p = (i + 1.0) / (NCAT + 1);
+            float speed = powf(-log1p(-p), 1.0 / args.shape);
+            float score = squiggle_match_forward(rt, speed, squiggle, args.backprob, args.localpen, args.skippen, args.minscore);
+            printf("%zu\t%f\t%f\n", i, speed, score);
         }
         squiggle = free_scrappie_matrix(squiggle);
     }
