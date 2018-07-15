@@ -202,17 +202,17 @@ int main_mappy(int argc, char *argv[]) {
         if(NULL != path){
             float score = squiggle_match_viterbi(rt, squiggle, args.backprob, args.localpen, args.skippen, args.minscore, path);
             fprintf(args.output, "# %s to %s  (score = %f)\n", args.fast5_file, args.fasta_file, score);
-            fprintf(args.output, "sample\tpos\tbase\tcurrent\tsd\tdwell\n");
+            fprintf(args.output, "idx\tsignal\tpos\tbase\tcurrent\tsd\tdwell\n");
             for(size_t i=0 ; i < rt.n ; i++){
                 const int32_t pos = path[i];
                 if(pos >= 0){
                     const size_t offset = pos * squiggle->stride;
-                    fprintf(args.output, "%zu\t%d\t%c\t%3.6f\t%3.6f\t%3.6f\n", i, pos, seq.seq[pos],
+                    fprintf(args.output, "%zu\t%3.6f\t%d\t%c\t%3.6f\t%3.6f\t%3.6f\n", i, rt.raw[i], pos, seq.seq[pos],
                             squiggle->data.f[offset + 0],
                             expf(squiggle->data.f[offset + 1]),
                             expf(-squiggle->data.f[offset + 2]));
                 } else {
-                    fprintf(args.output, "%zu\t%d\tN\tNaN\tNaN\tNaN\n", i, pos);
+                    fprintf(args.output, "%zu\t%3.6f\t%d\tN\tnan\tnan\tnan\n", i, (i >= rt.start && i < rt.end) ? rt.raw[i] : NAN, pos);
                 }
             }
             free(path);
