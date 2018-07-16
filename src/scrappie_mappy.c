@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 700
 #include <math.h>
 #include <stdio.h>
 #include <strings.h>
@@ -12,7 +13,7 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-const size_t NCAT = 10;
+const size_t NCAT = 5;
 
 
 // Doesn't play nice with other headers, include last
@@ -217,12 +218,33 @@ int main_mappy(int argc, char *argv[]) {
 
     scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false, args.model_type);
     if(NULL != squiggle){
+        float score[NCAT];
+        float scale = sinf(M_PI / args.shape) / (M_PI / args.shape);
         for(size_t i=0 ; i < NCAT ; i++){
             float p = (i + 1.0) / (NCAT + 1);
-            float speed = powf(-log1p(-p), 1.0 / args.shape);
-            float score = squiggle_match_forward(rt, speed, squiggle, args.backprob, args.localpen, args.skippen, args.minscore);
-            printf("%zu\t%f\t%f\n", i, speed, score);
+            // Log-logistic distribution
+            float speed = scale * powf((1.0 - p) / p, -1.0 / args.shape);
+            score[i] = squiggle_match_forward(rt, speed, squiggle, args.backprob, args.localpen, args.skippen, args.minscore);
         }
+
+        float max_score = valmaxf(score, NCAT);
+        float Z = expf(score[0] - max_score);
+        for(size_t i=1 ; i < NCAT ; i++){
+            Z += expf(score[i] - max_score);
+        }
+
+        float post_mean = 0.0;
+        float post_meansqr = 0.0;
+        for(size_t i=0 ; i < NCAT ; i++){
+            float p = (i + 1.0) / (NCAT + 1);
+            float speed = scale * powf((1.0 - p) / p, -1.0 / args.shape);
+            float post = expf(score[i] - max_score) / Z;
+            printf("%zu\t%f\t%f\t%f\t%f\n", i, speed, 1.0 / NCAT, post, score[i]);
+            post_mean += post * speed;
+            post_meansqr += post * speed * speed;
+        }
+        printf("#  post mean = %f  post sd = %f\n", post_mean, sqrtf(post_meansqr - post_mean * post_mean));
+
         squiggle = free_scrappie_matrix(squiggle);
     }
 
