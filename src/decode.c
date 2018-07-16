@@ -1109,7 +1109,6 @@ float squiggle_match_viterbi(const raw_table signal, float rate, const_scrappie_
     for(size_t sample=0 ; sample < nsample ; sample++){
         const size_t fwd_prev_off = (sample % 2) * nstate;
         const size_t fwd_curr_off = ((sample + 1) % 2) * nstate;
-        const size_t tr_off = sample * nstate;
 
         for(size_t st=0 ; st < nfstate ; st++){
             //  Stay in start, end or normal position
