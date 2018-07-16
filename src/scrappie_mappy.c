@@ -221,7 +221,7 @@ int main_mappy(int argc, char *argv[]) {
         float score[NCAT];
         float scale = sinf(M_PI / args.shape) / (M_PI / args.shape);
         for(size_t i=0 ; i < NCAT ; i++){
-            float p = (i + 1.0) / (NCAT + 1);
+            float p = (2 * i + 1.0) / (2 * NCAT);
             // Log-logistic distribution
             float speed = scale * powf((1.0 - p) / p, -1.0 / args.shape);
             score[i] = squiggle_match_forward(rt, speed, squiggle, args.backprob, args.localpen, args.skippen, args.minscore);
@@ -236,7 +236,7 @@ int main_mappy(int argc, char *argv[]) {
         float post_mean = 0.0;
         float post_meansqr = 0.0;
         for(size_t i=0 ; i < NCAT ; i++){
-            float p = (i + 1.0) / (NCAT + 1);
+            float p = (2 * i + 1.0) / (2 * NCAT);
             float speed = scale * powf((1.0 - p) / p, -1.0 / args.shape);
             float post = expf(score[i] - max_score) / Z;
             printf("%zu\t%f\t%f\t%f\t%f\n", i, speed, 1.0 / NCAT, post, score[i]);
