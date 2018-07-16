@@ -546,7 +546,7 @@ def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0, local_pen=4.0,
             gradient = seq_len / nblock
             bands = 2 * bands * gradient
             hband = bands / 2
-            bands = [np.ascontiguousarray(np.array(x, dtype=np.int32)) for x in (
+            bands = [np.ascontiguousarray(np.array(x, dtype=np.uintp)) for x in (
                 [(max(0,       x * gradient - hband)) for x in range(nblock)],
                 [(min(seq_len, x * gradient + hband)) for x in range(nblock)]
             )]
@@ -557,7 +557,7 @@ def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0, local_pen=4.0,
             raise ValueError('`bands` should be `None`, an integer, or length 2.')
 
         p_poslow, p_poshigh = (
-            ffi.cast("int *", ffi.from_buffer(x)) for x in bands)
+            ffi.cast("size_t *", ffi.from_buffer(x)) for x in bands)
         if not lib.are_bounds_sane(p_poslow, p_poshigh, nblock, seq_len):
             raise ValueError('Supplied banding structure is not valid.')
 
