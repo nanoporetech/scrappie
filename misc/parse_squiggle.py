@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     with open(args.model, 'rb') as fh:
         network = pickle.load(fh)
-    assert network.major_version == 2
+    assert network.major_version >= 2
 
 
     sys.stdout.write("""#pragma once

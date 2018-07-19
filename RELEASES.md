@@ -31,6 +31,7 @@ The intention is that behaviour will be stable within a series, with only bug fi
 * 1.4 series: Basecalls for better consensus
     * *release-1.4.1*
         * Temperature corrected R10 model (rgrgr_r10)
+        * New R9.4 squiggle model with improved dwell correction
     * *release-1.4.0*
         * Direct correction for homopolymers
         * Temperature adjustment for improved accuracy (rgrgr_r94 and rgrgr_r941 models only).
