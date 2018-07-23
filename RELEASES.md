@@ -29,7 +29,9 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
 
 * 1.4 series: Basecalls for better consensus
-    * *release-1.4.1*
+    * *release-1.4.2*
+        * Promethion R9.4.1 model trained from natural Human DNA (including modified bases)
+    * *release-1.4.1*  (Bermuda edition)
         * Temperature corrected R10 model (rgrgr_r10)
         * New R9.4 squiggle model with improved dwell correction
         * Allow read translocation rate to vary in signal-to-squiggle mapping

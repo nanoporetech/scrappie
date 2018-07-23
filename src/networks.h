@@ -11,6 +11,7 @@ enum raw_model_type {
     SCRAPPIE_MODEL_RGRGR_R9_4_1,
     SCRAPPIE_MODEL_RGRGR_R10,
     SCRAPPIE_MODEL_RNNRF_R9_4,
+    SCRAPPIE_MODEL_HUMAN_R9_4_1,
     SCRAPPIE_MODEL_INVALID};
 
 enum squiggle_model_type {
@@ -41,6 +42,8 @@ scrappie_matrix nanonet_raw_posterior(const raw_table signal, float min_prob,
 scrappie_matrix nanonet_rgrgr_r94_posterior(const raw_table signal, float min_prob,
 		                            float tempW, float tempb, bool return_log);
 scrappie_matrix nanonet_rgrgr_r941_posterior(const raw_table signal, float min_prob,
+		                            float tempW, float tempb, bool return_log);
+scrappie_matrix nanonet_human_r941_posterior(const raw_table signal, float min_prob,
 		                            float tempW, float tempb, bool return_log);
 scrappie_matrix nanonet_rgrgr_r10_posterior(const raw_table signal, float min_prob,
 		                             float tempW, float tempb, bool return_log);

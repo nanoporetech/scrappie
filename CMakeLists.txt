@@ -145,6 +145,7 @@ add_test(test_rawrgrgr_r94_call scrappie raw --model rgrgr_r94 ${USE_THREADS} ${
 add_test(test_rawrgrgr_r941_call scrappie raw --model rgrgr_r941 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrgrgr_r10_call scrappie raw --model rgrgr_r10 ${USE_THREADS} ${READSDIR})
 add_test(test_rawrnnrf_r94_call scrappie raw --model rnnrf_r94 ${USE_THREADS} ${READSDIR})
+add_test(test_rawhuman_r941_call scrappie raw --model human_r941 ${USE_THREADS} ${READSDIR})
 add_test(test_event_table scrappie event_table ${READSDIR}/${TESTREAD}.fast5)
 add_test(test_mappy scrappie mappy ${READSDIR}/${TESTREAD}.fa ${READSDIR}/${TESTREAD}.fast5)
 add_test(test_seqmappy scrappie seqmappy ${READSDIR}/${TESTREAD}.fa ${READSDIR}/${TESTREAD}.fast5)
