@@ -1021,6 +1021,7 @@ static float LARGE_VAL = 1e30f;
  *   predicted squiggle may be mapped to.
  *
  *   @param signal `raw_table` containing signal to map
+ *   @param rate Rate of translocation relative to squiggle model
  *   @param params `scrappie_matrix` containing predicted squiggle
  *   @param prob_back Probability of a backward movement.
  *   @param local_pen Penalty for local mapping (stay in start or ends state)
@@ -1031,7 +1032,7 @@ static float LARGE_VAL = 1e30f;
  *
  *   @returns score
  **/
-float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
+float squiggle_match_viterbi(const raw_table signal, float rate, const_scrappie_matrix params,
                              float prob_back, float local_pen, float skip_pen, float minscore,
                              int32_t * path_padded){
     RETURN_NULL_IF(NULL == signal.raw, NAN);
@@ -1039,6 +1040,7 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
     RETURN_NULL_IF(NULL == path_padded, NAN);
     assert(signal.start < signal.end);
     assert(signal.end <= signal.n);
+    assert(speed > 0.0f);
     assert(prob_back >= 0.0f && prob_back <= 1.0f);
 
     float final_score = NAN;
@@ -1077,10 +1079,11 @@ float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix param
 
 
     {
+        const float lograte = logf(rate);
         float mean_move_pen = 0.0f;
         float mean_stay_pen = 0.0f;
         for(size_t pos=0 ; pos < npos ; pos++){
-            const float mp = (1.0f - prob_back) * plogisticf(params->data.f[pos * ldp + 2]);
+            const float mp = (1.0f - prob_back) * plogisticf(params->data.f[pos * ldp + 2] + lograte);
             move_pen[pos + 1] = logf(mp);
             stay_pen[pos + 1] = log1pf(-mp - prob_back);
             mean_move_pen += move_pen[pos + 1];

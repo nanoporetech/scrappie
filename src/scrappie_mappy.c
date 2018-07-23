@@ -29,6 +29,7 @@ static struct argp_option options[] = {
     {"minscore", 'm', "float", 0, "Minimum possible score for matching emission"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of read"},
+    {"rate",'r', "float", 0, "Translocation rate of read relative to standard squiggle"},
     {"segmentation", 's', "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"licence", 10, 0, 0, "Print licensing information"},
@@ -43,6 +44,7 @@ struct arguments {
     float skippen;
     float localpen;
     float minscore;
+    float rate;
     FILE * output;
     char * prefix;
     int trim_start;
@@ -60,6 +62,7 @@ static struct arguments args = {
     .skippen = 5000.0f,
     .localpen = 2.0f,
     .minscore = 5.0f,
+    .rate = 1.0f,
     .output = NULL,
     .prefix = "",
     .trim_start = 200,
@@ -105,6 +108,12 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         break;
     case 'p':
         args.prefix = arg;
+        break;
+    case 'r':
+        args.rate = atof(arg);
+        if(args.rate <= 0.0f){
+            errx(EXIT_FAILURE, "Rate must be positive, got %f", args.rate);
+        }
         break;
     case 's':
         args.varseg_chunk = atoi(strtok(arg, ":"));
@@ -200,7 +209,9 @@ int main_mappy(int argc, char *argv[]) {
     if(NULL != squiggle){
         int * path = calloc(rt.n, sizeof(int32_t));
         if(NULL != path){
-            float score = squiggle_match_viterbi(rt, squiggle, args.backprob, args.localpen, args.skippen, args.minscore, path);
+            float score = squiggle_match_viterbi(rt, args.rate, squiggle, args.backprob,
+                                                 args.localpen, args.skippen, args.minscore,
+                                                 path);
             fprintf(args.output, "# %s to %s  (score = %f)\n", args.fast5_file, args.fasta_file, score);
             fprintf(args.output, "idx\tsignal\tpos\tbase\tcurrent\tsd\tdwell\n");
             for(size_t i=0 ; i < rt.n ; i++){

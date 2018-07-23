@@ -32,6 +32,7 @@ The intention is that behaviour will be stable within a series, with only bug fi
     * *release-1.4.1*
         * Temperature corrected R10 model (rgrgr_r10)
         * New R9.4 squiggle model with improved dwell correction
+        * Allow read translocation to vary in signal-to-squiggle mapping
     * *release-1.4.0*
         * Direct correction for homopolymers
         * Temperature adjustment for improved accuracy (rgrgr_r94 and rgrgr_r941 models only).
