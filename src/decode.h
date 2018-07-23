@@ -34,6 +34,9 @@ float squiggle_match_viterbi(const raw_table signal, float rate, const_scrappie_
 float squiggle_match_forward(const raw_table signal, const_scrappie_matrix params,
                              float prob_back, float local_pen, float skip_pen, float minscore,
                              float speed);
+float squiggle_match_ncat_forward(const raw_table signal, const_scrappie_matrix params,
+                                  float local_pen, float skip_pen, float minscore,
+                                  const float * speed, size_t ncat, float pchange);
 
 float squiggle_match_forward(const raw_table signal, float rate, const_scrappie_matrix params,
                              float prob_back, float local_pen, float skip_pen, float minscore);

@@ -13,7 +13,6 @@
 #include "scrappie_stdlib.h"
 #include "util.h"
 
-const size_t NCAT = 5;
 
 
 // Doesn't play nice with other headers, include last
@@ -34,7 +33,10 @@ static struct argp_option options[] = {
     {"prefix", 'p', "string", 0, "Prefix to append to name of read"},
     {"rate",'r', "float", 0, "Translocation rate of read relative to standard squiggle"},
     {"segmentation", 's', "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
-    {"speed", 2, "shape", 0, "Shape for speed distribution"},
+    {"speed_shape", 2, "shape", 0, "Shape for speed distribution"},
+    {"speed_mean", 3, "mean", 0, "Mean for speed distribution"},
+    {"speed_ncat", 4, "ncategories", 0, "Number of categories for speed discretisation"},
+    {"speed_pchange", 5, "prob", 0, "Probability of changing category"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
@@ -51,7 +53,10 @@ struct arguments {
     float rate;
     FILE * output;
     char * prefix;
-    float shape;
+    float speed_pchange;
+    float speed_mean;
+    int speed_ncat;
+    float speed_shape;
     int trim_start;
     int trim_end;
     int varseg_chunk;
@@ -70,7 +75,10 @@ static struct arguments args = {
     .rate = 1.0f,
     .output = NULL,
     .prefix = "",
-    .shape = 0,
+    .speed_pchange = 0.f,
+    .speed_ncat = 5,
+    .speed_mean = 1.f,
+    .speed_shape = 5.f,
     .trim_start = 200,
     .trim_end = 10,
     .varseg_chunk = 100,
@@ -143,9 +151,27 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state) {
         assert(args.trim_end >= 0);
         break;
     case 2:
-        args.shape = atof(arg);
-        if(args.shape < 0.0){
-            errx(EXIT_FAILURE, "--speed should be positive");
+        args.speed_shape = atof(arg);
+        if(args.speed_shape <= 0.0){
+            errx(EXIT_FAILURE, "--speed_shape should be positive");
+        }
+        break;
+    case 3:
+        args.speed_mean = atof(arg);
+        if(args.speed_mean <= 0.0){
+            errx(EXIT_FAILURE, "--speed_mean should be positive");
+        }
+        break;
+    case 4:
+        args.speed_ncat = atoi(arg);
+        if(args.speed_ncat <= 0){
+            errx(EXIT_FAILURE, "--speed_ncat should be positive");
+        }
+        break;
+    case 5:
+        args.speed_pchange = atof(arg);
+        if(args.speed_pchange < 0.0 || args.speed_pchange > 1.0){
+            errx(EXIT_FAILURE, "--speed_pchange should be probability");
         }
         break;
     case 10:
@@ -218,32 +244,18 @@ int main_mappy(int argc, char *argv[]) {
 
     scrappie_matrix squiggle = sequence_to_squiggle(seq.seq, seq.n, false, args.model_type);
     if(NULL != squiggle){
-        float score[NCAT];
-        float scale = sinf(M_PI / args.shape) / (M_PI / args.shape);
-        for(size_t i=0 ; i < NCAT ; i++){
-            float p = (2 * i + 1.0) / (2 * NCAT);
+        float speed[args.speed_ncat];
+        float scale = args.speed_mean * sinf(M_PI / args.speed_shape) / (M_PI / args.speed_shape);
+
+        for(size_t i=0 ; i < args.speed_ncat ; i++){
+            float p = (2 * i + 1.0) / (2 * args.speed_ncat);
             // Log-logistic distribution
-            float speed = scale * powf((1.0 - p) / p, -1.0 / args.shape);
-            score[i] = squiggle_match_forward(rt, speed, squiggle, args.backprob, args.localpen, args.skippen, args.minscore);
+            speed[i] = scale * powf((1.0 - p) / p, -1.0 / args.speed_shape);
+            printf("speed[%d] = %f\n", i, speed[i]);
         }
-
-        float max_score = valmaxf(score, NCAT);
-        float Z = expf(score[0] - max_score);
-        for(size_t i=1 ; i < NCAT ; i++){
-            Z += expf(score[i] - max_score);
-        }
-
-        float post_mean = 0.0;
-        float post_meansqr = 0.0;
-        for(size_t i=0 ; i < NCAT ; i++){
-            float p = (2 * i + 1.0) / (2 * NCAT);
-            float speed = scale * powf((1.0 - p) / p, -1.0 / args.shape);
-            float post = expf(score[i] - max_score) / Z;
-            printf("%zu\t%f\t%f\t%f\t%f\n", i, speed, 1.0 / NCAT, post, score[i]);
-            post_mean += post * speed;
-            post_meansqr += post * speed * speed;
-        }
-        printf("#  post mean = %f  post sd = %f\n", post_mean, sqrtf(post_meansqr - post_mean * post_mean));
+        float score = squiggle_match_ncat_forward(rt, squiggle, args.localpen, args.skippen, args.minscore,
+                                                  speed, args.speed_ncat, args.speed_pchange);
+        printf("score = %f\n", score);
 
         squiggle = free_scrappie_matrix(squiggle);
     }
