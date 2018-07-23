@@ -1109,6 +1109,7 @@ float squiggle_match_viterbi(const raw_table signal, float rate, const_scrappie_
     for(size_t sample=0 ; sample < nsample ; sample++){
         const size_t fwd_prev_off = (sample % 2) * nstate;
         const size_t fwd_curr_off = ((sample + 1) % 2) * nstate;
+        const size_t tr_off = sample * nstate;
 
         for(size_t st=0 ; st < nfstate ; st++){
             //  Stay in start, end or normal position
@@ -1449,8 +1450,9 @@ float squiggle_match_ncat_forward(const raw_table signal, const_scrappie_matrix 
         float mean_move_pen = 0.0f;
         float mean_stay_pen = 0.0f;
         const size_t catoffset = cat * nfstate;
+        const float logspeed = logf(speed[cat]);
         for(size_t pos=0 ; pos < npos ; pos++){
-            const float mp = plogisticf(params->data.f[pos * ldp + 2] / speed[cat]);
+            const float mp = plogisticf(params->data.f[pos * ldp + 2] + logspeed);
             move_pen[catoffset + pos + 1] = logf(mp);
             stay_pen[catoffset + pos + 1] = log1pf(-mp);
             mean_move_pen += move_pen[catoffset + pos + 1];
