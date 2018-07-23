@@ -28,10 +28,12 @@ float decode_crf(const_scrappie_matrix trans, int * path);
 scrappie_matrix posterior_crf(const_scrappie_matrix trans);
 char * crfpath_to_basecall(int const * path, size_t npos, int * pos);
 
-float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
+float squiggle_match_viterbi(const raw_table signal, float rate, const_scrappie_matrix params,
                              float prob_back, float local_pen, float skip_pen, float minscore,
                              int32_t * path_padded);
 
+float squiggle_match_forward(const raw_table signal, float rate, const_scrappie_matrix params,
+                             float prob_back, float local_pen, float skip_pen, float minscore);
 
 
 bool are_bounds_sane(size_t const * low, size_t const * high, size_t nblock, size_t seqlen);
