@@ -1409,7 +1409,7 @@ clean:
  *   @param local_pen Penalty for local mapping (stay in start or ends state)
  *   @param skip_pen  Penalty for skipping
  *   @param minscore Minimum possible emission for
- *   @param speed scaling factor for reasd speed
+ *   @param speed Scaling factor for read translocation rate
  *
  *   @returns score
  **/
@@ -1574,7 +1574,7 @@ clean:
  *   @param local_pen Penalty for local mapping (stay in start or ends state)
  *   @param skip_pen  Penalty for skipping
  *   @param minscore Minimum possible emission for
- *   @param speed scaling factor for reasd speed
+ *   @param speed Array of scaling factors for read translocation rate
  *
  *   @returns score
  **/
