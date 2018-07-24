@@ -1425,7 +1425,7 @@ float squiggle_match_ncat_forward(const raw_table signal, const_scrappie_matrix 
     for(size_t i=0 ; i < ncat ; i++){
         assert(speed[i] > 0.0);
     }
-    assert(pchange > 0.0 &&  pchange < 1.0);
+    assert(pchange >= 0.0 &&  pchange <= 1.0);
 
     float final_score = NAN;
 
