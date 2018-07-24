@@ -251,7 +251,7 @@ int main_mappy(int argc, char *argv[]) {
             float p = (2 * i + 1.0) / (2 * args.speed_ncat);
             // Log-logistic distribution
             speed[i] = scale * powf((1.0 - p) / p, -1.0 / args.speed_shape);
-            printf("speed[%d] = %f\n", i, speed[i]);
+            printf("speed[%zu] = %f\n", i, speed[i]);
         }
         float score = squiggle_match_ncat_forward(rt, squiggle, args.localpen, args.skippen, args.minscore,
                                                   speed, args.speed_ncat, args.speed_pchange);
