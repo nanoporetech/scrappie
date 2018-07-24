@@ -1419,9 +1419,12 @@ float squiggle_match_ncat_forward(const raw_table signal, const_scrappie_matrix 
                                   const float * speed, size_t ncat, float pchange){
     RETURN_NULL_IF(NULL == signal.raw, NAN);
     RETURN_NULL_IF(NULL == params, NAN);
+    RETURN_NULL_IF(NULL == speed, NAN);
     assert(signal.start < signal.end);
     assert(signal.end <= signal.n);
-    assert(speed > 0.0);
+    for(size_t i=0 ; i < ncat ; i++){
+        assert(speed[i] > 0.0);
+    }
     assert(pchange > 0.0 &&  pchange < 1.0);
 
     float final_score = NAN;
@@ -1564,170 +1567,6 @@ clean:
     return final_score;
 }
 
-
-/**  Score a signal against a predicted squiggle using variant of dynamic time-warping
- *
- *   Uses a local mapping so not all of signal may be mapped and not every position of the
- *   predicted squiggle may be mapped to.
- *
- *   @param signal `raw_table` containing signal to map
- *   @param params `scrappie_matrix` containing predicted squiggle
- *   @param prob_back Probability of a backward movement.
- *   @param local_pen Penalty for local mapping (stay in start or ends state)
- *   @param skip_pen  Penalty for skipping
- *   @param minscore Minimum possible emission for
- *   @param speed Array of scaling factors for read translocation rate
- *
- *   @returns score
- **/
-float squiggle_match_ncat_backward(const raw_table signal, const_scrappie_matrix params,
-                                   float local_pen, float skip_pen, float minscore,
-                                   const float * speed, size_t ncat, float pchange){
-    RETURN_NULL_IF(NULL == signal.raw, NAN);
-    RETURN_NULL_IF(NULL == params, NAN);
-    assert(signal.start < signal.end);
-    assert(signal.end <= signal.n);
-    assert(speed > 0.0);
-    assert(pchange > 0.0 &&  pchange < 1.0);
-
-    float final_score = NAN;
-
-    const float * rawsig = signal.raw + signal.start;
-    const size_t nsample = signal.end - signal.start;
-    const size_t ldp = params->stride;
-    const size_t npos = params->nc;
-    const size_t nfstate = npos + 2;
-
-    float * move_pen = calloc(ncat * nfstate, sizeof(float));
-    float * fwd = calloc(2 * nfstate * ncat, sizeof(float));
-    float * scale = calloc(npos, sizeof(float));
-    float * stay_pen = calloc(ncat * nfstate, sizeof(float));
-    if(NULL == move_pen || NULL == fwd || NULL == scale ||
-       NULL == stay_pen){
-        goto clean;
-    }
-
-    for(size_t pos=0 ; pos < npos ; pos++){
-        //  Create array of scales
-        scale[pos] = expf(params->data.f[pos * ldp + 1]);
-    }
-
-    for(size_t cat=0 ; cat < ncat ; cat++){
-        float mean_move_pen = 0.0f;
-        float mean_stay_pen = 0.0f;
-        const size_t catoffset = cat * nfstate;
-        for(size_t pos=0 ; pos < npos ; pos++){
-            const float mp = plogisticf(params->data.f[pos * ldp + 2] / speed[cat]);
-            move_pen[catoffset + pos + 1] = logf(mp);
-            stay_pen[catoffset + pos + 1] = log1pf(-mp);
-            mean_move_pen += move_pen[catoffset + pos + 1];
-            mean_stay_pen += stay_pen[catoffset + pos + 1];
-        }
-
-        mean_move_pen /= npos;
-        mean_stay_pen /= npos;
-
-        move_pen[catoffset + 0] = mean_move_pen;
-        move_pen[catoffset + nfstate - 1] = mean_move_pen;
-        stay_pen[catoffset + 0] = mean_stay_pen;
-        stay_pen[catoffset + nfstate - 1] = mean_stay_pen;
-    }
-
-    for(size_t cat=0 ; cat < ncat ; cat++){
-        const size_t catoffset = cat * nfstate;
-        for(size_t st=0 ; st < nfstate ; st++){
-            // States are start .. positions .. end
-            fwd[catoffset + st] = -LARGE_VAL;
-        }
-        // Must begin in start state (uniform prior over categories
-        fwd[catoffset + 0] = -log(ncat);
-    }
-
-
-    for(size_t sample=0 ; sample < nsample ; sample++){
-        const size_t fwd_prev_off = (sample % 2) * nfstate * ncat;
-        const size_t fwd_curr_off = ((sample + 1) % 2) * nfstate * ncat;
-
-#pragma omp parallel for
-        for(size_t cat=0 ; cat < ncat ; cat++){
-            const size_t catoffset = cat * nfstate;
-            for(size_t st=0 ; st < nfstate ; st++){
-                //  Stay in start, end or normal position
-                fwd[fwd_curr_off + catoffset + st] = fwd[fwd_prev_off + catoffset + st] + stay_pen[catoffset + st];
-            }
-
-            for(size_t st=1 ; st < nfstate ; st++){
-                //  Move to next position
-                const float step_score = fwd[fwd_prev_off + catoffset + st - 1] + move_pen[catoffset + st - 1];
-                fwd[fwd_curr_off + catoffset + st] = logsumexpf(fwd[fwd_curr_off + catoffset + st], step_score);
-            }
-            for(size_t st=2 ; st < nfstate ; st++){
-                //  Skip to next position
-                const float skip_score = fwd[fwd_prev_off + catoffset + st - 2] + move_pen[catoffset + st - 2] - skip_pen;
-                fwd[fwd_curr_off + catoffset + st] = logsumexpf(fwd[fwd_curr_off + catoffset + st], skip_score);
-            }
-            for(size_t destpos=1 ; destpos < npos ; destpos++){
-                const size_t destst = destpos + 1;
-                //  Move from start into sequence
-                const float score = fwd[fwd_prev_off + catoffset] + move_pen[catoffset + 0] - local_pen * destpos;
-                fwd[fwd_curr_off + catoffset + destst] = logsumexpf(fwd[fwd_curr_off + catoffset + destst], score);
-            }
-            for(size_t origpos=0 ; origpos < (npos - 1) ; origpos++){
-                const size_t destst = nfstate - 1;
-                const size_t origst = origpos + 1;
-                const size_t deltapos = npos - 1 - origpos;
-                //  Move from sequence into end
-                const float score = fwd[fwd_prev_off + catoffset + origst] + move_pen[catoffset + origst] - local_pen * deltapos;
-                fwd[fwd_curr_off + catoffset + destst] = logsumexpf(fwd[fwd_curr_off + catoffset + destst], score);
-            }
-
-            for(size_t pos=0 ; pos < npos ; pos++){
-                //  Add on score for samples
-                const float location = params->data.f[pos * ldp + 0];
-                const float logscale = params->data.f[pos * ldp + 1];
-                const float logscore = fmaxf(-minscore, loglaplace(rawsig[sample], location, scale[pos], logscale));
-                //  State to add to is offset by one because of start state
-                fwd[fwd_curr_off + catoffset + pos + 1] += logscore;
-            }
-
-            // Score for start and end states
-            fwd[fwd_curr_off + catoffset + 0] -= local_pen;
-            fwd[fwd_curr_off + catoffset + nfstate - 1] -= local_pen;
-        }
-
-        // Switch categories
-        if(0.0 != pchange){
-            const float catchange_pen = logf(pchange / ncat);
-            const float catstay_pen = log1pf(-pchange);
-            for(size_t st=0 ; st < nfstate ; st++){
-                float sum = fwd[fwd_curr_off + st];
-                for(size_t cat=1 ; cat < ncat ; cat++){
-                    sum = logsumexpf(sum, fwd[fwd_curr_off + cat * nfstate + st]);
-                }
-                for(size_t cat=1 ; cat < ncat ; cat++){
-                    fwd[fwd_curr_off + cat * nfstate + st] = logsumexpf(sum + catchange_pen, catstay_pen + fwd[fwd_curr_off + cat * nfstate + st]);
-                }
-            }
-        }
-    }
-
-    //  Score of best path and final states.  Could be either last position or end state
-    const size_t fwd_offset = (nsample % 2) * nfstate;
-    final_score = logsumexpf(fwd[fwd_offset + nfstate - 2], fwd[fwd_offset + nfstate - 1]);
-    for(size_t cat=1 ; cat < ncat ; cat++){
-        const size_t catoffset = cat * nfstate;
-        float cat_score = logsumexpf(fwd[fwd_offset + catoffset + nfstate - 2], fwd[fwd_offset + catoffset + nfstate - 1]);
-        final_score = logsumexpf(final_score, cat_score);
-    }
-
-clean:
-    free(stay_pen);
-    free(scale);
-    free(fwd);
-    free(move_pen);
-
-    return final_score;
-}
 
 /**  Viterbi score of sequence
  *
