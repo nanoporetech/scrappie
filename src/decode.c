@@ -1532,7 +1532,7 @@ float squiggle_match_ncat_forward(const raw_table signal, const_scrappie_matrix 
 
         // Switch categories
         if(0.0 != pchange){
-            const float catchange_pen = logf(pchange / ncat);
+            const float catchange_pen = logf(pchange / (ncat - 1));
             const float catstay_pen = log1pf(-pchange);
             for(size_t st=0 ; st < nfstate ; st++){
                 float sum = fwd[fwd_curr_off + st];
