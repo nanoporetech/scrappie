@@ -59,7 +59,7 @@ static struct argp_option options[] = {
     {"hdf5-compression", 12, "level", 0, "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
-    {"homopolymer", 'H',"homopolymer", 0, "Homopolymer run calc. to use: choose from nochange (the default) or mean. Not implemented for CRF."},
+    {"homopolymer", 'H',"homopolymer", 0, "Homopolymer run calc. to use: choose from \"nochange\" or \"mean\" (default). Not implemented for CRF."},
     {"uuid", 14, 0, 0, "Output UUID"},
     {"no-uuid", 15, 0, OPTION_ALIAS, "Output read file"},
 #if defined(_OPENMP)

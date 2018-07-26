@@ -30,9 +30,12 @@ scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_unit
 scrappie_matrix squiggle_r10(int const * sequence, size_t n, bool transform_units);
 
 // Scrappy Mappy
-float squiggle_match_viterbi(const raw_table signal, const_scrappie_matrix params,
+float squiggle_match_viterbi(const raw_table signal, float rate, const_scrappie_matrix params,
                              float prob_back, float local_pen, float skip_pen,
                              float minscore, int32_t * path_padded);
+float squiggle_match_forward(const raw_table signal, float rate, const_scrappie_matrix params,
+                             float prob_back, float local_pen, float skip_pen,
+                             float minscore);
 
 // Block-based mapping
 bool are_bounds_sane(size_t const * low, size_t const * high,
