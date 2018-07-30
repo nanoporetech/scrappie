@@ -1,22 +1,13 @@
 #!/bin/bash
 set -e -x
 
-# How have we been run?
-if [ -f python/setup.py ]; then
-    # direct invocation
-    HOMEPATH=$(pwd)
-else
-    # docker run ...
-    HOMEPATH="/io"
-fi
-
 BUILD_PREFIX="/usr/local"
 OPENBLAS_VERS="0.2.18"
-OPENBLAS_TAR="/${HOMEPATH}/python/openblas_${OPENBLAS_VERS}.tgz"
+OPENBLAS_TAR="openblas_${OPENBLAS_VERS}.tgz"
 OPENBLAS_PATH="/usr/local/lib/libopenblasp-r${OPENBLAS_VERS}.so"
 PACKAGE_NAME='scrappie'
 # this is picked up by build.py
-export SCRAPPIESRC=${HOMEPATH}/src
+export SCRAPPIESRC=$(pwd)/src  # pip wheel changes cwd
 export MANYLINUX=1
 
 function build_openblas {
@@ -42,8 +33,6 @@ function install_openblas {
     tar zcf ${OPENBLAS_TAR} /usr/local/lib /usr/local/include ${license_path}
 }
 
-cd ${HOMEPATH}
-
 # OpenBLAS possibilities:
 #   i) check /usr/local/lib for openblas -> nothing to do
 #  ii) look for a tar (containing compiled blas) -> unpack
@@ -59,15 +48,16 @@ else
     install_openblas
 fi
 
-cd ${HOMEPATH}/python
+# don't do 33 since numpy doesn't like it
+PYTHONS=$(ls -1 /opt/python/ | grep -v 33 | xargs -I {} echo /opt/python/{}/bin)
 
+cd python
 
 # Compile wheels
-for minor in 4 5 6; do
-    PYBIN="/opt/python/cp3${minor}-cp3${minor}m/bin"
+for PYBIN in ${PYTHONS}; do
+    echo $PYBIN
     "${PYBIN}/pip" wheel . -w wheelhouse/
 done
-
 
 # Bundle external shared libraries into the wheels
 for whl in "wheelhouse/${PACKAGE_NAME}"*.whl; do
@@ -75,10 +65,10 @@ for whl in "wheelhouse/${PACKAGE_NAME}"*.whl; do
     rm "${whl}"
 done
 
-
 # Install packages and "test"
-for minor in 4 5 6; do
-    PYBIN="/opt/python/cp3${minor}-cp3${minor}m/bin"
+for PYBIN in ${PYTHONS}; do
     "${PYBIN}/pip" install "${PACKAGE_NAME}" --no-index -f wheelhouse
     "${PYBIN}/python" -c "from scrappy import *; import numpy as np; print(basecall_raw(np.random.normal(10,4,1000)))" 
 done
+
+

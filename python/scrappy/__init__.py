@@ -1,12 +1,12 @@
 __version__ = '1.4.0'
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import itertools
 import functools
-import h5py
-import numpy as np
 import os
+import sys
+
+import numpy as np
 
 from libscrappy import ffi, lib
 
@@ -577,27 +577,16 @@ def map_post_to_sequence(post, sequence, stay_pen=0, skip_pen=0, local_pen=4.0,
     return score, path_data
 
 
-def _raw_gen(filelist):
-    for fname in filelist:
-        with h5py.File(fname, 'r') as h:
-            pass
-        try:
-            data = None
-            with h5py.File(fname, 'r') as h:
-                base = 'Raw/Reads'
-                read_name = list(h[base].keys())[0]
-                data = h['{}/{}/Signal'.format(base, read_name)][()].astype(np.float32)
-                meta = h['/UniqueGlobalKey/channel_id'].attrs
-                raw_unit = meta['range'] / meta['digitisation']
-                data = (data + meta['offset']) * raw_unit
-        except:
-            raise RuntimeError('Failed to read signal data from {}.'.format(fname))
-        else:
-            yield os.path.basename(fname), data
-
-
 def _basecall():
     # Entry point for testing/demonstration.
+    try:
+        import h5py
+    except ImportError:
+        raise ImportError("The optional requirement 'h5py' is required for this program.")
+
+    # this is only here because the main library doesn't need it
+    from multiprocessing.pool import ThreadPool
+
     parser = argparse.ArgumentParser(
         description="Basecall a single .fast5.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -608,23 +597,43 @@ def _basecall():
         help='Choice of model.')
     parser.add_argument('--threads', default=None, type=int,
         help='Number of threads to use.')
-    parser.add_argument('--process', action='store_true',
-        help='Use ProcesPool rather than ThreadPool.')
-
+    
     args = parser.parse_args()
 
+
     worker = functools.partial(basecall_raw, model=args.model)
+    def _basecall_worker(fname):
+        try:
+            data = None
+            with h5py.File(fname, 'r') as h:
+                base = 'Raw/Reads'
+                read_name = list(h[base].keys())[0]
+                data = h['{}/{}/Signal'.format(base, read_name)][()].astype(np.float32)
+                meta = h['/UniqueGlobalKey/channel_id'].attrs
+                raw_unit = meta['range'] / meta['digitisation']
+                data = (data + meta['offset']) * raw_unit
+        except:
+            sys.stderr.write('Failed to read signal data from {}.\n'.format(fname))
+        else:
+            try:
+                results = worker(data)
+            except:
+                sys.stderr.write('Failed to basecall {}.\n'.format(fname))
+            else:
+                return os.path.basename(fname), results
+
+
+    def _print_fasta(fname, results):
+        seq, score, _, start, end, _ = results
+        sys.stdout.write(">{} {} {}-{}\n{}\n".format(fname, score, start, end, seq))
+
+
     if args.threads is None:
-        for fname, data in _raw_gen(args.fast5):
-            seq, score, _, start, end, _ = worker(data)
-            print(">{} {} {}-{}\n{}".format(fname, score, start, end, seq))
+        for fname in args.fast5:
+            _print_fasta(*_basecall_worker(fname))
     else:
-        iter0, iter1 = itertools.tee(_raw_gen(args.fast5))
-        Executor = ProcessPoolExecutor if args.process else ThreadPoolExecutor
-        with Executor(max_workers=args.threads) as executor:
-            datas = (x[1] for x in iter0)
-            fnames = (x[0] for x in iter1)
-            results = executor.map(worker, datas)
-            for fname, (seq, score, _, start, end, _) in zip(fnames, results):
-                print(">{} {} {}-{}\n{}".format(fname, score, start, end, seq))
+        pool = ThreadPool(args.threads)
+        for fname, results in pool.imap(_basecall_worker, args.fast5):
+            _print_fasta(fname, results)
+        pool.close()
 

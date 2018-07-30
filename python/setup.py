@@ -81,7 +81,7 @@ setup(
     description=__description__,
     long_description=__long_description__,
     long_description_content_type=__long_description_content_type__,
-    python_requires='~=3.4',
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     license='MPL 2.0',
 
     dependency_links=[],

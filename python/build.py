@@ -13,6 +13,10 @@ else:
 
 if 'SCRAPPIESRC' in os.environ:
     src_dir = os.environ['SCRAPPIESRC']
+    if not os.path.isfile(os.path.join(src_dir, 'decode.h')):
+        raise IOError(
+            'Scrappie sources not found at supplied location: {}'.format(src_dir)
+        )
 else:
     if os.path.isfile(os.path.join('..', 'src', 'decode.h')):
         # assume the git repo
