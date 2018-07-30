@@ -12,8 +12,8 @@ __description__ = 'Python bindings to scrappie basecaller'
 # Use readme as long description and say its github-flavour markdown
 from os import path
 this_directory = path.abspath(path.dirname(__file__))
-with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
-    __long_description__ = f.read()
+with open(path.join(this_directory, 'README.md'), 'rb') as f:
+    __long_description__ = f.read().decode('utf-8')
 __long_description_content_type__ = 'text/markdown'
 
 
