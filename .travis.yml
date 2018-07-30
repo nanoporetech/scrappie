@@ -19,7 +19,7 @@ compiler:
 
 script:
     - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j 4 && make test && cd .. ; fi
-    - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then docker run --rm -v `pwd`:/io ontresearch/manylinux1_x86_64_openblas /io/python/build-wheels.sh ; fi
+    - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then docker run --rm -v `pwd`:/io  -w="/io" ontresearch/manylinux1_x86_64_openblas python/build-wheels.sh ; fi
 
 env:
   global:
