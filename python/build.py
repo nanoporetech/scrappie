@@ -3,22 +3,25 @@ import os
 from cffi import FFI
 
 if 'MANYLINUX' in os.environ:
-    src_dir = os.path.join('/io', 'src')
     # build-wheels.sh determines these
     libraries=['openblas']
     library_dirs=['/usr/local/lib/']
 else:
-    if os.path.isfile(os.path.join('..', 'src','decode.h')):
+    # this might want to be cblas on some systems
+    libraries=['blas']
+    library_dirs=[]
+
+if 'SCRAPPIESRC' in os.environ:
+    src_dir = os.environ['SCRAPPIESRC']
+else:
+    if os.path.isfile(os.path.join('..', 'src', 'decode.h')):
         # assume the git repo
         src_dir = os.path.join('..', 'src')
-    elif os.path.isfile(os.path.join('src','decode.h')):
+    elif os.path.isfile(os.path.join('src', 'decode.h')):
         # else we're from an sdist
         src_dir = 'src'
     else:
         raise IOError('Cannot find scrappie C sources.')
-    # this might want to be cblas on some systems
-    libraries=['blas']
-    library_dirs=[]
 
 ffibuilder = FFI()
 ffibuilder.set_source("libscrappy",

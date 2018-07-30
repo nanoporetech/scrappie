@@ -36,9 +36,9 @@ building:
 
 build-manylinux:
     stage: build
-    image: docker-registry.oxfordnanolabs.local:5000/ont-base-docker
+    image: ontresearch/manylinux1_x86_64_openblas
     script:
-        - docker run --rm -v `pwd`:/io ontresearch/manylinux1_x86_64_openblas /io/python/build-wheels.sh
+        - python/build-wheels.sh
     artifacts:
         paths:
           - python/wheelhouse/scrappie*.whl

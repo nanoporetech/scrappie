@@ -1,12 +1,23 @@
 #!/bin/bash
 set -e -x
-export MANYLINUX=1
+
+# How have we been run?
+if [ -f python/setup.py ]; then
+    # direct invocation
+    HOMEPATH=$(pwd)
+else
+    # docker run ...
+    HOMEPATH="/io"
+fi
 
 BUILD_PREFIX="/usr/local"
 OPENBLAS_VERS="0.2.18"
-OPENBLAS_TAR="/io/python/openblas_${OPENBLAS_VERS}.tgz"
+OPENBLAS_TAR="/${HOMEPATH}/python/openblas_${OPENBLAS_VERS}.tgz"
 OPENBLAS_PATH="/usr/local/lib/libopenblasp-r${OPENBLAS_VERS}.so"
 PACKAGE_NAME='scrappie'
+# this is picked up by build.py
+export SCRAPPIESRC=${HOMEPATH}/src
+export MANYLINUX=1
 
 function build_openblas {
     # this takes a long time so record success in openblas-built
@@ -31,7 +42,7 @@ function install_openblas {
     tar zcf ${OPENBLAS_TAR} /usr/local/lib /usr/local/include ${license_path}
 }
 
-cd /io
+cd ${HOMEPATH}
 
 # OpenBLAS possibilities:
 #   i) check /usr/local/lib for openblas -> nothing to do
@@ -48,7 +59,8 @@ else
     install_openblas
 fi
 
-cd /io/python
+cd ${HOMEPATH}/python
+
 
 # Compile wheels
 for minor in 4 5 6; do
