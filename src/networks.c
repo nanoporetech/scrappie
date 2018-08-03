@@ -30,7 +30,7 @@ enum raw_model_type get_raw_model(const char * modelstr){
     if(0 == strcmp(modelstr, "rnnrf_r94")){
         return SCRAPPIE_MODEL_RNNRF_R9_4;
     }
-    if(0 == strcmp(modelstr, "human_r941")){
+    if(0 == strcmp(modelstr, "native_human_prom_r941")){
         return SCRAPPIE_MODEL_HUMAN_R9_4_1;
     }
     return SCRAPPIE_MODEL_INVALID;
@@ -59,7 +59,7 @@ const char * raw_model_string(const enum raw_model_type model){
     case SCRAPPIE_MODEL_RNNRF_R9_4:
         return "rnnrf_r94";
     case SCRAPPIE_MODEL_HUMAN_R9_4_1:
-        return "human_r941";
+        return "native_human_prom_r941";
     case SCRAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid scrappie model %s:%d", __FILE__, __LINE__);
     default:
