@@ -9,9 +9,11 @@ import sys
 model_file = sys.argv[1]
 trim_trailing_zeros = re.compile('0+p')
 
+
 def small_hex(f):
     hf = float(f).hex()
     return trim_trailing_zeros.sub('p', hf)
+
 
 def process_column(v, pad):
     """ process and pad """
@@ -34,7 +36,7 @@ def cformatV(fh, name, X):
     nrq = int(math.ceil(X.shape[0] / 4.0))
     pad = nrq * 4 - X.shape[0]
     lines = ', '.join(list(map(lambda f: small_hex(f), X)) + [small_hex(0.0)] * pad)
-    fh.write('float {}[] = {}\n'.format( '__' + name, '{'))
+    fh.write('float {}[] = {}\n'.format('__' + name, '{'))
     fh.write('\t' + lines)
     fh.write('};\n')
     fh.write('_Mat {} = {}\n\t.nr = {},\n\t.nrq = {},\n\t.nc = {},\n\t.stride = {},\n\t.data.f = {}\n{};\n'.format('_' + name, '{', X.shape[0], nrq, 1, nrq * 4, '__' + name, '}'))
@@ -42,12 +44,12 @@ def cformatV(fh, name, X):
 
 
 def reshape_lstmM(mat):
-	_, isize = mat.shape
-	return mat.reshape((-1, 4, isize)).transpose([1, 0, 2]).reshape((-1, isize))
+    _, isize = mat.shape
+    return mat.reshape((-1, 4, isize)).transpose([1, 0, 2]).reshape((-1, isize))
 
 
 def reshape_lstmV(mat):
-	return mat.reshape((-1, 4)).transpose().reshape(-1)
+    return mat.reshape((-1, 4)).transpose().reshape(-1)
 
 
 with open(model_file, 'rb') as fh:
