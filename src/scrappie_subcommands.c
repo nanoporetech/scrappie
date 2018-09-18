@@ -100,7 +100,7 @@ int fprint_scrappie_commands(FILE * fp, bool header) {
     }
     for (enum scrappie_mode i = 0; i < scrappie_ncommand; i++) {
         if (EOF != ret) {
-            ret = fprintf(fp, "* scrappie %-10s%s\n", scrappie_mode_string(i),
+            ret = fprintf(fp, "* scrappie %-14s%s\n", scrappie_mode_string(i),
                           scrappie_mode_description(i));
         }
     }
