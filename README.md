@@ -46,6 +46,11 @@ adding in *clang/llvm* in version 3.7 (see http://llvm.org or use *brew*).
 mkdir build && cd build && cmake .. && make
 ```
 
+If HDF5 or OpenBLAS libraries are stored in non-standard locations, you can specify the HDF5_ROOT and/or OPENBLAS_ROOT cmake option.
+```bash
+cmake -DOPENBLAS_ROOT=/software/gcc/openblas -DHDF5_ROOT=/software/gcc/hdf5 ..
+```
+
 ## Running
 ```bash
 #  Set some enviromental variables.
@@ -220,7 +225,7 @@ argument.  When this is given, the 'standard deviation' and 'dwell' columns chan
 
 
 ## Methylation and other modifications
-The models underlying Scrappie are trained from PCR'd data.  Methylated 
+The models underlying Scrappie are trained from PCR'd data.  Methylated
 bases, and other modifications, will manifest as errors rather than
 the appropriate cannonical base.  Models calling modified bases into
 cannonical bases will be released in future version of Scrappie.
