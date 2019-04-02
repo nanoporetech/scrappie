@@ -11,6 +11,7 @@
 #include "util.h"
 
 #include "models/squiggle_r94.h"
+#include "models/squiggle_r94_rna.h"
 #include "models/squiggle_r10.h"
 
 enum raw_model_type get_raw_model(const char * modelstr){
@@ -35,6 +36,9 @@ enum raw_model_type get_raw_model(const char * modelstr){
 enum squiggle_model_type get_squiggle_model(const char * squigmodelstr){
     if(0 == strcmp(squigmodelstr, "squiggle_r94")){
         return SCRAPPIE_SQUIGGLE_MODEL_R9_4;
+    }
+    if(0 == strcmp(squigmodelstr, "squiggle_r94_rna")){
+        return SCRAPPIE_SQUIGGLE_MODEL_R9_4_RNA;
     }
     if(0 == strcmp(squigmodelstr, "squiggle_r10")){
         return SCRAPPIE_SQUIGGLE_MODEL_R10;
@@ -67,6 +71,8 @@ const char * squiggle_model_string(const enum squiggle_model_type squiggle_model
     switch(squiggle_model){
     case SCRAPPIE_SQUIGGLE_MODEL_R9_4:
         return "squiggle_r94";
+    case SCRAPPIE_SQUIGGLE_MODEL_R9_4_RNA:
+        return "squiggle_r94_rna";
     case SCRAPPIE_SQUIGGLE_MODEL_R10:
         return "squiggle_r10";
     case SCRAPPIE_SQUIGGLE_MODEL_INVALID:
@@ -124,6 +130,8 @@ squiggle_function_ptr get_squiggle_function(const enum squiggle_model_type squig
     switch(squiggle_model){
     case SCRAPPIE_SQUIGGLE_MODEL_R9_4:
         return squiggle_r94;
+    case SCRAPPIE_SQUIGGLE_MODEL_R9_4_RNA:
+        return squiggle_r94_rna;
     case SCRAPPIE_SQUIGGLE_MODEL_R10:
         return squiggle_r10;
     case SCRAPPIE_SQUIGGLE_MODEL_INVALID:
@@ -425,6 +433,63 @@ scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_unit
 
     scrappie_matrix conv6 = convolution(conv5, conv6_squiggle_r94_W, conv6_squiggle_r94_b,
                                         conv6_squiggle_r94_stride, NULL);
+    conv5 = free_scrappie_matrix(conv5);
+
+    RETURN_NULL_IF(NULL == conv6, NULL);
+
+    if(transform_units){
+        for(size_t c=0 ; c < conv6->nc ; c++){
+            size_t offset = c * conv6->stride;
+            //  Convert logsd to sd
+            conv6->data.f[offset + 1] = expf(conv6->data.f[offset + 1]);
+            //  Convert transformed dwell into expected samples
+            conv6->data.f[offset + 2] = expf(-conv6->data.f[offset + 2]);
+        }
+    }
+
+    return conv6;
+}
+
+
+scrappie_matrix squiggle_r94_rna(int const * sequence, size_t n, bool transform_units){
+    RETURN_NULL_IF(NULL == sequence, NULL);
+
+    scrappie_matrix seq_embedding = embedding(sequence, n, embed_squiggle_rna_W, NULL);
+    scrappie_matrix conv1 = convolution(seq_embedding, conv1_squiggle_rna_W, conv1_squiggle_rna_b,
+                                        conv1_squiggle_rna_stride, NULL);
+    seq_embedding = free_scrappie_matrix(seq_embedding);
+    tanh_activation_inplace(conv1);
+
+    // Convolution 2, wrapped in residual layer
+    scrappie_matrix conv2 = convolution(conv1, conv2_squiggle_rna_W, conv2_squiggle_rna_b,
+                                        conv2_squiggle_rna_stride, NULL);
+    tanh_activation_inplace(conv2);
+    residual_inplace(conv1, conv2);
+    conv1 = free_scrappie_matrix(conv1);
+
+    // Convolution 3, wrapped in residual layer
+    scrappie_matrix conv3 = convolution(conv2, conv3_squiggle_rna_W, conv3_squiggle_rna_b,
+                                        conv3_squiggle_rna_stride, NULL);
+    tanh_activation_inplace(conv3);
+    residual_inplace(conv2, conv3);
+    conv2 = free_scrappie_matrix(conv2);
+
+    // Convolution 4, wrapped in residual layer
+    scrappie_matrix conv4 = convolution(conv3, conv4_squiggle_rna_W, conv4_squiggle_rna_b,
+                                        conv4_squiggle_rna_stride, NULL);
+    tanh_activation_inplace(conv4);
+    residual_inplace(conv3, conv4);
+    conv3 = free_scrappie_matrix(conv3);
+
+    // Convolution 4, wrapped in residual layer
+    scrappie_matrix conv5 = convolution(conv4, conv5_squiggle_rna_W, conv5_squiggle_rna_b,
+                                        conv5_squiggle_rna_stride, NULL);
+    tanh_activation_inplace(conv5);
+    residual_inplace(conv4, conv5);
+    conv4 = free_scrappie_matrix(conv4);
+
+    scrappie_matrix conv6 = convolution(conv5, conv6_squiggle_rna_W, conv6_squiggle_rna_b,
+                                        conv6_squiggle_rna_stride, NULL);
     conv5 = free_scrappie_matrix(conv5);
 
     RETURN_NULL_IF(NULL == conv6, NULL);

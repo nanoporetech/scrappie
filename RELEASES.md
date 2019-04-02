@@ -5,7 +5,7 @@ This software is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-(c) 2017 Oxford Nanopore Technologies Ltd.
+(c) 2017--2019 Oxford Nanopore Technologies Ltd.
 
 The vectorised math functions `src/sse_mathfun.h` are from
 http://gruntthepeon.free.fr/ssemath/ and the original version of this file is
@@ -29,6 +29,8 @@ Scrappie's purpose is to demonstrate the next generation of base calling and, as
 The intention is that behaviour will be stable within a series, with only bug fixes or minor improvements being applied.  An improvement or change in behaviour that is not a major shift in the algorithm will be a new series with a bump of the minor version number.  Any major changes in the algorithm will be a new series with the major number bumped.
 
 * 1.4 series: Basecalls for better consensus
+    * *release-1.4.2*
+        * RNA squiggle model
     * *release-1.4.1*
         * Temperature corrected R10 model (rgrgr_r10)
         * New R9.4 squiggle model with improved dwell correction

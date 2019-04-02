@@ -375,6 +375,7 @@ _models_ = {
 
 _squiggle_models_ = {
     'squiggle_r94': lib.squiggle_r94,
+    'squiggle_r94_rna': lib.squiggle_r94_rna,
     'squiggle_r10': lib.squiggle_r10,
 }
 

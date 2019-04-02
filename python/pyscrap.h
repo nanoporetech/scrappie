@@ -27,6 +27,7 @@ scrappie_matrix posterior_crf(const_scrappie_matrix trans);
 
 // Squiggle generation
 scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_units);
+scrappie_matrix squiggle_r94_rna(int const * sequence, size_t n, bool transform_units);
 scrappie_matrix squiggle_r10(int const * sequence, size_t n, bool transform_units);
 
 // Scrappy Mappy

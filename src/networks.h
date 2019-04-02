@@ -15,6 +15,7 @@ enum raw_model_type {
 
 enum squiggle_model_type {
     SCRAPPIE_SQUIGGLE_MODEL_R9_4,
+    SCRAPPIE_SQUIGGLE_MODEL_R9_4_RNA,
     SCRAPPIE_SQUIGGLE_MODEL_R10,
     SCRAPPIE_SQUIGGLE_MODEL_INVALID};
 
@@ -49,6 +50,7 @@ scrappie_matrix nanonet_rnnrf_r94_transitions(const raw_table signal, float min_
 
 //  Squiggle functions
 scrappie_matrix squiggle_r94(int const * sequence, size_t n, bool transform_units);
+scrappie_matrix squiggle_r94_rna(int const * sequence, size_t n, bool transform_units);
 scrappie_matrix squiggle_r10(int const * sequence, size_t n, bool transform_units);
 
 #endif    /* NETWORKS_H */
