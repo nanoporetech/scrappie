@@ -33,57 +33,6 @@ int main_help_short(void) {
     return (EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-int main_help(int argc, char *argv[]) {
-
-    if (argc == 1) {
-        int ret = fputs(scrappie_help_header, stdout);
-        if (EOF != ret) {
-            fputc('\n', stdout);
-            ret = fprint_scrappie_commands(stdout, true);
-        }
-        if (EOF != ret) {
-            fputc('\n', stdout);
-            ret = fputs(scrappie_help_footer, stdout);
-        }
-        return (EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
-
-    int ret = EXIT_FAILURE;
-    switch (get_scrappie_mode(argv[1])) {
-    case SCRAPPIE_MODE_HELP:
-        printf("Recursively calling scrappie help\n");
-        break;
-    case SCRAPPIE_MODE_EVENTS:
-        help_options[0] = argv[1];
-        ret = main_events(2, help_options);
-        break;
-    case SCRAPPIE_MODE_RAW:
-        help_options[0] = argv[1];
-        ret = main_raw(2, help_options);
-        break;
-    case SCRAPPIE_MODE_SQUIGGLE:
-        help_options[0] = argv[1];
-        ret = main_squiggle(2, help_options);
-        break;
-    case SCRAPPIE_MODE_MAPPY:
-        help_options[0] = argv[1];
-        ret = main_mappy(2, help_options);
-        break;
-    case SCRAPPIE_MODE_SEQMAPPY:
-        help_options[0] = argv[1];
-        ret = main_seqmappy(2, help_options);
-        break;
-    case SCRAPPIE_MODE_EVENT_TABLE:
-        help_options[0] = argv[1];
-        ret = main_event_table(2, help_options);
-        break;
-    default:
-        ret = EXIT_FAILURE;
-        warnx("Unrecognised subcommand %s\n", argv[1]);
-    }
-
-    return ret;
-}
 
 int main_licence(int argc, char *argv[]) {
     int ret = fputs(scrappie_licence_text, stdout);
