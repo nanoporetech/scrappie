@@ -214,7 +214,7 @@ argument.  When this is given, the 'standard deviation' and 'dwell' columns chan
   * Dwell -> -log Dwell
 
 
-## Gotya's and notes
+## Gotcha's and notes
 * Model is hard-coded.  Generate new header files using
   * Events: `parse_events.py model.pkl > src/nanonet_events.h`
   * Raw: `parse_raw.py model.pkl > src/nanonet_raw.h`
