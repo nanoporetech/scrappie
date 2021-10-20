@@ -60,3 +60,6 @@ float map_to_sequence_viterbi_banded(const_scrappie_matrix logpost,
 // Misc
 int * encode_bases_to_integers(char const * seq, size_t n, size_t state_len);
 int get_raw_model_stride_from_string(const char * modelstr);
+
+// Event
+event_table detect_events(raw_table const rt, detector_param const edparam);
