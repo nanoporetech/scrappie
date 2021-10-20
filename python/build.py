@@ -29,6 +29,7 @@ ffibuilder.set_source("libscrappy",
       #include "util.h"
       #include "scrappie_seq_helpers.h"
       #include "scrappie_matrix.h"
+      #include "event_detection.h"
 
       int get_raw_model_stride_from_string(const char * modelstr){
         // Obtain the model stride from its str name
