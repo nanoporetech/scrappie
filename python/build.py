@@ -29,6 +29,7 @@ ffibuilder.set_source("libscrappy",
       #include "util.h"
       #include "scrappie_seq_helpers.h"
       #include "scrappie_matrix.h"
+      #include "event_detection.h"
 
       int get_raw_model_stride_from_string(const char * modelstr){
         // Obtain the model stride from its str name
@@ -72,6 +73,30 @@ typedef struct {
   size_t end;
   float *raw;
 } raw_table;
+
+typedef struct {
+        uint64_t start;
+        float length;
+        float mean;
+        float stdv;
+        int pos;
+        int state;
+} event_t;
+
+typedef struct {
+        size_t n;
+        size_t start;
+        size_t end;
+        event_t *event;
+} event_table;
+
+typedef struct {
+    size_t window_length1;
+    size_t window_length2;
+    float threshold1;
+    float threshold2;
+    float peak_height;
+} detector_param;
 
 typedef struct {
   size_t nr, nrq, nc, stride;
