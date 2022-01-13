@@ -1,3 +1,14 @@
+
+![ONT_logo](/ONT_logo.png)
+-----------------------------
+
+We have a new bioinformatic resource that largely replaces the functionality of this project! See our new repository here: [https://github.com/nanoporetech/bonito](https://github.com/nanoporetech/bonito)
+
+
+This repository is now unsupported and we do not recommend its use. Please contact Oxford Nanopore: support@nanoporetech.com for help with your application if it is not possible to upgrade to our new resources, or we are missing key features.
+
+******************
+
 # Scrappie basecaller
 
 Scrappie is a technology demonstrator for the Oxford Nanopore Research Algorithms group.
